@@ -15,7 +15,7 @@ BoMs as well as Dependency-Check XML reports to the Dependency-Track platform.
 Copyright & License
 -------------------
 
-Dependency-Track and the Dependency-Track Jenkins Plugin is Copyright (c) Steve Springett. All Rights Reserved.
+Dependency-Track and the Dependency-Track Jenkins Plugin are Copyright (c) Steve Springett. All Rights Reserved.
 
 Permission to modify and redistribute is granted under the terms of the Apache 2.0 license.
 
