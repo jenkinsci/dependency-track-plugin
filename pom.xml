@@ -9,12 +9,7 @@
         <version>3.2</version>
     </parent>
 
-    <!--
-        If artifactId changes, the *.jelly files containing links to help need
-        to be changed. Additionally, the ICONS_PREFIX and PLUGIN_ID in
-        DependencyCheckDescriptor need to be updated as well.
-    -->
-    <artifactId>dependency-track-jenkins-plugin</artifactId>
+    <artifactId>dependency-track</artifactId>
 
     <name>OWASP Dependency-Track Plugin</name>
     <version>1.0.0-SNAPSHOT</version>

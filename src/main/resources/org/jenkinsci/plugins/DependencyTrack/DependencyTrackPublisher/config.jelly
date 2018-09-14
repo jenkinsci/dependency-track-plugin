@@ -16,11 +16,11 @@ limitations under the License.
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 
-    <f:entry title="${%projectId}" field="projectId" help="/plugin/dependency-track-jenkins-plugin/help-dt-projectid.html">
+    <f:entry title="${%projectId}" field="projectId" help="/plugin/dependency-track/help-dt-projectid.html">
         <f:select id="projectId"/>
     </f:entry>
 
-    <f:entry title="${%artifact}" field="artifact" help="/plugin/dependency-track-jenkins-plugin/help-dt-artifact.html">
+    <f:entry title="${%artifact}" field="artifact" help="/plugin/dependency-track/help-dt-artifact.html">
         <f:textbox id="artifact"/>
     </f:entry>
 
