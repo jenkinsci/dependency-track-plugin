@@ -2,7 +2,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <description>Dependency-Track is an intelligent Software Composition Analysis (SCA) platform that allows organizations to identify and reduce risk from the use of third-party and open source components. This plug-in can publish various BoM formats to Dependency-Track.</description>
-    <url>http://wiki.jenkins-ci.org/display/JENKINS/OWASP+Dependency-Track+Plugin</url>
+    <url>https://wiki.jenkins.io/display/JENKINS/OWASP+Dependency-Track+Plugin</url>
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
@@ -25,7 +25,7 @@
             <name>Steve Springett</name>
             <email>steve.springett@owasp.org</email>
             <organization>OWASP</organization>
-            <organizationUrl>https://www.owasp.org/index.php/OWASP_Dependency_Check</organizationUrl>
+            <organizationUrl>https://www.owasp.org/index.php/OWASP_Dependency_Track_Project</organizationUrl>
             <roles>
                 <role>architect</role>
                 <role>developer</role>
