@@ -113,8 +113,8 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
         this.logger = listener.getLogger();
         log(Messages.Builder_Publishing());
 
-        final String projectId = PluginUtil.substituteVariable(build, listener, this.projectId);
-        final String artifact = PluginUtil.substituteVariable(build, listener, this.artifact);
+        final String projectId = build.getEnvironment(listener).expand(this.projectId);
+        final String artifact = build.getEnvironment(listener).expand(this.artifact);
 
         boolean success = upload(listener, projectId, artifact, isScanResult, filePath);
         if (!success) {

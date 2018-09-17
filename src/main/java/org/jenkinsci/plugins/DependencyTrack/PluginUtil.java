@@ -16,14 +16,10 @@
 package org.jenkinsci.plugins.DependencyTrack;
 
 import hudson.FilePath;
-import hudson.model.AbstractBuild;
-import hudson.model.Run;
-import hudson.model.TaskListener;
 import hudson.util.FormValidation;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.QueryParameter;
 import java.io.File;
-import java.io.IOException;
 import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -33,39 +29,6 @@ public class PluginUtil implements Serializable {
     private static final long serialVersionUID = 5780698407191725723L;
 
     private PluginUtil() { }
-
-    /**
-     * Replace a Jenkins environment variable in the form ${name} contained in the
-     * specified String with the value of the matching environment variable.
-     */
-    static String substituteVariable(final Run<?, ?> build, final TaskListener listener, final String parameterizedValue) {
-        // We cannot perform variable substitution for Pipeline jobs, so check to see if Run is an instance
-        // of AbstractBuild or not. If not, simply return the value without attempting variable substitution.
-        if (! (build instanceof AbstractBuild)) {
-            return parameterizedValue;
-        }
-        try {
-            if (parameterizedValue != null && parameterizedValue.contains("${")) {
-                final int start = parameterizedValue.indexOf("${");
-                final int end = parameterizedValue.indexOf("}", start);
-                final String parameter = parameterizedValue.substring(start + 2, end);
-                final String value = build.getEnvironment(listener).get(parameter);
-                if (value == null) {
-                    throw new IllegalStateException(parameter);
-                }
-                final String substitutedValue = parameterizedValue.substring(0, start) + value + (parameterizedValue.length() > end + 1 ? parameterizedValue.substring(end + 1) : "");
-                if (end > 0) { // recursively substitute variables
-                    return substituteVariable(build, listener, substitutedValue);
-                } else {
-                    return parameterizedValue;
-                }
-            } else {
-                return parameterizedValue;
-            }
-        } catch (IOException | InterruptedException e) {
-            return parameterizedValue;
-        }
-    }
 
     /**
      * Performs input validation when submitting the global config
