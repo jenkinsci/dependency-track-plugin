@@ -1,4 +1,4 @@
-[![Build Status](https://ci.jenkins.io/buildStatus/icon?job=Plugins/dependency-track-plugin/master)](https://ci.jenkins.io/job/Plugins/dependency-track-plugin/master)
+[![Build Status](https://ci.jenkins.io/buildStatus/icon?job=Plugins/dependency-track-plugin/master)](https://ci.jenkins.io/job/Plugins/job/dependency-track-plugin)
 [![License][license-image]][license-url]
 [![Website](https://img.shields.io/badge/https://-dependencytrack.org-blue.svg)](https://dependencytrack.org/)
 [![Documentation](https://img.shields.io/badge/read-documentation-blue.svg)](https://docs.dependencytrack.org/)
