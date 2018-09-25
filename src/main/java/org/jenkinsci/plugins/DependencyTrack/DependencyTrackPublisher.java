@@ -35,6 +35,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.DependencyTrack.Messages;
 import org.kohsuke.stapler.DataBoundConstructor;
+import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 import javax.annotation.Nonnull;
@@ -58,18 +59,49 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
 
     private static final long serialVersionUID = 480115440498217963L;
 
-    private final String projectId;
+    private String projectId;
+    private String projectName;
+    private String projectVersion;
     private final String artifact;
     private final String artifactType;
     private final boolean isScanResult;
     private transient PrintStream logger;
 
-    @DataBoundConstructor // Fields in config.jelly must match the parameter names
-    public DependencyTrackPublisher(final String projectId, final String artifact, final String artifactType) {
-        this.projectId = projectId;
+    // Fields in config.jelly must match the parameter names
+    @DataBoundConstructor
+    public DependencyTrackPublisher(final String artifact, final String artifactType) {
         this.artifact = artifact;
         this.artifactType = artifactType;
         this.isScanResult = artifactType == null || !"bom".equals(artifactType);
+
+        this.projectId = null;
+        this.projectName = null;
+        this.projectVersion = null;
+    }
+
+    /**
+     * Sets the project ID to upload to. This is a per-build config item. This
+     * method must match the value in <tt>config.jelly</tt>.
+     **/
+    @DataBoundSetter
+    public void setProjectId(String projectId) {
+        this.projectId = projectId;
+    }
+
+    /**
+     * Sets the project name to upload to. This is a per-build config item.
+     **/
+    @DataBoundSetter
+    public void setProjectName(String projectName) {
+        this.projectName = projectName;
+    }
+
+    /**
+     * Sets the project name to upload to. This is a per-build config item.
+     **/
+    @DataBoundSetter
+    public void setProjectVersion(String projectVersion) {
+        this.projectVersion = projectVersion;
     }
 
     /**
@@ -96,6 +128,23 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
         return artifactType;
     }
 
+
+    /**
+     * Retrieves the project name to upload to. This is a per-build config item.
+     * This method must match the value in <tt>config.jelly</tt>.
+     */
+    public String getProjectName() {
+        return projectName;
+    }
+
+    /**
+     * Retrieves the project version to upload to. This is a per-build config item.
+     * This method must match the value in <tt>config.jelly</tt>.
+     */
+    public String getProjectVersion() {
+        return projectVersion;
+    }
+
     /**
      * This method is called whenever the build step is executed.
      *
@@ -116,7 +165,7 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
         final String projectId = build.getEnvironment(listener).expand(this.projectId);
         final String artifact = build.getEnvironment(listener).expand(this.artifact);
 
-        boolean success = upload(listener, projectId, artifact, isScanResult, filePath);
+        boolean success = upload(listener, projectId, projectName, projectVersion, artifact, isScanResult, filePath);
         if (!success) {
             build.setResult(Result.FAILURE);
         }
@@ -134,7 +183,7 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
         logger.println(outtag + message.replaceAll("\\n", "\n" + outtag));
     }
 
-    private boolean upload(TaskListener listener, String projectId, String artifact, boolean isScanResult, FilePath workspace) throws IOException {
+    private boolean upload(TaskListener listener, String projectId, String projectName, String projectVersion, String artifact, boolean isScanResult, FilePath workspace) throws IOException {
         final FilePath filePath = new FilePath(workspace, artifact);
         final String encodedScan;
         try {
@@ -153,9 +202,18 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
 
         // Creates the JSON payload that will be sent to Dependency-Track
         JsonObjectBuilder jsonObjectBuilder = Json.createObjectBuilder();
-        JsonObject jsonObject = jsonObjectBuilder
-                .add("project", projectId)
-                .add(jsonAttribute, encodedScan).build();
+
+        if (projectId != null)
+            jsonObjectBuilder.add("project", projectId);
+        else {
+            jsonObjectBuilder.add("projectName", projectName);
+            jsonObjectBuilder.add("projectVersion", projectVersion);
+            jsonObjectBuilder.add("autoCreate", getDescriptor().isDependencyTrackAutoCreateProjects());
+        }
+
+        jsonObjectBuilder.add(jsonAttribute, encodedScan);
+
+        JsonObject jsonObject = jsonObjectBuilder.build();
 
         byte[] payloadBytes = jsonObject.toString().getBytes(StandardCharsets.UTF_8);
 
@@ -223,6 +281,13 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
          * Specifies an API Key used for authentication (if authentication is required).
          */
         private String dependencyTrackApiKey;
+
+
+        /**
+         * Specifies whether the API key provided has the PROJECT_CREATION_UPLOAD permission.
+         */
+        private boolean dependencyTrackAutoCreateProjects;
+
 
         /**
          * Default constructor. Obtains the Descriptor used in DependencyCheckBuilder as this contains
@@ -301,6 +366,7 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
             dependencyTrackUrl = formData.getString("dependencyTrackUrl");
             dependencyTrackApiKey = formData.getString("dependencyTrackApiKey");
+            dependencyTrackAutoCreateProjects = formData.getBoolean("dependencyTrackAutoCreateProjects");
             save();
             return super.configure(req, formData);
         }
@@ -330,6 +396,14 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
         public String getDependencyTrackApiKey() {
             return dependencyTrackApiKey;
         }
+
+        /**
+         * This method returns the global configuration for
+         * dependencyTrackAutoCreateProjects.
+         */
+        public boolean isDependencyTrackAutoCreateProjects() {
+            return dependencyTrackAutoCreateProjects;
+        }        
 
     }
 
