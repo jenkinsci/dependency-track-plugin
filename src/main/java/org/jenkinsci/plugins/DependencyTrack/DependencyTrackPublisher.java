@@ -186,6 +186,11 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
     private boolean upload(TaskListener listener, String projectId, String projectName, String projectVersion, String artifact, boolean isScanResult, FilePath workspace) throws IOException {
         final FilePath filePath = new FilePath(workspace, artifact);
         final String encodedScan;
+        if (projectId == null && (projectName == null || projectVersion == null)) {
+            log(Messages.Builder_Result_InvalidArguments());
+            return false;
+        }
+
         try {
             if (StringUtils.isBlank(artifact) || !filePath.exists()) {
                 log(Messages.Builder_Result_NonExist());
