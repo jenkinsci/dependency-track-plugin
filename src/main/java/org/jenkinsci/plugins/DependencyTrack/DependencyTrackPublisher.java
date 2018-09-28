@@ -30,6 +30,7 @@ import hudson.tasks.Recorder;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.tasks.SimpleBuildStep;
+import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.Symbol;
@@ -38,11 +39,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 import javax.annotation.Nonnull;
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
-import javax.json.JsonReader;
+import javax.json.*;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -63,13 +60,25 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
     private final String artifactType;
     private final boolean isScanResult;
     private transient PrintStream logger;
+    private final boolean isAutoCreateEnabled;
+    private final String projectName;
+    private final String projectVersion;
+    private final String projectDesc;
+    private final String projectTags;
 
     @DataBoundConstructor // Fields in config.jelly must match the parameter names
-    public DependencyTrackPublisher(final String projectId, final String artifact, final String artifactType) {
+    public DependencyTrackPublisher(final String projectId, final String artifact, final String artifactType,
+                                    Boolean isAutoCreateEnabled, final String projectName,
+                                    final String projectVersion, final String projectDesc, String projectTags) {
         this.projectId = projectId;
         this.artifact = artifact;
         this.artifactType = artifactType;
         this.isScanResult = artifactType == null || !"bom".equals(artifactType);
+        this.isAutoCreateEnabled = (isAutoCreateEnabled != null) && isAutoCreateEnabled;
+        this.projectName = projectName;
+        this.projectVersion = projectVersion;
+        this.projectDesc = projectDesc;
+        this.projectTags = projectTags;
     }
 
     /**
@@ -97,6 +106,46 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
     }
 
     /**
+     * Retrieves whether project auto create enabled or not. This is a per-build config item.
+     * This method must match the value in <tt>config.jelly</tt>.
+     */
+    public boolean getIsAutoCreateEnabled() {
+        return isAutoCreateEnabled;
+    }
+
+    /**
+     * Retrieves the name of project. This is a per-build config item.
+     * This method must match the value in <tt>config.jelly</tt>.
+     */
+    public String getProjectName() {
+        return projectName;
+    }
+
+    /**
+     * Retrieves the description of the project. This is a per-build config item.
+     * This method must match the value in <tt>config.jelly</tt>.
+     */
+    public String getProjectDesc() {
+        return projectDesc;
+    }
+
+    /**
+     * Retrieves the tags of the project. This is a per-build config item.
+     * This method must match the value in <tt>config.jelly</tt>.
+     */
+    public String getProjectTags() {
+        return projectTags;
+    }
+
+    /**
+     * Retrieves the version of the project. This is a per-build config item.
+     * This method must match the value in <tt>config.jelly</tt>.
+     */
+    public String getProjectVersion() {
+        return projectVersion;
+    }
+
+    /**
      * This method is called whenever the build step is executed.
      *
      * @param build    A Run object
@@ -115,18 +164,35 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
 
         final String projectId = build.getEnvironment(listener).expand(this.projectId);
         final String artifact = build.getEnvironment(listener).expand(this.artifact);
+        final boolean isAutoCreateEnabled = this.isAutoCreateEnabled;
+        build.getEnvironment(listener).expand(Boolean.toString(this.isAutoCreateEnabled));
+        final String projectName = build.getEnvironment(listener).expand(this.projectName);
+        final String projectVersion = build.getEnvironment(listener).expand(this.projectVersion);
+        final String projectDesc = build.getEnvironment(listener).expand(this.projectDesc);
+        final String projectTags = build.getEnvironment(listener).expand(this.projectTags);
 
-        boolean success = upload(listener, projectId, artifact, isScanResult, filePath);
-        if (!success) {
-            build.setResult(Result.FAILURE);
+        log(build.getEnvironment(listener).toString());
+
+        if (isAutoCreateEnabled) {
+            createProject(listener, projectName, projectVersion, projectDesc, projectTags);
+            boolean success = upload(listener, "", artifact, isScanResult, filePath, true, projectName, projectVersion);
+            if (!success) {
+                build.setResult(Result.FAILURE);
+            }
+        } else {
+            boolean success = upload(listener, projectId, artifact, isScanResult, filePath,false,projectName,projectVersion);
+            if (!success) {
+                build.setResult(Result.FAILURE);
+            }
         }
     }
 
     /**
      * Log messages to the builds console.
+     *
      * @param message The message to log
      */
-    private void log(String message) {
+    private void log(String message){
         if (logger == null || message == null) {
             return;
         }
@@ -134,7 +200,73 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
         logger.println(outtag + message.replaceAll("\\n", "\n" + outtag));
     }
 
-    private boolean upload(TaskListener listener, String projectId, String artifact, boolean isScanResult, FilePath workspace) throws IOException {
+    /**
+     * Request to create a new project.
+     *
+     * @param listener        A BuildListener object
+     * @param projectName     The name if the new project
+     * @param projectVersion  The version of the new project
+     * @param projectDesc     The description of the new project
+     * @param projectTags     The tags of the new project
+     */
+    private void createProject(TaskListener listener, String projectName, String projectVersion, String projectDesc, String projectTags) throws IOException {
+
+        String baseUrl = "/api/v1/project";
+        String[] tags = projectTags.split(",");
+        JsonArrayBuilder jsonArrayBuilder = Json.createArrayBuilder();
+        for (int i = 0; i < tags.length; i++) {
+            jsonArrayBuilder.add(Json.createObjectBuilder().add("name", tags[i]));
+        }
+
+        // Creates the JSON payload that will be sent to Dependency-Track
+        JsonObjectBuilder jsonObjectBuilder = Json.createObjectBuilder();
+        JsonObject jsonObject = jsonObjectBuilder
+                .add("name", projectName)
+                .add("version", projectVersion)
+                .add("description", projectDesc)
+                .add("tags", jsonArrayBuilder)
+                .build();
+
+        byte[] payloadBytes = jsonObject.toString().getBytes(StandardCharsets.UTF_8);
+
+        // Creates the request and connects
+        final HttpURLConnection conn = (HttpURLConnection) new URL(getDescriptor().getDependencyTrackUrl()
+                + baseUrl).openConnection();
+        conn.setDoOutput(true);
+        conn.setDoInput(true);
+        conn.setRequestMethod("PUT");
+        conn.setRequestProperty("Content-Type", "application/json");
+        conn.setRequestProperty("Content-Length", Integer.toString(payloadBytes.length));
+        conn.setRequestProperty("X-Api-Key", getDescriptor().getDependencyTrackApiKey());
+        conn.connect();
+
+        // Sends the payload bytes
+        try (OutputStream os = new BufferedOutputStream(conn.getOutputStream())) {
+                os.write(payloadBytes);
+                os.flush();
+        }
+
+        // Checks the server response
+        if (conn.getResponseCode() == 201) {
+            log(Messages.Builder_Create_Success());
+        } else if (conn.getResponseCode() == 400) {
+            log(Messages.Builder_Payload_Invalid());
+        } else if (conn.getResponseCode() == 401) {
+            log(Messages.Builder_Unauthorized());
+        } else if (conn.getResponseCode() == 404) {
+            log(Messages.Builder_Project_NotFound());
+        } else if (conn.getResponseCode() == 409) {
+            log(Messages.Builder_Create_DuplicateError());
+        } else {
+            log(Messages.Builder_Error_Connect() + ": "
+                    + conn.getResponseCode() + " " + conn.getResponseMessage());
+        }
+
+    }
+
+
+
+    private boolean upload(TaskListener listener, String projectId, String artifact, boolean isScanResult, FilePath workspace, boolean autocreate, String projectname, String projectversion) throws IOException {
         final FilePath filePath = new FilePath(workspace, artifact);
         final String encodedScan;
         try {
@@ -153,9 +285,17 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
 
         // Creates the JSON payload that will be sent to Dependency-Track
         JsonObjectBuilder jsonObjectBuilder = Json.createObjectBuilder();
-        JsonObject jsonObject = jsonObjectBuilder
-                .add("project", projectId)
-                .add(jsonAttribute, encodedScan).build();
+        jsonObjectBuilder.add(jsonAttribute, encodedScan);
+
+        if (autocreate) {
+            jsonObjectBuilder.add("autoCreate", true);
+            jsonObjectBuilder.add("projectName", projectname);
+            jsonObjectBuilder.add("projectVersion", projectversion);
+        }else {
+            jsonObjectBuilder.add("project", projectId);
+        }
+
+        JsonObject jsonObject = jsonObjectBuilder.build();
 
         byte[] payloadBytes = jsonObject.toString().getBytes(StandardCharsets.UTF_8);
 
@@ -334,7 +474,7 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
     }
 
     @Override
-    public BuildStepMonitor getRequiredMonitorService() {
+    public BuildStepMonitor getRequiredMonitorService(){
         return BuildStepMonitor.NONE;
     }
 

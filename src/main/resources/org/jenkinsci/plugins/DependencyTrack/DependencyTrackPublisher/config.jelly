@@ -31,4 +31,23 @@ limitations under the License.
         </select>
     </f:entry>
 
+    <f:advanced>
+        <f:entry title="${%enable.autoucreate}" description="" help="/plugin/dependency-check-jenkins-plugin/help-dt-autocreate.html">
+            <f:checkbox id="isAutoCreateEnabled" name="isAutoCreateEnabled" checked="${instance.getIsAutoCreateEnabled()}"/>
+        </f:entry>
+        <f:entry title="${%projectName}" field="projectName" help="/plugin/dependency-track/help-dt-newproject-name.html">
+            <f:textbox id="projectName"/>
+        </f:entry>
+        <f:entry title="${%projectVersion}" field="projectVersion" help="/plugin/dependency-track/help-dt-newproject-version.html">
+            <f:textbox id="projectVersion"/>
+        </f:entry>
+        <f:entry title="${%projectDesc}" field="projectDesc" help="/plugin/dependency-track/help-dt-newproject-desc.html">
+            <f:textbox id="projectDesc"/>
+        </f:entry>
+        <f:entry title="${%projectTags}" field="projectTags" help="/plugin/dependency-track/help-dt-newproject-tags.html">
+            <f:textbox id="projectTags"/>
+        </f:entry>
+
+    </f:advanced>
+
 </j:jelly>
