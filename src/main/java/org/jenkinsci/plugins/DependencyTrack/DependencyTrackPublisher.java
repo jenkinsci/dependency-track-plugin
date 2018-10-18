@@ -291,6 +291,38 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
         }
 
         /**
+         * Performs an on-the-fly check of the Dependency-Track URL and api key
+         * parameters by making a simple call to the server and validating
+         * the response code.
+         * @param dependencyTrackUrl the base URL to Dependency-Track
+         * @param dependencyTrackApiKey the API key to use for authentication
+         * @return FormValidation
+         * @throws IOException Oops
+         */
+        public FormValidation doTestConnection(@QueryParameter final String dependencyTrackUrl,
+                                               @QueryParameter final String dependencyTrackApiKey) throws IOException {
+            final String baseUrl = PluginUtil.parseBaseUrl(dependencyTrackUrl);
+            final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + "/api/version").openConnection();
+            conn.setDoOutput(true);
+            conn.setDoInput(true);
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty("Content-Type", "application/json");
+            conn.setRequestProperty("X-Api-Key", dependencyTrackApiKey);
+            conn.connect();
+            if (conn.getResponseCode() == 200) {
+                try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
+                    JsonReader jsonReader = Json.createReader(in);
+                    JsonObject jsonObject = jsonReader.readObject();
+                    String version = jsonObject.getString("version", "null");
+                    if (!version.equals("null")) {
+                        return FormValidation.ok("Connection successful - Dependency-Track v" + version);
+                    }
+                }
+            }
+            return FormValidation.error("An error occurred connecting to Dependency-Track");
+        }
+
+        /**
          * Takes the /apply/save step in the global config and saves the JSON data.
          * @param req the request
          * @param formData the form data
@@ -317,11 +349,7 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
          * This method returns the global configuration for dependencyTrackUrl.
          */
         public String getDependencyTrackUrl() {
-            dependencyTrackUrl = StringUtils.trimToNull(dependencyTrackUrl);
-            if (dependencyTrackUrl != null && dependencyTrackUrl.endsWith("/")) {
-                return dependencyTrackUrl.substring(0, dependencyTrackUrl.length() -1);
-            }
-            return dependencyTrackUrl;
+            return PluginUtil.parseBaseUrl(dependencyTrackUrl);
         }
 
         /**
