@@ -65,4 +65,12 @@ public class PluginUtil implements Serializable {
         return FormValidation.ok();
     }
 
+    static String parseBaseUrl(String baseUrl) {
+        baseUrl = StringUtils.trimToNull(baseUrl);
+        if (baseUrl != null && baseUrl.endsWith("/")) {
+            return baseUrl.substring(0, baseUrl.length() -1);
+        }
+        return baseUrl;
+    }
+
 }

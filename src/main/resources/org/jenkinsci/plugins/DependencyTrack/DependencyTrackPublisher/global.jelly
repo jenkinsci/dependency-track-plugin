@@ -17,7 +17,6 @@ limitations under the License.
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
 
     <f:section title="Dependency-Track">
-
         <f:entry title="${%dependencytrack.url}" field="dependencyTrackUrl" help="/plugin/dependency-track/help-dt-url.html">
             <f:textbox id="dependencytrack.url"/>
         </f:entry>
@@ -27,7 +26,7 @@ limitations under the License.
         <f:entry title="${%dependencytrack.autocreate}" field="dependencyTrackAutoCreateProjects" help="/plugin/dependency-track/help-dt-autocreate.html">
             <f:checkbox id="dependencytrack.autocreate" default="false"/>
         </f:entry>        
-
+        <f:validateButton title="${%Test Connection}" progress="${%Testing...}" method="testConnection" with="dependencyTrackUrl,dependencyTrackApiKey" />
     </f:section>
 
 </j:jelly>
