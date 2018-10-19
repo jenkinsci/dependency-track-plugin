@@ -26,7 +26,7 @@ limitations under the License.
         <f:entry title="${%dependencytrack.autocreate}" field="dependencyTrackAutoCreateProjects" help="/plugin/dependency-track/help-dt-autocreate.html">
             <f:checkbox id="dependencytrack.autocreate" default="false"/>
         </f:entry>        
-        <f:validateButton title="${%Test Connection}" progress="${%Testing...}" method="testConnection" with="dependencyTrackUrl,dependencyTrackApiKey" />
+        <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnection" with="dependencyTrackUrl,dependencyTrackApiKey" />
     </f:section>
 
 </j:jelly>
