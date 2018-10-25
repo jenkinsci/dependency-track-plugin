@@ -315,10 +315,10 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
             final ListBoxModel projects = new ListBoxModel();
             try {
                 // Creates the request and connects
-                Boolean isPaginated = true;
+                boolean isPaginated = true;
                 int page = 1;
                 while(isPaginated) {
-                    final HttpURLConnection conn = (HttpURLConnection) new URL(getDependencyTrackUrl() + "/api/v1/project")
+                    final HttpURLConnection conn = (HttpURLConnection) new URL(getDependencyTrackUrl() + "/api/v1/project?limit=500&page="+page)
                             .openConnection();
                     conn.setDoOutput(true);
                     conn.setDoInput(true);
@@ -332,7 +332,7 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
                         try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
                             JsonReader jsonReader = Json.createReader(in);
                             JsonArray array = jsonReader.readArray();
-                            if (!(array.isEmpty())) {
+                            if (!array.isEmpty()) {
                                 for (int i = 0; i < array.size(); i++) {
                                     JsonObject jsonObject = array.getJsonObject(i);
                                     String name = jsonObject.getString("name");
@@ -343,13 +343,13 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
                                     }
                                     projects.add(name, uuid);
                                 }
-                            }
-                            else {
-                                    isPaginated = false;
+                            } else {
+                                isPaginated = false;
                             }
                         }
                     } else {
                         projects.add(Messages.Builder_Error_Projects() + ": " + conn.getResponseCode());
+                        isPaginated = false;
                     }
                     page++;
                 }
