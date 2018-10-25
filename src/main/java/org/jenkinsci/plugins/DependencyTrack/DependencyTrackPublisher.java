@@ -315,35 +315,43 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
             final ListBoxModel projects = new ListBoxModel();
             try {
                 // Creates the request and connects
-                final HttpURLConnection conn = (HttpURLConnection) new URL(getDependencyTrackUrl() + "/api/v1/project")
-                        .openConnection();
-                conn.setDoOutput(true);
-                conn.setDoInput(true);
-                conn.setRequestMethod("GET");
-                conn.setRequestProperty("Content-Type", "application/json");
-                conn.setRequestProperty("X-Api-Key", getDependencyTrackApiKey());
-                conn.connect();
+                Boolean isPaginated = true;
+                int page = 1;
+                while(isPaginated) {
+                    final HttpURLConnection conn = (HttpURLConnection) new URL(getDependencyTrackUrl() + "/api/v1/project")
+                            .openConnection();
+                    conn.setDoOutput(true);
+                    conn.setDoInput(true);
+                    conn.setRequestMethod("GET");
+                    conn.setRequestProperty("Content-Type", "application/json");
+                    conn.setRequestProperty("X-Api-Key", getDependencyTrackApiKey());
+                    conn.connect();
 
-                // Checks the server response
-                if (conn.getResponseCode() == 200) {
-                    try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
-                        JsonReader jsonReader = Json.createReader(in);
-                        JsonArray array = jsonReader.readArray();
-                        if (array != null) {
-                            for (int i = 0; i < array.size(); i++) {
-                                JsonObject jsonObject = array.getJsonObject(i);
-                                String name = jsonObject.getString("name");
-                                String version = jsonObject.getString("version", "null");
-                                String uuid = jsonObject.getString("uuid");
-                                if (!version.equals("null")) {
-                                    name = name + " " + version;
+                    // Checks the server response
+                    if (conn.getResponseCode() == 200) {
+                        try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
+                            JsonReader jsonReader = Json.createReader(in);
+                            JsonArray array = jsonReader.readArray();
+                            if (!(array.isEmpty())) {
+                                for (int i = 0; i < array.size(); i++) {
+                                    JsonObject jsonObject = array.getJsonObject(i);
+                                    String name = jsonObject.getString("name");
+                                    String version = jsonObject.getString("version", "null");
+                                    String uuid = jsonObject.getString("uuid");
+                                    if (!version.equals("null")) {
+                                        name = name + " " + version;
+                                    }
+                                    projects.add(name, uuid);
                                 }
-                                projects.add(name, uuid);
+                            }
+                            else {
+                                    isPaginated = false;
                             }
                         }
+                    } else {
+                        projects.add(Messages.Builder_Error_Projects() + ": " + conn.getResponseCode());
                     }
-                } else {
-                    projects.add(Messages.Builder_Error_Projects() + ": " + conn.getResponseCode());
+                    page++;
                 }
             } catch (IOException e) {
                 projects.add(e.getMessage());
