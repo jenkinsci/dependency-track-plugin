@@ -1,0 +1,58 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:l="/lib/layout" xmlns:st="jelly:stapler" xmlns:t="/lib/hudson">
+
+    <l:layout title="Dependency-Track Report">
+
+        <l:side-panel>
+            <st:include page="sidepanel.jelly" it="${it.run}" optional="true" />
+        </l:side-panel>
+
+        <l:main-panel>
+            <link rel="stylesheet" type="text/css" href="${resURL}/plugin/dependency-track/css/tipped.css"/>
+            <link rel="stylesheet" type="text/css" href="${resURL}/plugin/dependency-track/css/font-awesome.min.css"/>
+            <link rel="stylesheet" type="text/css" href="${resURL}/plugin/dependency-track/css/footable.standalone.min.css"/>
+            <link rel="stylesheet" type="text/css" href="${resURL}/plugin/dependency-track/css/custom.css"/>
+
+            <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/libs/jquery.min.js"/>
+            <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/libs/footable.min.js"/>
+            <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/libs/tipped.js"/>
+            <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/libs/echarts.common.min.js"/>
+            <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/no-prototype.js"/>
+            <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/charts.js"/>
+
+            <h1>${it.displayName} Results</h1>
+
+            <j:set var="i" value="${it.issues}"/>
+            <j:choose>
+                <j:when test="${i.isNotEmpty()}">>
+
+                    <script>var view = <st:bind value="${it}"/></script>
+
+                </j:when>
+                <j:otherwise>
+                    <div id="severity-distribution"></div>
+                    <table id="findings-table" class="table" data-paging="true" data-filtering="true"
+                           data-sorting="true" data-editing="false" data-state="true">
+                    </table>
+
+                    <script>
+                        var view =<st:bind value="${it}"/>
+                        view.getFindingsJson(function (data) {
+                            (function ($) {
+                                jQuery.noConflict();
+                                $('.table').footable(data.responseJSON);
+                            })(jQuery);
+                        });
+
+                        view.getSeverityDistributionJson(function (data) {
+                            var json = data.responseJSON;
+                            generateSeverityDistributionBar("severity-distribution", "Severity Distribution",
+                                json.critical, json.high, json.medium, json.low, json.info, json.unassigned);
+                        });
+                    </script>
+
+                </j:otherwise>
+            </j:choose>
+        </l:main-panel>
+    </l:layout>
+</j:jelly>

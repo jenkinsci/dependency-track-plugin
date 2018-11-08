@@ -1,0 +1,21 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+
+    <div class="test-trend-caption">
+        Dependency-Track Trend
+    </div>
+    <div align="right">
+        <div id="${from.urlName}-history-chart" class="graph-cursor-pointer"
+             style="width: 500px; min-height: 200px; min-width: 500px; height: 200px;"/>
+    </div>
+    <script src="${resURL}/plugin/dependency-track/js/libs/echarts.common.min.js"/>
+    <script src="${resURL}/plugin/dependency-track/js/charts.js"/>
+    <script>
+        var ${from.urlName}Action = <st:bind value="${from}"/>;
+        ${from.urlName}Action.getSeverityDistributionTrend(function (data) {
+            console.log(data.responseJSON);
+            renderTrendChart('${from.urlName}-history-chart', data.responseJSON);
+        });
+    </script>
+
+</j:jelly>

@@ -72,5 +72,4 @@ public class PluginUtil implements Serializable {
         }
         return baseUrl;
     }
-
 }

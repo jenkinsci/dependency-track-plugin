@@ -26,8 +26,8 @@ limitations under the License.
 
     <f:entry name="artifactType" title="${%artifactType.choose}" field="artifactType">
         <select name="artifactType">
-            <option selected="${instance.artifactType.equals('scanResult')? 'true':null}" value="scanResult">${%artifactType.scanResult}</option>
             <option selected="${instance.artifactType.equals('bom')? 'true':null}" value="bom">${%artifactType.bom}</option>
+            <option selected="${instance.artifactType.equals('scanResult')? 'true':null}" value="scanResult">${%artifactType.scanResult}</option>
         </select>
     </f:entry>
 

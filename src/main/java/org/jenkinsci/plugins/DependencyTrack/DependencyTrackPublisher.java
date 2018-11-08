@@ -19,10 +19,10 @@ import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.AbstractProject;
+import hudson.model.Action;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
-import hudson.remoting.Base64;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Publisher;
@@ -33,7 +33,8 @@ import jenkins.tasks.SimpleBuildStep;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.Symbol;
-import org.jenkinsci.plugins.DependencyTrack.Messages;
+import org.jenkinsci.plugins.DependencyTrack.model.Finding;
+import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
@@ -42,19 +43,16 @@ import javax.annotation.Nonnull;
 import javax.json.Json;
 import javax.json.JsonArray;
 import javax.json.JsonObject;
-import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
-import java.io.PrintStream;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.nio.charset.StandardCharsets;
+import java.util.List;
 
+@SuppressWarnings("unused")
 public class DependencyTrackPublisher extends Recorder implements SimpleBuildStep, Serializable {
 
     private static final long serialVersionUID = 480115440498217963L;
@@ -65,7 +63,6 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
     private final String artifact;
     private final String artifactType;
     private final boolean isScanResult;
-    private transient PrintStream logger;
 
     // Fields in config.jelly must match the parameter names
     @DataBoundConstructor
@@ -159,101 +156,68 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
                         @Nonnull final Launcher launcher,
                         @Nonnull final TaskListener listener) throws InterruptedException, IOException {
 
-        this.logger = listener.getLogger();
-        log(Messages.Builder_Publishing());
+        ConsoleLogger logger = new ConsoleLogger(listener);
+        final ApiClient apiClient = new ApiClient(
+                getDescriptor().getDependencyTrackUrl(), getDescriptor().getDependencyTrackApiKey(), logger);
+
+        logger.log(Messages.Builder_Publishing());
 
         final String projectId = build.getEnvironment(listener).expand(this.projectId);
         final String artifact = build.getEnvironment(listener).expand(this.artifact);
+        final boolean autoCreateProject = getDescriptor().isDependencyTrackAutoCreateProjects();
 
-        boolean success = upload(listener, projectId, projectName, projectVersion, artifact, isScanResult, filePath);
-        if (!success) {
+        if (StringUtils.isBlank(artifact)) {
+            logger.log(Messages.Builder_Artifact_Unspecified());
             build.setResult(Result.FAILURE);
-        }
-    }
-
-    /**
-     * Log messages to the builds console.
-     * @param message The message to log
-     */
-    private void log(String message) {
-        if (logger == null || message == null) {
             return;
         }
-        final String outtag = "[" + DependencyTrackPlugin.PLUGIN_NAME + "] ";
-        logger.println(outtag + message.replaceAll("\\n", "\n" + outtag));
+        final FilePath artifactFilePath = new FilePath(filePath, artifact);
+        if (projectId == null && (projectName == null || projectVersion == null)) {
+            logger.log(Messages.Builder_Result_InvalidArguments());
+            build.setResult(Result.FAILURE);
+            return;
+        }
+        try {
+            if (!filePath.exists()) {
+                logger.log(Messages.Builder_Artifact_NonExist());
+                build.setResult(Result.FAILURE);
+                return;
+            }
+            final ApiClient.UploadResult uploadResult = apiClient.upload(projectId, projectName, projectVersion,
+                    artifactFilePath, isScanResult, autoCreateProject);
+
+            if (!uploadResult.isSuccess()) {
+                build.setResult(Result.FAILURE);
+                return;
+            }
+
+            if (uploadResult.getToken() != null) {
+                Thread.sleep(10000);
+                logger.log(Messages.Builder_Polling());
+                while (apiClient.isTokenBeingProcessed(uploadResult.getToken())) {
+                    Thread.sleep(10000);
+                    logger.log(Messages.Builder_Polling());
+                }
+                logger.log(Messages.Builder_Findings_Processing());
+                final String jsonResponseBody = apiClient.getFindings(this.projectId);
+                final FindingParser parser = new FindingParser(build.getNumber(), jsonResponseBody).parse();
+                final List<Finding> findings = parser.getFindings();
+                final SeverityDistribution severityDistribution = parser.getSeverityDistribution();
+                final ResultAction projectAction = new ResultAction(findings, severityDistribution);
+                build.addAction(projectAction);
+
+                // todo: get previous results and compare to thresholds
+            }
+        } catch (ApiClientException e) {
+            build.setResult(Result.FAILURE);
+            return;
+        }
+        //todo: build.getPreviousBuild().getResult()
     }
 
-    private boolean upload(TaskListener listener, String projectId, String projectName, String projectVersion, String artifact, boolean isScanResult, FilePath workspace) throws IOException {
-        final FilePath filePath = new FilePath(workspace, artifact);
-        final String encodedScan;
-        if (projectId == null && (projectName == null || projectVersion == null)) {
-            log(Messages.Builder_Result_InvalidArguments());
-            return false;
-        }
-
-        try {
-            if (StringUtils.isBlank(artifact) || !filePath.exists()) {
-                log(Messages.Builder_Result_NonExist());
-                return false;
-            }
-            encodedScan = Base64.encode(filePath.readToString().getBytes(StandardCharsets.UTF_8));
-        } catch (IOException | InterruptedException e) {
-            log(Messages.Builder_Error_Processing() + ": " + e.getMessage());
-            return false;
-        }
-
-        String baseUrl = isScanResult ? "/api/v1/scan" : "/api/v1/bom";
-        String jsonAttribute = isScanResult ? "scan" : "bom";
-
-        // Creates the JSON payload that will be sent to Dependency-Track
-        JsonObjectBuilder jsonObjectBuilder = Json.createObjectBuilder();
-
-        if (projectId != null)
-            jsonObjectBuilder.add("project", projectId);
-        else {
-            jsonObjectBuilder.add("projectName", projectName);
-            jsonObjectBuilder.add("projectVersion", projectVersion);
-            jsonObjectBuilder.add("autoCreate", getDescriptor().isDependencyTrackAutoCreateProjects());
-        }
-
-        jsonObjectBuilder.add(jsonAttribute, encodedScan);
-
-        JsonObject jsonObject = jsonObjectBuilder.build();
-
-        byte[] payloadBytes = jsonObject.toString().getBytes(StandardCharsets.UTF_8);
-
-        // Creates the request and connects
-        final HttpURLConnection conn = (HttpURLConnection) new URL(getDescriptor().getDependencyTrackUrl()
-                + baseUrl).openConnection();
-        conn.setDoOutput(true);
-        conn.setDoInput(true);
-        conn.setRequestMethod("PUT");
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setRequestProperty("Content-Length", Integer.toString(payloadBytes.length));
-        conn.setRequestProperty("X-Api-Key", getDescriptor().getDependencyTrackApiKey());
-        conn.connect();
-
-        // Sends the payload bytes
-        try (OutputStream os = new BufferedOutputStream(conn.getOutputStream())) {
-            os.write(payloadBytes);
-            os.flush();
-        }
-
-        // Checks the server response
-        if (conn.getResponseCode() == 200) {
-            log(Messages.Builder_Success());
-            return true;
-        } else if (conn.getResponseCode() == 400) {
-            log(Messages.Builder_Payload_Invalid());
-        } else if (conn.getResponseCode() == 401) {
-            log(Messages.Builder_Unauthorized());
-        } else if (conn.getResponseCode() == 404) {
-            log(Messages.Builder_Project_NotFound());
-        } else {
-            log(Messages.Builder_Error_Connect() + ": "
-                    + conn.getResponseCode() + " " + conn.getResponseMessage());
-        }
-        return false;
+    @Override
+    public Action getProjectAction(AbstractProject<?, ?> project) {
+        return new JobAction(project);
     }
 
     /**
@@ -269,7 +233,7 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
      * The class is marked as public so that it can be accessed from views.
      * <p/>
      * <p/>
-     * See <tt>src/main/resources/org/jenkinsci/plugins/DependencyCheck/DependencyTrackPublisher/*.jelly</tt>
+     * See <tt>src/main/resources/org/jenkinsci/plugins/DependencyCheck/DependencyTrackBuilder/*.jelly</tt>
      * for the actual HTML fragment for the configuration screen.
      */
     @Extension @Symbol("dependencyTrackPublisher") // This indicates to Jenkins that this is an implementation of an extension point.
@@ -375,7 +339,6 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
          * @param dependencyTrackUrl the base URL to Dependency-Track
          * @param dependencyTrackApiKey the API key to use for authentication
          * @return FormValidation
-         * @throws IOException Oops
          */
         public FormValidation doTestConnection(@QueryParameter final String dependencyTrackUrl,
                                                @QueryParameter final String dependencyTrackApiKey) {
