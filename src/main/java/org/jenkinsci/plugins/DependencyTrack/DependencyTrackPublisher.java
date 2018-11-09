@@ -63,13 +63,15 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
     private final String artifact;
     private final String artifactType;
     private final boolean isScanResult;
+    private final boolean synchronous;
 
     // Fields in config.jelly must match the parameter names
     @DataBoundConstructor
-    public DependencyTrackPublisher(final String artifact, final String artifactType) {
+    public DependencyTrackPublisher(final String artifact, final String artifactType, final boolean synchronous) {
         this.artifact = artifact;
         this.artifactType = artifactType;
         this.isScanResult = artifactType == null || !"bom".equals(artifactType);
+        this.synchronous = synchronous;
 
         this.projectId = null;
         this.projectName = null;
@@ -143,6 +145,14 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
     }
 
     /**
+     * Retrieves is synchronous mode is enabled or not. This is a per-build config item.
+     * This method must match the value in <tt>config.jelly</tt>.
+     */
+    public boolean isSynchronous() {
+        return synchronous;
+    }
+
+    /**
      * This method is called whenever the build step is executed.
      *
      * @param build    A Run object
@@ -191,7 +201,7 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
                 return;
             }
 
-            if (uploadResult.getToken() != null) {
+            if (uploadResult.getToken() != null && synchronous && !isScanResult) {
                 Thread.sleep(10000);
                 logger.log(Messages.Builder_Polling());
                 while (apiClient.isTokenBeingProcessed(uploadResult.getToken())) {
