@@ -25,12 +25,11 @@ import org.jenkinsci.plugins.DependencyTrack.model.Severity;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
 import java.util.ArrayList;
-import java.util.List;
 
 public class FindingParser {
 
     private final String jsonResponse;
-    private List<Finding> findings;
+    private ArrayList<Finding> findings;
     private SeverityDistribution severityDistribution;
 
     public FindingParser(int buildNumber, String jsonResponse) {
@@ -39,7 +38,7 @@ public class FindingParser {
     }
 
     public FindingParser parse() {
-        final List<Finding> findings = new ArrayList<>();
+        final ArrayList<Finding> findings = new ArrayList<>();
         final JSONArray jsonArray = JSONArray.fromObject(jsonResponse);
         for (int i = 0; i < jsonArray.size(); i++) {
             final Finding finding = parseFinding(jsonArray.getJSONObject(i));
@@ -88,7 +87,7 @@ public class FindingParser {
         return new Analysis(state, isSuppressed);
     }
 
-    public List<Finding> getFindings() {
+    public ArrayList<Finding> getFindings() {
         return findings;
     }
 

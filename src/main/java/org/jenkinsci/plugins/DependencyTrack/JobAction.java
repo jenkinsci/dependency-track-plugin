@@ -80,7 +80,6 @@ public class JobAction implements Action {
     public JSONArray getSeverityDistributionTrend() {
         final List<SeverityDistribution> severityDistributions = new ArrayList<>();
         final List<? extends AbstractBuild<?, ?>> builds = project.getBuilds();
-        final Class<ResultAction> buildClass = ResultAction.class;
         int count = 0;
         for (AbstractBuild<?, ?> currentBuild : builds) {
             ResultAction action = currentBuild.getAction(ResultAction.class);

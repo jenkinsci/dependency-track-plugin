@@ -15,7 +15,11 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.model;
 
-public class Component {
+import java.io.Serializable;
+
+public class Component implements Serializable {
+
+    private static final long serialVersionUID = -4825926766668357091L;
 
     private final String uuid;
     private final String name;

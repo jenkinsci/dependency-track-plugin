@@ -159,7 +159,7 @@ public class ApiClient {
     }
 
     private String getResponseBody(InputStream in) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
         StringBuilder result = new StringBuilder();
         String line;
         while((line = reader.readLine()) != null) {
@@ -168,7 +168,7 @@ public class ApiClient {
         return result.toString();
     }
 
-    public class UploadResult {
+    public static class UploadResult {
         private boolean success;
         private UUID token;
 

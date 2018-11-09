@@ -15,7 +15,11 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.model;
 
-public class Analysis {
+import java.io.Serializable;
+
+public class Analysis implements Serializable {
+
+    private static final long serialVersionUID = 9143258740219702420L;
 
     private final String state;
     private final boolean isSuppressed;

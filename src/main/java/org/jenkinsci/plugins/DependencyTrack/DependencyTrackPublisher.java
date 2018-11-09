@@ -50,7 +50,7 @@ import java.io.InputStream;
 import java.io.Serializable;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.util.List;
+import java.util.ArrayList;
 
 @SuppressWarnings("unused")
 public class DependencyTrackPublisher extends Recorder implements SimpleBuildStep, Serializable {
@@ -211,7 +211,7 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
                 logger.log(Messages.Builder_Findings_Processing());
                 final String jsonResponseBody = apiClient.getFindings(this.projectId);
                 final FindingParser parser = new FindingParser(build.getNumber(), jsonResponseBody).parse();
-                final List<Finding> findings = parser.getFindings();
+                final ArrayList<Finding> findings = parser.getFindings();
                 final SeverityDistribution severityDistribution = parser.getSeverityDistribution();
                 final ResultAction projectAction = new ResultAction(findings, severityDistribution);
                 build.addAction(projectAction);

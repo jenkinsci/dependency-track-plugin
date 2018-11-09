@@ -15,7 +15,11 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.model;
 
-public class Finding {
+import java.io.Serializable;
+
+public class Finding implements Serializable {
+
+    private static final long serialVersionUID = 5309487290800777874L;
 
     private final Component component;
     private final Vulnerability vulnerability;

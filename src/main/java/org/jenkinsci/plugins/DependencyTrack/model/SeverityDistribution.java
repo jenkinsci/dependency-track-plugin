@@ -15,7 +15,11 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.model;
 
-public class SeverityDistribution {
+import java.io.Serializable;
+
+public class SeverityDistribution implements Serializable {
+
+    private static final long serialVersionUID = 8144779189066349036L;
 
     private int buildNumber;
     private int critical;

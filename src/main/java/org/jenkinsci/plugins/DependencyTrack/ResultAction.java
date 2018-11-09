@@ -24,16 +24,17 @@ import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.jenkinsci.plugins.DependencyTrack.transformer.FindingsTransformer;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 import java.io.Serializable;
+import java.util.ArrayList;
 import java.util.List;
 
 public class ResultAction implements RunAction2, Serializable {
 
     private static final long serialVersionUID = -3741322502842596768L;
     private transient Run run;
-    private List<Finding> findings;
+    private ArrayList<Finding> findings;
     private SeverityDistribution severityDistribution;
 
-    public ResultAction(List<Finding> findings, SeverityDistribution severityDistribution) {
+    public ResultAction(ArrayList<Finding> findings, SeverityDistribution severityDistribution) {
         this.findings = findings;
         this.severityDistribution = severityDistribution;
     }
