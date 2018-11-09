@@ -55,7 +55,7 @@ function renderTrendChart(chartDivId, chartModel) {
                 name: 'vulnerabilities',
                 nameLocation: 'center',
                 boundaryGap : false,
-                nameGap: '35',
+                nameGap: '30',
                 nameRotate: '90',
                 type: 'value'
             }
