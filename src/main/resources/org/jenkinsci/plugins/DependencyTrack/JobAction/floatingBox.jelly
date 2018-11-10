@@ -13,7 +13,6 @@
     <script>
         var ${from.urlName}Action = <st:bind value="${from}"/>;
         ${from.urlName}Action.getSeverityDistributionTrend(function (data) {
-            console.log(data.responseJSON);
             renderTrendChart('${from.urlName}-history-chart', data.responseJSON);
         });
     </script>
