@@ -1,5 +1,8 @@
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:l="/lib/layout" xmlns:st="jelly:stapler" xmlns:t="/lib/hudson">
+<j:jelly xmlns:j="jelly:core" xmlns:l="/lib/layout" xmlns:st="jelly:stapler">
+
+    <st:header name="Expires" value="0" />
+    <st:header name="Cache-Control" value="no-cache,no-store,must-revalidate" />
 
     <l:layout title="Dependency-Track Report">
 
@@ -22,37 +25,27 @@
 
             <h1>${it.displayName} Results</h1>
 
-            <j:set var="i" value="${it.issues}"/>
-            <j:choose>
-                <j:when test="${i.isNotEmpty()}">>
+            <div id="severity-distribution"></div>
+            <table id="findings-table" class="table" data-paging="true" data-filtering="true"
+                   data-sorting="true" data-editing="false" data-state="true">
+            </table>
 
-                    <script>var view = <st:bind value="${it}"/></script>
+            <script>
+                var view = <st:bind value="${it}"/>
+                view.getFindingsJson(function (data) {
+                (function ($) {
+                jQuery.noConflict();
+                $('.table').footable(data.responseJSON);
+                })(jQuery);
+                });
 
-                </j:when>
-                <j:otherwise>
-                    <div id="severity-distribution"></div>
-                    <table id="findings-table" class="table" data-paging="true" data-filtering="true"
-                           data-sorting="true" data-editing="false" data-state="true">
-                    </table>
+                view.getSeverityDistributionJson(function (data) {
+                var json = data.responseJSON;
+                generateSeverityDistributionBar("severity-distribution", "Severity Distribution",
+                json.critical, json.high, json.medium, json.low, json.info, json.unassigned);
+                });
+            </script>
 
-                    <script>
-                        var view =<st:bind value="${it}"/>
-                        view.getFindingsJson(function (data) {
-                            (function ($) {
-                                jQuery.noConflict();
-                                $('.table').footable(data.responseJSON);
-                            })(jQuery);
-                        });
-
-                        view.getSeverityDistributionJson(function (data) {
-                            var json = data.responseJSON;
-                            generateSeverityDistributionBar("severity-distribution", "Severity Distribution",
-                                json.critical, json.high, json.medium, json.low, json.info, json.unassigned);
-                        });
-                    </script>
-
-                </j:otherwise>
-            </j:choose>
         </l:main-panel>
     </l:layout>
 </j:jelly>
