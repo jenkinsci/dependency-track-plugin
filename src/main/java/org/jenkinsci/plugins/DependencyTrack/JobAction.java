@@ -51,25 +51,6 @@ public class JobAction implements Action {
         return this.project;
     }
 
-    public String getProjectName() {
-        return this.project.getName();
-    }
-
-    // used to hide charts
-    public boolean getHasBuilds() {
-        return !project.getBuilds().isEmpty();
-    }
-
-    public String getBuildResult() {
-        List<? extends AbstractBuild<?, ?>> builds = project.getBuilds();
-        StringBuilder buildResult = new StringBuilder();
-        final Class<ResultAction> buildClass = ResultAction.class;
-        for (AbstractBuild<?, ?> currentBuild : builds) {
-            buildResult.append(currentBuild.getAction(buildClass).toString());
-        }
-        return buildResult.toString();
-    }
-
     /**
      * Returns the UI model for an ECharts line chart that shows the issues stacked by severity.
      *

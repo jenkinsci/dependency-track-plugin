@@ -89,7 +89,7 @@ public class ResultAction implements RunAction2, Serializable {
     }
 
     /**
-     * Returns the UI model for an ECharts line chart that shows the severity distribution.
+     * Returns a JSON response with the statistics for severity.
      *
      * @return the UI model as JSON
      */
