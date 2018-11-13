@@ -64,11 +64,12 @@ public class ApiClient {
             // Checks the server response
             if (conn.getResponseCode() == 200) {
                 return getResponseBody(conn.getInputStream());
+            } else {
+                throw new ApiClientException("An error occurred while retrieving findings - HTTP response code: " + conn.getResponseCode() + " " + conn.getResponseMessage());
             }
         } catch (IOException e) {
             throw new ApiClientException("An error occurred while retrieving findings", e);
         }
-        return null;
     }
 
     public UploadResult upload(String projectId, String projectName, String projectVersion, FilePath artifact,

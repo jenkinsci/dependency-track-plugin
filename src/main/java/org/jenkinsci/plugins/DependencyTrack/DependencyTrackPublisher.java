@@ -224,6 +224,7 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
                 // todo: get previous results and compare to thresholds
             }
         } catch (ApiClientException e) {
+            logger.log(e.getMessage());
             build.setResult(Result.FAILURE);
             return;
         }
