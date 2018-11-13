@@ -210,11 +210,6 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
                 }
                 logger.log(Messages.Builder_Findings_Processing());
                 final String jsonResponseBody = apiClient.getFindings(this.projectId);
-                if (jsonResponseBody == null) {
-                    logger.log(Messages.Builder_Publisher_Response_Failure());
-                    build.setResult(Result.FAILURE);
-                    return;
-                }
                 final FindingParser parser = new FindingParser(build.getNumber(), jsonResponseBody).parse();
                 final ArrayList<Finding> findings = parser.getFindings();
                 final SeverityDistribution severityDistribution = parser.getSeverityDistribution();
