@@ -159,12 +159,27 @@ function generateSeverityDistributionBar(targetId, label, critical, high, medium
     var percentInfo = (info/(critical+high+medium+low+info+unassigned))*100;
     var percentUnassigned = (unassigned/(critical+high+medium+low+info+unassigned))*100;
     var block = '<span class="dtrack-section-label ">' + label + '</span><div class="severity-distribution">';
-    block += '<div class="severity-distribution-bar severity-critical-bg dtrack-tooltip" title="Critical: ' + critical + ' (' + Math.round(percentCritical*10)/10 + '%)" style="width:' + percentCritical+ '%">' + critical + '</div>';
-    block += '<div class="severity-distribution-bar severity-high-bg dtrack-tooltip" title="High: ' + high + ' (' + Math.round(percentHigh*10)/10 + '%)" style="width:' + percentHigh + '%">' + high + '</div>';
-    block += '<div class="severity-distribution-bar severity-medium-bg dtrack-tooltip" title="Medium: ' + medium + ' (' + Math.round(percentMedium*10)/10 + '%)" style="width:' + percentMedium + '%">' + medium + '</div>';
-    block += '<div class="severity-distribution-bar severity-low-bg dtrack-tooltip" title="Low: ' + low + ' (' + Math.round(percentLow*10)/10 + '%)" style="width:' + percentLow + '%">' + low + '</div>';
-    block += '<div class="severity-distribution-bar severity-info-bg dtrack-tooltip" title="Info: ' + info + ' (' + Math.round(percentInfo*10)/10 + '%)" style="width:' + percentInfo + '%">' + info + '</div>';
-    block += '<div class="severity-distribution-bar severity-unassigned-bg dtrack-tooltip" title="Unassigned: ' + unassigned + ' (' + Math.round(percentUnassigned*10)/10 + '%)" style="width:' + percentUnassigned + '%">' + unassigned + '</div>';
+    if (critical > 0) {
+        block += '<div class="severity-distribution-bar severity-critical-bg dtrack-tooltip" title="Critical: ' + critical + ' (' + Math.round(percentCritical*10)/10 + '%)" style="width:' + percentCritical+ '%">' + critical + '</div>';
+    }
+    if (high > 0) {
+        block += '<div class="severity-distribution-bar severity-high-bg dtrack-tooltip" title="High: ' + high + ' (' + Math.round(percentHigh*10)/10 + '%)" style="width:' + percentHigh + '%">' + high + '</div>';
+    }
+    if (medium > 0) {
+        block += '<div class="severity-distribution-bar severity-medium-bg dtrack-tooltip" title="Medium: ' + medium + ' (' + Math.round(percentMedium*10)/10 + '%)" style="width:' + percentMedium + '%">' + medium + '</div>';
+    }
+    if (low > 0) {
+        block += '<div class="severity-distribution-bar severity-low-bg dtrack-tooltip" title="Low: ' + low + ' (' + Math.round(percentLow*10)/10 + '%)" style="width:' + percentLow + '%">' + low + '</div>';
+    }
+    if (info > 0) {
+        block += '<div class="severity-distribution-bar severity-info-bg dtrack-tooltip" title="Info: ' + info + ' (' + Math.round(percentInfo*10)/10 + '%)" style="width:' + percentInfo + '%">' + info + '</div>';
+    }
+    if (unassigned > 0) {
+        block += '<div class="severity-distribution-bar severity-unassigned-bg dtrack-tooltip" title="Unassigned: ' + unassigned + ' (' + Math.round(percentUnassigned*10)/10 + '%)" style="width:' + percentUnassigned + '%">' + unassigned + '</div>';
+    }
+    if (critical === 0 && high === 0 && medium === 0 && low === 0 && info === 0 && unassigned === 0) {
+        block += '<div class="severity-distribution-bar severity-info-bg dtrack-tooltip" title="No Vulnerabilities Found" style="width:100%">No Vulnerabilities Found</div>';
+    }
     block += '</div>';
     document.getElementById(targetId).innerHTML = block;
     Tipped.create('.dtrack-tooltip');
