@@ -17,6 +17,8 @@ package org.jenkinsci.plugins.DependencyTrack;
 
 import hudson.FilePath;
 import hudson.remoting.Base64;
+import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import javax.json.Json;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
@@ -112,13 +114,11 @@ public class ApiClient {
         // Checks the server response
         if (conn.getResponseCode() == 200) {
             logger.log(Messages.Builder_Success());
-            try {
-                try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
-                    JsonReader jsonReader = Json.createReader(in);
-                    JsonObject jsonResponse = jsonReader.readObject();
-                    return new UploadResult(true, UUID.fromString(jsonResponse.getString("token")));
-                }
-            } catch (NullPointerException | IllegalArgumentException e) {
+            final String responseBody = getResponseBody(conn.getInputStream());
+            if (StringUtils.isNotBlank(responseBody)) {
+                final JSONObject json = JSONObject.fromObject(responseBody);
+                return new UploadResult(true, UUID.fromString(json.getString("token")));
+            } else {
                 return new UploadResult(true);
             }
         } else if (conn.getResponseCode() == 400) {
