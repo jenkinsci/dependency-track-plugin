@@ -52,6 +52,28 @@ public class JobAction implements Action {
     }
 
     /**
+     * Returns whether the trend chart is visible or not.
+     *
+     * @return {@code true} if the trend is visible, false otherwise
+     */
+    @SuppressWarnings("unused") // Called by jelly view
+    public boolean isTrendVisible() {
+        final List<? extends AbstractBuild<?, ?>> builds = project.getBuilds();
+        int count = 0;
+        for (AbstractBuild<?, ?> currentBuild : builds) {
+            final ResultAction action = currentBuild.getAction(ResultAction.class);
+            if (action != null) {
+                return true;
+            }
+            count++;
+            if (count == 10) { // Only chart the last 10 builds (max)
+                break;
+            }
+        }
+        return false;
+    }
+
+    /**
      * Returns the UI model for an ECharts line chart that shows the issues stacked by severity.
      *
      * @return the UI model as JSON
@@ -63,7 +85,7 @@ public class JobAction implements Action {
         final List<? extends AbstractBuild<?, ?>> builds = project.getBuilds();
         int count = 0;
         for (AbstractBuild<?, ?> currentBuild : builds) {
-            ResultAction action = currentBuild.getAction(ResultAction.class);
+            final ResultAction action = currentBuild.getAction(ResultAction.class);
             if (action != null) {
                 if (action.getSeverityDistribution() != null) {
                     severityDistributions.add(action.getSeverityDistribution());
