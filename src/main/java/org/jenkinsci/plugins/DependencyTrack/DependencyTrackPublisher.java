@@ -201,7 +201,12 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
                 return;
             }
 
-            if (uploadResult.getToken() != null && synchronous && !isScanResult) {
+            if (synchronous && isScanResult) {
+                logger.log(Messages.Builder_Artifact_NonBomSync());
+                return;
+            }
+
+            if (uploadResult.getToken() != null && synchronous) {
                 Thread.sleep(10000);
                 logger.log(Messages.Builder_Polling());
                 while (apiClient.isTokenBeingProcessed(uploadResult.getToken())) {
