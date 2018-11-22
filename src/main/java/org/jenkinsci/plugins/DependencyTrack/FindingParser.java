@@ -42,7 +42,10 @@ public class FindingParser {
         final JSONArray jsonArray = JSONArray.fromObject(jsonResponse);
         for (int i = 0; i < jsonArray.size(); i++) {
             final Finding finding = parseFinding(jsonArray.getJSONObject(i));
-            findings.add(finding);
+            if (!finding.getAnalysis().isSuppressed()) {
+                findings.add(finding);
+                severityDistribution.add(finding.getVulnerability().getSeverity());
+            }
         }
         this.findings = findings;
         return this;
@@ -77,7 +80,6 @@ public class FindingParser {
         final Integer severityRank = json.optInt("severityRank");
         final Integer cweId = json.optInt("cweId");
         final String cweName = StringUtils.trimToNull(json.optString("cweName"));
-        severityDistribution.add(severity);
         return new Vulnerability(uuid, source, vulnId, title, subtitle, description, recommendation, severity, severityRank, cweId, cweName);
     }
 
