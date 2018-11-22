@@ -12,7 +12,7 @@
     <artifactId>dependency-track</artifactId>
 
     <name>OWASP Dependency-Track Plugin</name>
-    <version>2.0.2-SNAPSHOT</version>
+    <version>2.0.2</version>
     <packaging>hpi</packaging>
     <inceptionYear>2018</inceptionYear>
     <organization>
@@ -92,7 +92,7 @@
         <connection>scm:git:git@github.com:jenkinsci/dependency-track-plugin.git</connection>
         <url>https://github.com/jenkinsci/dependency-track-plugin.git</url>
         <developerConnection>scm:git:git@github.com:jenkinsci/dependency-track-plugin.git</developerConnection>
-        <tag>HEAD</tag>
+        <tag>dependency-track-2.0.2</tag>
     </scm>
 
     <issueManagement>
