@@ -312,6 +312,10 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
                         try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
                             JsonReader jsonReader = Json.createReader(in);
                             JsonArray array = jsonReader.readArray();
+                            // Add an empty option at the beginning of the list
+                            if (projects.size() == 0) {
+                                projects.add("-- Select Project --", null);
+                            }
                             if (!array.isEmpty()) {
                                 for (int i = 0; i < array.size(); i++) {
                                     JsonObject jsonObject = array.getJsonObject(i);
