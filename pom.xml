@@ -1,7 +1,7 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <description>Dependency-Track is an intelligent Software Composition Analysis (SCA) platform that allows organizations to identify and reduce risk from the use of third-party and open source components. This plug-in can publish various BoM formats to Dependency-Track.</description>
+    <description>Dependency-Track is an intelligent Software Composition Analysis (SCA) platform that allows organizations to identify and reduce risk from the use of third-party and open source components. This plug-in can publish various BOM formats to Dependency-Track.</description>
     <url>https://wiki.jenkins.io/display/JENKINS/OWASP+Dependency-Track+Plugin</url>
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>

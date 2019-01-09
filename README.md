@@ -11,7 +11,7 @@ Dependency-Track is an intelligent Software Composition Analysis (SCA) platform 
 and reduce risk from the use of third-party and open source components.
 
 The Dependency-Track Jenkins plugin aids in publishing [CycloneDX](https://cyclonedx.org/) and [SPDX](https://spdx.org/) 
-BoMs as well as Dependency-Check XML reports to the Dependency-Track platform.
+BOMs as well as Dependency-Check XML reports to the Dependency-Track platform.
 
 Copyright & License
 -------------------

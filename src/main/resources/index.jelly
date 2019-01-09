@@ -1,6 +1,6 @@
 <?jelly escape-by-default='true'?>
 <div>
-    This plug-in publishes software bill-of-material (S-BoM) to Dependency-Track for continuous analysis. This plugin supports <a href="https://cyclonedx.org/">CycloneDX</a> and <a href="https://spdx.org/">SPDX</a> BoM formats in addition to <a href="https://www.owasp.org/index.php/OWASP_Dependency_Check">Dependency-Check</a> XML reports.
+    This plug-in publishes software bill-of-material (BOM) to Dependency-Track for continuous analysis. This plugin supports <a href="https://cyclonedx.org/">CycloneDX</a> and <a href="https://spdx.org/">SPDX</a> BOM formats in addition to <a href="https://www.owasp.org/index.php/OWASP_Dependency_Check">Dependency-Check</a> XML reports.
     <p>
         <a href="https://dependencytrack.org/">Dependency-Track</a> is an intelligent Software Composition Analysis (SCA) platform that allows organizations to identify and reduce risk from the use of third-party and open source components.
     </p>
