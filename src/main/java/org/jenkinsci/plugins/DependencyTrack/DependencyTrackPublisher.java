@@ -170,7 +170,7 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
         final ApiClient apiClient = new ApiClient(
                 getDescriptor().getDependencyTrackUrl(), getDescriptor().getDependencyTrackApiKey(), logger);
 
-        logger.log(Messages.Builder_Publishing());
+        logger.log(Messages.Builder_Publishing() + " - " + getDescriptor().getDependencyTrackUrl());
 
         final String projectId = build.getEnvironment(listener).expand(this.projectId);
         final String artifact = build.getEnvironment(listener).expand(this.artifact);
