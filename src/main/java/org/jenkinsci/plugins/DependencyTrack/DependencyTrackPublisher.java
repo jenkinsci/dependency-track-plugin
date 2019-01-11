@@ -26,7 +26,6 @@ import hudson.model.TaskListener;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
 import hudson.tasks.Publisher;
-import hudson.tasks.Recorder;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import jenkins.tasks.SimpleBuildStep;
@@ -34,7 +33,9 @@ import net.sf.json.JSONObject;
 import org.apache.commons.lang3.StringUtils;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
+import org.jenkinsci.plugins.DependencyTrack.model.RiskGate;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
+import org.jenkinsci.plugins.DependencyTrack.model.Thresholds;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
@@ -53,7 +54,7 @@ import java.net.URL;
 import java.util.ArrayList;
 
 @SuppressWarnings("unused")
-public class DependencyTrackPublisher extends Recorder implements SimpleBuildStep, Serializable {
+public class DependencyTrackPublisher extends ThresholdCapablePublisher implements SimpleBuildStep, Serializable {
 
     private static final long serialVersionUID = 480115440498217963L;
 
@@ -197,7 +198,7 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
                     artifactFilePath, isScanResult, autoCreateProject);
 
             if (!uploadResult.isSuccess()) {
-                build.setResult(Result.FAILURE);
+                build.setResult(Result.FAILURE); //todo: make configurable
                 return;
             }
 
@@ -207,6 +208,7 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
             }
 
             if (uploadResult.getToken() != null && synchronous) {
+                // todo: create configurable timeout - this has the potential for infinite loop
                 Thread.sleep(10000);
                 logger.log(Messages.Builder_Polling());
                 while (apiClient.isTokenBeingProcessed(uploadResult.getToken())) {
@@ -221,14 +223,27 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
                 final ResultAction projectAction = new ResultAction(findings, severityDistribution);
                 build.addAction(projectAction);
 
-                // todo: get previous results and compare to thresholds
+                // Get previous results and evaluate to thresholds
+                final Run previousBuild = build.getPreviousBuild();
+                if (previousBuild != null) {
+                    final ResultAction previousResults = previousBuild.getAction(ResultAction.class);
+                    final RiskGate riskGate = new RiskGate(getThresholds());
+                    final Thresholds.BuildStatus buildStatus = riskGate.evaluate(
+                            previousResults.getSeverityDistribution(),
+                            previousResults.getFindings(),
+                            severityDistribution,
+                            findings);
+                    if (Thresholds.BuildStatus.FAILURE == buildStatus) {
+                        build.setResult(Result.FAILURE);
+                    } else if (Thresholds.BuildStatus.UNSTABLE == buildStatus) {
+                        build.setResult(Result.UNSTABLE);
+                    }
+                }
             }
         } catch (ApiClientException e) {
             logger.log(e.getMessage());
             build.setResult(Result.FAILURE);
-            return;
         }
-        //todo: build.getPreviousBuild().getResult()
     }
 
     @Override
@@ -318,14 +333,16 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
                             }
                             if (!array.isEmpty()) {
                                 for (int i = 0; i < array.size(); i++) {
-                                    JsonObject jsonObject = array.getJsonObject(i);
-                                    String name = jsonObject.getString("name");
-                                    String version = jsonObject.getString("version", "null");
-                                    String uuid = jsonObject.getString("uuid");
-                                    if (!version.equals("null")) {
-                                        name = name + " " + version;
+                                    final JsonObject jsonObject = array.getJsonObject(i);
+                                    final StringBuilder nameBuilder = new StringBuilder();
+                                    final String name = jsonObject.getString("name");
+                                    final String version = jsonObject.getString("version", "null");
+                                    final String uuid = jsonObject.getString("uuid");
+                                    nameBuilder.append(name);
+                                    if (!"null".equals(version)) {
+                                        nameBuilder.append(' ').append(version);
                                     }
-                                    projects.add(name, uuid);
+                                    projects.add(nameBuilder.toString(), uuid);
                                 }
                             } else {
                                 isPaginated = false;
@@ -388,7 +405,7 @@ public class DependencyTrackPublisher extends Recorder implements SimpleBuildSte
          * @param req the request
          * @param formData the form data
          * @return a boolean
-         * @throws FormException
+         * @throws FormException an exception validating form input
          */
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
