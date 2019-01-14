@@ -35,7 +35,6 @@ import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.RiskGate;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
-import org.jenkinsci.plugins.DependencyTrack.model.Thresholds;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
@@ -228,21 +227,19 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
                 if (previousBuild != null) {
                     final ResultAction previousResults = previousBuild.getAction(ResultAction.class);
                     final RiskGate riskGate = new RiskGate(getThresholds());
-                    final Thresholds.BuildStatus buildStatus = riskGate.evaluate(
+                    final Result result = riskGate.evaluate(
                             previousResults.getSeverityDistribution(),
                             previousResults.getFindings(),
                             severityDistribution,
                             findings);
-                    if (Thresholds.BuildStatus.FAILURE == buildStatus) {
-                        build.setResult(Result.FAILURE);
-                    } else if (Thresholds.BuildStatus.UNSTABLE == buildStatus) {
-                        build.setResult(Result.UNSTABLE);
+                    if (Result.SUCCESS != result) {
+                        build.setResult(result); // only set the result if the evaluation fails the threshold
                     }
                 }
             }
         } catch (ApiClientException e) {
             logger.log(e.getMessage());
-            build.setResult(Result.FAILURE);
+            build.setResult(Result.FAILURE); //todo: make configurable
         }
     }
 

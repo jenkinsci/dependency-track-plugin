@@ -20,73 +20,168 @@ import org.jenkinsci.plugins.DependencyTrack.model.Thresholds;
 import org.kohsuke.stapler.DataBoundSetter;
 import java.io.Serializable;
 
+@SuppressWarnings("unused")
 public abstract class ThresholdCapablePublisher extends Recorder implements Serializable {
 
     private static final long serialVersionUID = 8844465732219790336L;
 
-    private final Thresholds thresholds = new Thresholds();
+    private Integer totalThresholdAll;
+    private Integer totalThresholdCritical;
+    private Integer totalThresholdHigh;
+    private Integer totalThresholdMedium;
+    private Integer totalThresholdLow;
+    private boolean totalThresholdAnalysisExploitable;
+    private boolean totalThresholdFailBuild;
+
+    private Integer newThresholdAll;
+    private Integer newThresholdCritical;
+    private Integer newThresholdHigh;
+    private Integer newThresholdMedium;
+    private Integer newThresholdLow;
+    private boolean newThresholdAnalysisExploitable;
+    private boolean newThresholdFailBuild;
 
     Thresholds getThresholds() {
+        final Thresholds thresholds = new Thresholds();
+        thresholds.totalFindings.critical = totalThresholdCritical;
+        thresholds.totalFindings.high = totalThresholdHigh;
+        thresholds.totalFindings.medium = totalThresholdMedium;
+        thresholds.totalFindings.low = totalThresholdLow;
+        thresholds.totalFindings.limitToAnalysisExploitable = totalThresholdAnalysisExploitable;
+        thresholds.totalFindings.failBuild = totalThresholdFailBuild;
+
+        thresholds.newFindings.critical = newThresholdCritical;
+        thresholds.newFindings.high = newThresholdHigh;
+        thresholds.newFindings.medium = newThresholdMedium;
+        thresholds.newFindings.low = newThresholdLow;
+        thresholds.newFindings.limitToAnalysisExploitable = newThresholdAnalysisExploitable;
+        thresholds.newFindings.failBuild = newThresholdFailBuild;
         return thresholds;
     }
 
-    @DataBoundSetter
-    public void setTotalThresholdAll(final int totalThresholdAll) {
-        getThresholds().totalFindings.all = totalThresholdAll;
+    public Integer getTotalThresholdAll() {
+        return totalThresholdAll;
     }
 
     @DataBoundSetter
-    public void settotalThresholdCritical(final int totalThresholdCritical) {
-        getThresholds().totalFindings.critical = totalThresholdCritical;
+    public void setTotalThresholdAll(final Integer totalThresholdAll) {
+        this.totalThresholdAll = totalThresholdAll;
+    }
+
+    public Integer getTotalThresholdCritical() {
+        return totalThresholdCritical;
     }
 
     @DataBoundSetter
-    public void setTotalThresholdHigh(final int totalThresholdHigh) {
-        getThresholds().totalFindings.high = totalThresholdHigh;
+    public void setTotalThresholdCritical(final Integer totalThresholdCritical) {
+        this.totalThresholdCritical = totalThresholdCritical;
+    }
+
+    public Integer getTotalThresholdHigh() {
+        return totalThresholdHigh;
     }
 
     @DataBoundSetter
-    public void setTotalThresholdMedium(final int totalThresholdMedium) {
-        getThresholds().totalFindings.medium = totalThresholdMedium;
+    public void setTotalThresholdHigh(final Integer totalThresholdHigh) {
+        this.totalThresholdHigh = totalThresholdHigh;
+    }
+
+    public Integer getTotalThresholdMedium() {
+        return totalThresholdMedium;
     }
 
     @DataBoundSetter
-    public void setTotalThresholdLow(final int totalThresholdLow) {
-        getThresholds().totalFindings.low = totalThresholdLow;
+    public void setTotalThresholdMedium(final Integer totalThresholdMedium) {
+        this.totalThresholdMedium = totalThresholdMedium;
+    }
+
+    public Integer getTotalThresholdLow() {
+        return totalThresholdLow;
+    }
+
+    @DataBoundSetter
+    public void setTotalThresholdLow(final Integer totalThresholdLow) {
+        this.totalThresholdLow = totalThresholdLow;
+    }
+
+    public boolean getTotalThresholdAnalysisExploitable() {
+        return totalThresholdAnalysisExploitable;
     }
 
     @DataBoundSetter
     public void setTotalThresholdAnalysisExploitable(final boolean totalThresholdAnalysisExploitable) {
-        getThresholds().totalFindings.limitToAnalysisExploitable = totalThresholdAnalysisExploitable;
+        this.totalThresholdAnalysisExploitable = totalThresholdAnalysisExploitable;
+    }
+
+    public boolean getTotalThresholdFailBuild() {
+        return totalThresholdFailBuild;
     }
 
     @DataBoundSetter
-    public void setNewThresholdAll(final int newThresholdAll) {
-        getThresholds().newFindings.all = newThresholdAll;
+    public void setTotalThresholdFailBuild(boolean totalThresholdFailBuild) {
+        this.totalThresholdFailBuild = totalThresholdFailBuild;
+    }
+
+    public Integer getNewThresholdAll() {
+        return newThresholdAll;
     }
 
     @DataBoundSetter
-    public void setNewThresholdCritical(final int newThresholdCritical) {
-        getThresholds().newFindings.critical = newThresholdCritical;
+    public void setNewThresholdAll(final Integer newThresholdAll) {
+        this.newThresholdAll = newThresholdAll;
+    }
+
+    public Integer getNewThresholdCritical() {
+        return newThresholdCritical;
     }
 
     @DataBoundSetter
-    public void setNewThresholdHigh(final int newThresholdHigh) {
-        getThresholds().newFindings.high = newThresholdHigh;
+    public void setNewThresholdCritical(final Integer newThresholdCritical) {
+        this.newThresholdCritical = newThresholdCritical;
+    }
+
+    public Integer getNewThresholdHigh() {
+        return newThresholdHigh;
     }
 
     @DataBoundSetter
-    public void setNewThresholdMedium(final int newThresholdMedium) {
-        getThresholds().newFindings.medium = newThresholdMedium;
+    public void setNewThresholdHigh(final Integer newThresholdHigh) {
+        this.newThresholdHigh = newThresholdHigh;
+    }
+
+    public Integer getNewThresholdMedium() {
+        return newThresholdMedium;
     }
 
     @DataBoundSetter
-    public void setNewThresholdLow(final int newThresholdLow) {
-        getThresholds().newFindings.low = newThresholdLow;
+    public void setNewThresholdMedium(final Integer newThresholdMedium) {
+        this.newThresholdMedium = newThresholdMedium;
+    }
+
+    public Integer getNewThresholdLow() {
+        return newThresholdLow;
+    }
+
+    @DataBoundSetter
+    public void setNewThresholdLow(final Integer newThresholdLow) {
+        this.newThresholdLow = newThresholdLow;
+    }
+
+    public boolean getNewThresholdAnalysisExploitable() {
+        return newThresholdAnalysisExploitable;
     }
 
     @DataBoundSetter
     public void setNewThresholdAnalysisExploitable(final boolean newThresholdAnalysisExploitable) {
-        getThresholds().newFindings.limitToAnalysisExploitable = newThresholdAnalysisExploitable;
+        this.newThresholdAnalysisExploitable = newThresholdAnalysisExploitable;
+    }
+
+    public boolean getNewThresholdFailBuild() {
+        return newThresholdFailBuild;
+    }
+
+    @DataBoundSetter
+    public void setNewThresholdFailBuild(boolean newThresholdFailBuild) {
+        this.newThresholdFailBuild = newThresholdFailBuild;
     }
 }

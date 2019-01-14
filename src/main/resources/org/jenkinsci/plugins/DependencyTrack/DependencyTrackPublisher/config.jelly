@@ -14,7 +14,7 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
 
     <f:entry title="${%projectId}" field="projectId" help="/plugin/dependency-track/help-dt-projectid.html">
         <f:select id="projectId"/>
@@ -34,5 +34,91 @@ limitations under the License.
     <f:entry title="${%enable.synchronous}" field="synchronous" description="" help="/plugin/dependency-track/help-dt-synchronous-mode.html">
         <f:checkbox name="synchronous" checked="${instance.isSynchronous()}"/>
     </f:entry>
+
+    <f:advanced title="Risk Gate Thresholds" align="left">
+        <f:section title="Risk Gate Thresholds - Synchronous Mode Only">
+            <f:entry title="${%Total Findings}" help="/plugin/dependency-track/help-thresholds-total.html">
+                <table>
+                    <thead>
+                        <tr>
+                            <td width="25%">${%Critical}</td>
+                            <td width="25%">${%High}</td>
+                            <td width="25%">${%Medium}</td>
+                            <td width="25%">${%Low}</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <f:number field="totalThresholdCritical" value="${instance.totalThresholdCritical}"/>
+                            </td>
+                            <td>
+                                <f:number field="totalThresholdHigh" value="${instance.totalThresholdHigh}"/>
+                            </td>
+                            <td>
+                                <f:number field="totalThresholdMedium" value="${instance.totalThresholdMedium}"/>
+                            </td>
+                            <td>
+                                <f:number field="totalThresholdLow" value="${instance.totalThresholdLow}"/>
+                            </td>
+                        </tr>
+                        <!--
+                        <tr>
+                            <td colspan="4">
+                                <f:checkbox name="totalThresholdAnalysisExploitable" checked="${instance.totalThresholdAnalysisExploitable}" title="${%Limit to audited exploitable}"/>
+                            </td>
+                        </tr>
+                        -->
+                        <tr>
+                            <td colspan="4">
+                                <f:checkbox name="totalThresholdFailBuild" checked="${instance.totalThresholdFailBuild}" title="${%Fail build on threshold}"/>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </f:entry>
+
+            <f:entry title="${%New Findings}" help="/plugin/dependency-track/help-thresholds-new.html">
+                <table>
+                    <thead>
+                        <tr>
+                            <td width="25%">${%Critical}</td>
+                            <td width="25%">${%High}</td>
+                            <td width="25%">${%Medium}</td>
+                            <td width="25%">${%Low}</td>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>
+                                <f:number field="newThresholdCritical" value="${instance.newThresholdCritical}"/>
+                            </td>
+                            <td>
+                                <f:number field="newThresholdHigh" value="${instance.newThresholdHigh}"/>
+                            </td>
+                            <td>
+                                <f:number field="newThresholdMedium" value="${instance.newThresholdMedium}"/>
+                            </td>
+                            <td>
+                                <f:number field="newThresholdLow" value="${instance.newThresholdLow}"/>
+                            </td>
+                        </tr>
+                        <!--
+                        <tr>
+                            <td colspan="4">
+                                <f:checkbox name="newThresholdAnalysisExploitable" checked="${instance.newThresholdAnalysisExploitable}" title="${%Limit to Audited Exploitable}"/>
+                            </td>
+                        </tr>
+                        -->
+                        <tr>
+                            <td colspan="4">
+                                <f:checkbox name="newThresholdFailBuild" checked="${instance.newThresholdFailBuild}" title="${%Fail build on threshold}"/>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </f:entry>
+        </f:section>
+    </f:advanced>
 
 </j:jelly>

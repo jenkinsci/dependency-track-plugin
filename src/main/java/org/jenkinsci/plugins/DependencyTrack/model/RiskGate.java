@@ -15,6 +15,7 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.model;
 
+import hudson.model.Result;
 import java.io.Serializable;
 import java.util.List;
 
@@ -28,14 +29,48 @@ public class RiskGate implements Serializable {
         this.thresholds = thresholds;
     }
 
-    public Thresholds getThresholds() {
-        return thresholds;
-    }
+    /**
+     * Evaluates if the current results meet or exceed the defined threshold.
+     * @param previousDistribution
+     * @param previousFindings
+     * @param currentDistribution
+     * @param currentFindings
+     * @return a Result
+     */
+    public Result evaluate(final SeverityDistribution previousDistribution,
+                                   final List<Finding> previousFindings,
+                                   final SeverityDistribution currentDistribution,
+                                   final List<Finding> currentFindings) {
 
-    public Thresholds.BuildStatus evaluate(final SeverityDistribution previousDistribution,
-                                           final List<Finding> previousFindings,
-                                           final SeverityDistribution currentDistribution,
-                                           final List<Finding> currentFindings) {
-        return Thresholds.BuildStatus.FAILURE;
+        Result result = Result.SUCCESS;
+        if (currentDistribution != null) {
+            if ((currentDistribution.getCritical() > 0 && currentDistribution.getCritical() >= thresholds.totalFindings.critical)
+                    || (currentDistribution.getHigh() > 0 && currentDistribution.getHigh() >= thresholds.totalFindings.high)
+                    || (currentDistribution.getMedium() > 0 && currentDistribution.getMedium() >= thresholds.totalFindings.medium)
+                    || (currentDistribution.getLow() > 0 && currentDistribution.getLow() >= thresholds.totalFindings.low)) {
+
+                if (thresholds.totalFindings.failBuild) {
+                    return Result.FAILURE;
+                } else {
+                    result = Result.UNSTABLE;
+                }
+            }
+        }
+
+        if (currentDistribution != null && previousDistribution != null) {
+            if ((currentDistribution.getCritical() > 0 && currentDistribution.getCritical() >= previousDistribution.getCritical() + thresholds.newFindings.critical)
+                    || (currentDistribution.getHigh() > 0 && currentDistribution.getHigh() >= previousDistribution.getHigh() + thresholds.newFindings.high)
+                    || (currentDistribution.getMedium() > 0 && currentDistribution.getMedium() >= previousDistribution.getMedium() + thresholds.newFindings.medium)
+                    || (currentDistribution.getLow() > 0 && currentDistribution.getLow() >= previousDistribution.getLow() + thresholds.newFindings.low)) {
+
+                if (thresholds.newFindings.failBuild) {
+                    return Result.FAILURE;
+                } else  {
+                    result = Result.UNSTABLE;
+                }
+            }
+        }
+
+        return result;
     }
 }

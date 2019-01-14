@@ -17,12 +17,6 @@ package org.jenkinsci.plugins.DependencyTrack.model;
 
 public class Thresholds {
 
-    public enum BuildStatus {
-        SUCCESS,
-        UNSTABLE,
-        FAILURE
-    }
-
     public TotalFindings totalFindings;
     public NewFindings newFindings;
 
@@ -32,8 +26,8 @@ public class Thresholds {
         public int medium;
         public int low;
         public int all;
-        public BuildStatus exceedBuildStatus;
         public boolean limitToAnalysisExploitable;
+        public boolean failBuild;
     }
 
     public class NewFindings {
@@ -42,7 +36,7 @@ public class Thresholds {
         public int medium;
         public int low;
         public int all;
-        public BuildStatus exceedBuildStatus;
         public boolean limitToAnalysisExploitable;
+        public boolean failBuild;
     }
 }
