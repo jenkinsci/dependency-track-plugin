@@ -23,6 +23,9 @@ limitations under the License.
         <f:entry title="${%dependencytrack.apikey}" field="dependencyTrackApiKey" help="/plugin/dependency-track/help-dt-apikey.html">
             <f:textbox id="dependencytrack.apikey"/>
         </f:entry>
+        <f:entry title="${%dependencytrack.polling.timeout}" field="dependencyTrackPollingTimeout" help="/plugin/dependency-track/help-dt-polling-timeout.html">
+            <f:number id="dependencytrack.polling.timeout"/>
+        </f:entry>
         <f:entry title="${%dependencytrack.autocreate}" field="dependencyTrackAutoCreateProjects" help="/plugin/dependency-track/help-dt-autocreate.html">
             <f:checkbox id="dependencytrack.autocreate" default="false"/>
         </f:entry>        

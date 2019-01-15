@@ -207,11 +207,15 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
             }
 
             if (uploadResult.getToken() != null && synchronous) {
-                // todo: create configurable timeout - this has the potential for infinite loop
+                final long startTime = System.currentTimeMillis();
                 Thread.sleep(10000);
                 logger.log(Messages.Builder_Polling());
                 while (apiClient.isTokenBeingProcessed(uploadResult.getToken())) {
                     Thread.sleep(10000);
+                    if (startTime + (60000 * getDescriptor().dependencyTrackPollingTimeout) > System.currentTimeMillis()) {
+                        logger.log(Messages.Builder_Polling_Timeout_Exceeded());
+                        return;
+                    }
                     logger.log(Messages.Builder_Polling());
                 }
                 logger.log(Messages.Builder_Findings_Processing());
@@ -285,6 +289,10 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
          */
         private boolean dependencyTrackAutoCreateProjects;
 
+        /**
+         * Specifies the maximum number of minutes to wait for synchronous jobs to complete.
+         */
+        private int dependencyTrackPollingTimeout;
 
         /**
          * Default constructor. Obtains the Descriptor used in DependencyCheckBuilder as this contains
@@ -409,6 +417,7 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
             dependencyTrackUrl = formData.getString("dependencyTrackUrl");
             dependencyTrackApiKey = formData.getString("dependencyTrackApiKey");
             dependencyTrackAutoCreateProjects = formData.getBoolean("dependencyTrackAutoCreateProjects");
+            dependencyTrackPollingTimeout = formData.getInt("dependencyTrackPollingTimeout");
             save();
             return super.configure(req, formData);
         }
@@ -441,8 +450,17 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
          */
         public boolean isDependencyTrackAutoCreateProjects() {
             return dependencyTrackAutoCreateProjects;
-        }        
+        }
 
+        /**
+         * This method returns the global configuration for dependencyTrackPollingTimeout.
+         */
+        public int getDependencyTrackPollingTimeout() {
+            if (dependencyTrackPollingTimeout <= 0) {
+                return 5;
+            }
+            return dependencyTrackPollingTimeout;
+        }
     }
 
     @Override
