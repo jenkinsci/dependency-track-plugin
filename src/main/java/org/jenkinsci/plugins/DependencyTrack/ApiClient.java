@@ -113,7 +113,11 @@ public class ApiClient {
         }
         // Checks the server response
         if (conn.getResponseCode() == 200) {
-            logger.log(Messages.Builder_Success());
+            if (projectId != null) {
+                logger.log(Messages.Builder_Success() + " - " + projectId);
+            } else {
+                logger.log(Messages.Builder_Success());
+            }
             final String responseBody = getResponseBody(conn.getInputStream());
             if (StringUtils.isNotBlank(responseBody)) {
                 final JSONObject json = JSONObject.fromObject(responseBody);
