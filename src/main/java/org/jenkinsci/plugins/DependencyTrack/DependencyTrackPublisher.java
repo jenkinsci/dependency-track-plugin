@@ -237,6 +237,7 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
                             severityDistribution,
                             findings);
                     if (Result.SUCCESS != result) {
+                        logger.log(Messages.Builder_Threshold_Exceed());
                         build.setResult(result); // only set the result if the evaluation fails the threshold
                     }
                 }
