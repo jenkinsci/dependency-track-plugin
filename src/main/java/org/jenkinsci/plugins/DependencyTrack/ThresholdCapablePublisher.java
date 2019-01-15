@@ -43,20 +43,28 @@ public abstract class ThresholdCapablePublisher extends Recorder implements Seri
 
     Thresholds getThresholds() {
         final Thresholds thresholds = new Thresholds();
-        thresholds.totalFindings.critical = totalThresholdCritical;
-        thresholds.totalFindings.high = totalThresholdHigh;
-        thresholds.totalFindings.medium = totalThresholdMedium;
-        thresholds.totalFindings.low = totalThresholdLow;
+        thresholds.totalFindings.critical = parseInteger(totalThresholdCritical);
+        thresholds.totalFindings.high = parseInteger(totalThresholdHigh);
+        thresholds.totalFindings.medium = parseInteger(totalThresholdMedium);
+        thresholds.totalFindings.low = parseInteger(totalThresholdLow);
         thresholds.totalFindings.limitToAnalysisExploitable = totalThresholdAnalysisExploitable;
         thresholds.totalFindings.failBuild = totalThresholdFailBuild;
 
-        thresholds.newFindings.critical = newThresholdCritical;
-        thresholds.newFindings.high = newThresholdHigh;
-        thresholds.newFindings.medium = newThresholdMedium;
-        thresholds.newFindings.low = newThresholdLow;
+        thresholds.newFindings.critical = parseInteger(newThresholdCritical);
+        thresholds.newFindings.high = parseInteger(newThresholdHigh);
+        thresholds.newFindings.medium = parseInteger(newThresholdMedium);
+        thresholds.newFindings.low = parseInteger(newThresholdLow);
         thresholds.newFindings.limitToAnalysisExploitable = newThresholdAnalysisExploitable;
         thresholds.newFindings.failBuild = newThresholdFailBuild;
         return thresholds;
+    }
+
+    private int parseInteger(Integer integer) {
+        if (integer == null) {
+            return 0;
+        } else {
+            return integer;
+        }
     }
 
     public Integer getTotalThresholdAll() {

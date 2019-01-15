@@ -17,8 +17,8 @@ package org.jenkinsci.plugins.DependencyTrack.model;
 
 public class Thresholds {
 
-    public TotalFindings totalFindings;
-    public NewFindings newFindings;
+    public final TotalFindings totalFindings = new TotalFindings();
+    public final NewFindings newFindings = new NewFindings();
 
     public class TotalFindings {
         public int critical;
