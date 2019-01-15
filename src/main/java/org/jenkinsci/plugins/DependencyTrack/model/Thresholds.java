@@ -21,21 +21,21 @@ public class Thresholds {
     public final NewFindings newFindings = new NewFindings();
 
     public class TotalFindings {
-        public int critical;
-        public int high;
-        public int medium;
-        public int low;
-        public int all;
+        public Integer critical;
+        public Integer high;
+        public Integer medium;
+        public Integer low;
+        public Integer all;
         public boolean limitToAnalysisExploitable;
         public boolean failBuild;
     }
 
     public class NewFindings {
-        public int critical;
-        public int high;
-        public int medium;
-        public int low;
-        public int all;
+        public Integer critical;
+        public Integer high;
+        public Integer medium;
+        public Integer low;
+        public Integer all;
         public boolean limitToAnalysisExploitable;
         public boolean failBuild;
     }

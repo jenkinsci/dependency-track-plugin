@@ -44,10 +44,10 @@ public class RiskGate implements Serializable {
 
         Result result = Result.SUCCESS;
         if (currentDistribution != null) {
-            if ((currentDistribution.getCritical() > 0 && currentDistribution.getCritical() >= thresholds.totalFindings.critical)
-                    || (currentDistribution.getHigh() > 0 && currentDistribution.getHigh() >= thresholds.totalFindings.high)
-                    || (currentDistribution.getMedium() > 0 && currentDistribution.getMedium() >= thresholds.totalFindings.medium)
-                    || (currentDistribution.getLow() > 0 && currentDistribution.getLow() >= thresholds.totalFindings.low)) {
+            if ((thresholds.totalFindings.critical != null && currentDistribution.getCritical() > 0 && currentDistribution.getCritical() >= thresholds.totalFindings.critical)
+                    || (thresholds.totalFindings.high != null && currentDistribution.getHigh() > 0 && currentDistribution.getHigh() >= thresholds.totalFindings.high)
+                    || (thresholds.totalFindings.medium != null && currentDistribution.getMedium() > 0 && currentDistribution.getMedium() >= thresholds.totalFindings.medium)
+                    || (thresholds.totalFindings.low != null && currentDistribution.getLow() > 0 && currentDistribution.getLow() >= thresholds.totalFindings.low)) {
 
                 if (thresholds.totalFindings.failBuild) {
                     return Result.FAILURE;
@@ -58,10 +58,10 @@ public class RiskGate implements Serializable {
         }
 
         if (currentDistribution != null && previousDistribution != null) {
-            if ((currentDistribution.getCritical() > 0 && currentDistribution.getCritical() >= previousDistribution.getCritical() + thresholds.newFindings.critical)
-                    || (currentDistribution.getHigh() > 0 && currentDistribution.getHigh() >= previousDistribution.getHigh() + thresholds.newFindings.high)
-                    || (currentDistribution.getMedium() > 0 && currentDistribution.getMedium() >= previousDistribution.getMedium() + thresholds.newFindings.medium)
-                    || (currentDistribution.getLow() > 0 && currentDistribution.getLow() >= previousDistribution.getLow() + thresholds.newFindings.low)) {
+            if ((thresholds.newFindings.critical != null && currentDistribution.getCritical() > 0 && currentDistribution.getCritical() >= previousDistribution.getCritical() + thresholds.newFindings.critical)
+                    || (thresholds.newFindings.high != null && currentDistribution.getHigh() > 0 && currentDistribution.getHigh() >= previousDistribution.getHigh() + thresholds.newFindings.high)
+                    || (thresholds.newFindings.medium != null && currentDistribution.getMedium() > 0 && currentDistribution.getMedium() >= previousDistribution.getMedium() + thresholds.newFindings.medium)
+                    || (thresholds.newFindings.low != null && currentDistribution.getLow() > 0 && currentDistribution.getLow() >= previousDistribution.getLow() + thresholds.newFindings.low)) {
 
                 if (thresholds.newFindings.failBuild) {
                     return Result.FAILURE;
