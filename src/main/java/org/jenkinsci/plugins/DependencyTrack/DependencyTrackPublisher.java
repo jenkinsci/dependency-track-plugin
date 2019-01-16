@@ -207,7 +207,7 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
             }
 
             if (uploadResult.getToken() != null && synchronous) {
-                final long timeout = System.currentTimeMillis() + (60000 * getDescriptor().getDependencyTrackPollingTimeout());
+                final long timeout = System.currentTimeMillis() + (60000L * getDescriptor().getDependencyTrackPollingTimeout());
                 Thread.sleep(10000);
                 logger.log(Messages.Builder_Polling());
                 while (apiClient.isTokenBeingProcessed(uploadResult.getToken())) {

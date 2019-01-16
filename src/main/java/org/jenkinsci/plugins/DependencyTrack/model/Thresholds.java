@@ -15,12 +15,14 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.model;
 
-public class Thresholds {
+import java.io.Serializable;
+
+public class Thresholds implements Serializable {
 
     public final TotalFindings totalFindings = new TotalFindings();
     public final NewFindings newFindings = new NewFindings();
 
-    public class TotalFindings {
+    public static class TotalFindings implements Serializable {
         public Integer critical;
         public Integer high;
         public Integer medium;
@@ -30,7 +32,7 @@ public class Thresholds {
         public boolean failBuild;
     }
 
-    public class NewFindings {
+    public static class NewFindings implements Serializable {
         public Integer critical;
         public Integer high;
         public Integer medium;
