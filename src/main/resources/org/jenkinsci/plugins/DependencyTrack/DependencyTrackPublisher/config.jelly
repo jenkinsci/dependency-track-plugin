@@ -83,13 +83,6 @@ limitations under the License.
                                 <f:number field="failedTotalLow" value="${instance.failedTotalLow}"/>
                             </td>
                         </tr>
-                        <!--
-                        <tr>
-                            <td colspan="4">
-                                <f:checkbox name="totalThresholdAnalysisExploitable" checked="${instance.totalThresholdAnalysisExploitable}" title="${%Limit to audited exploitable}"/>
-                            </td>
-                        </tr>
-                        -->
                     </tbody>
                 </table>
             </f:entry>
@@ -140,13 +133,6 @@ limitations under the License.
                                 <f:number field="failedNewLow" value="${instance.failedNewLow}"/>
                             </td>
                         </tr>
-                        <!--
-                        <tr>
-                            <td colspan="4">
-                                <f:checkbox name="newThresholdAnalysisExploitable" checked="${instance.newThresholdAnalysisExploitable}" title="${%Limit to Audited Exploitable}"/>
-                            </td>
-                        </tr>
-                        -->
                     </tbody>
                 </table>
             </f:entry>
