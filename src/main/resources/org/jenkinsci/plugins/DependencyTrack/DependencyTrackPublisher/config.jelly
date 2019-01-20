@@ -41,6 +41,7 @@ limitations under the License.
                 <table>
                     <thead>
                         <tr>
+                            <td width="24"></td>
                             <td width="25%">${%Critical}</td>
                             <td width="25%">${%High}</td>
                             <td width="25%">${%Medium}</td>
@@ -49,17 +50,37 @@ limitations under the License.
                     </thead>
                     <tbody>
                         <tr>
-                            <td>
-                                <f:number field="totalThresholdCritical" value="${instance.totalThresholdCritical}"/>
+                            <td style="vertical-align: middle;">
+                                <img src="${resURL}/plugin/dependency-track/icons/yellow.svg" width="24" height="24"/>
                             </td>
                             <td>
-                                <f:number field="totalThresholdHigh" value="${instance.totalThresholdHigh}"/>
+                                <f:number field="unstableTotalCritical" value="${instance.unstableTotalCritical}"/>
                             </td>
                             <td>
-                                <f:number field="totalThresholdMedium" value="${instance.totalThresholdMedium}"/>
+                                <f:number field="unstableTotalHigh" value="${instance.unstableTotalHigh}"/>
                             </td>
                             <td>
-                                <f:number field="totalThresholdLow" value="${instance.totalThresholdLow}"/>
+                                <f:number field="unstableTotalMedium" value="${instance.unstableTotalMedium}"/>
+                            </td>
+                            <td>
+                                <f:number field="unstableTotalLow" value="${instance.unstableTotalLow}"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="vertical-align: middle;">
+                                <img src="${resURL}/plugin/dependency-track/icons/red.svg" width="24" height="24"/>
+                            </td>
+                            <td>
+                                <f:number field="failedTotalCritical" value="${instance.failedTotalCritical}"/>
+                            </td>
+                            <td>
+                                <f:number field="failedTotalHigh" value="${instance.failedTotalHigh}"/>
+                            </td>
+                            <td>
+                                <f:number field="failedTotalMedium" value="${instance.failedTotalMedium}"/>
+                            </td>
+                            <td>
+                                <f:number field="failedTotalLow" value="${instance.failedTotalLow}"/>
                             </td>
                         </tr>
                         <!--
@@ -69,11 +90,6 @@ limitations under the License.
                             </td>
                         </tr>
                         -->
-                        <tr>
-                            <td colspan="4">
-                                <f:checkbox name="totalThresholdFailBuild" checked="${instance.totalThresholdFailBuild}" title="${%Fail build on threshold}"/>
-                            </td>
-                        </tr>
                     </tbody>
                 </table>
             </f:entry>
@@ -82,6 +98,7 @@ limitations under the License.
                 <table>
                     <thead>
                         <tr>
+                            <td width="24"></td>
                             <td width="25%">${%Critical}</td>
                             <td width="25%">${%High}</td>
                             <td width="25%">${%Medium}</td>
@@ -90,17 +107,37 @@ limitations under the License.
                     </thead>
                     <tbody>
                         <tr>
-                            <td>
-                                <f:number field="newThresholdCritical" value="${instance.newThresholdCritical}"/>
+                            <td style="vertical-align: middle;">
+                                <img src="${resURL}/plugin/dependency-track/icons/yellow.svg" width="24" height="24"/>
                             </td>
                             <td>
-                                <f:number field="newThresholdHigh" value="${instance.newThresholdHigh}"/>
+                                <f:number field="unstableNewCritical" value="${instance.unstableNewCritical}"/>
                             </td>
                             <td>
-                                <f:number field="newThresholdMedium" value="${instance.newThresholdMedium}"/>
+                                <f:number field="unstableNewHigh" value="${instance.unstableNewHigh}"/>
                             </td>
                             <td>
-                                <f:number field="newThresholdLow" value="${instance.newThresholdLow}"/>
+                                <f:number field="unstableNewMedium" value="${instance.unstableNewMedium}"/>
+                            </td>
+                            <td>
+                                <f:number field="unstableNewLow" value="${instance.unstableNewLow}"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td style="vertical-align: middle;">
+                                <img src="${resURL}/plugin/dependency-track/icons/red.svg" width="24" height="24"/>
+                            </td>
+                            <td>
+                                <f:number field="failedNewCritical" value="${instance.failedNewCritical}"/>
+                            </td>
+                            <td>
+                                <f:number field="failedNewHigh" value="${instance.failedNewHigh}"/>
+                            </td>
+                            <td>
+                                <f:number field="failedNewMedium" value="${instance.failedNewMedium}"/>
+                            </td>
+                            <td>
+                                <f:number field="failedNewLow" value="${instance.failedNewLow}"/>
                             </td>
                         </tr>
                         <!--
@@ -110,11 +147,6 @@ limitations under the License.
                             </td>
                         </tr>
                         -->
-                        <tr>
-                            <td colspan="4">
-                                <f:checkbox name="newThresholdFailBuild" checked="${instance.newThresholdFailBuild}" title="${%Fail build on threshold}"/>
-                            </td>
-                        </tr>
                     </tbody>
                 </table>
             </f:entry>

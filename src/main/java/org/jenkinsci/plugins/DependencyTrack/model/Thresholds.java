@@ -23,22 +23,26 @@ public class Thresholds implements Serializable {
     public final NewFindings newFindings = new NewFindings();
 
     public static class TotalFindings implements Serializable {
-        public Integer critical;
-        public Integer high;
-        public Integer medium;
-        public Integer low;
-        public Integer all;
+        public Integer unstableCritical;
+        public Integer unstableHigh;
+        public Integer unstableMedium;
+        public Integer unstableLow;
+        public Integer failedCritical;
+        public Integer failedHigh;
+        public Integer failedMedium;
+        public Integer failedLow;
         public boolean limitToAnalysisExploitable;
-        public boolean failBuild;
     }
 
     public static class NewFindings implements Serializable {
-        public Integer critical;
-        public Integer high;
-        public Integer medium;
-        public Integer low;
-        public Integer all;
+        public Integer unstableCritical;
+        public Integer unstableHigh;
+        public Integer unstableMedium;
+        public Integer unstableLow;
+        public Integer failedCritical;
+        public Integer failedHigh;
+        public Integer failedMedium;
+        public Integer failedLow;
         public boolean limitToAnalysisExploitable;
-        public boolean failBuild;
     }
 }
