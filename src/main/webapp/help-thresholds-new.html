@@ -2,10 +2,6 @@
     <p>
         Sets the threshold for the number of new critical, high, medium, or low severity findings allowed. If the
         number of new findings equals or is greater than the previous builds finding for any one of the severities,
-        the threshold action will be triggered.
-    </p>
-    <p>
-        By default, if the threshold is triggered, the build will be put into an UNSTABLE state. However, a build
-        can optionally be failed upon triggering a threshold.
+        the job status will be changed to UNSTABLE or FAILURE.
     </p>
 </div>
