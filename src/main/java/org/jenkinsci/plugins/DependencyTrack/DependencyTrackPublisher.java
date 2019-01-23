@@ -230,15 +230,17 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
                 final Run previousBuild = build.getPreviousBuild();
                 if (previousBuild != null) {
                     final ResultAction previousResults = previousBuild.getAction(ResultAction.class);
-                    final RiskGate riskGate = new RiskGate(getThresholds());
-                    final Result result = riskGate.evaluate(
-                            previousResults.getSeverityDistribution(),
-                            previousResults.getFindings(),
-                            severityDistribution,
-                            findings);
-                    if (Result.SUCCESS != result) {
-                        logger.log(Messages.Builder_Threshold_Exceed());
-                        build.setResult(result); // only set the result if the evaluation fails the threshold
+                    if (previousResults != null) {
+                        final RiskGate riskGate = new RiskGate(getThresholds());
+                        final Result result = riskGate.evaluate(
+                                previousResults.getSeverityDistribution(),
+                                previousResults.getFindings(),
+                                severityDistribution,
+                                findings);
+                        if (Result.SUCCESS != result) {
+                            logger.log(Messages.Builder_Threshold_Exceed());
+                            build.setResult(result); // only set the result if the evaluation fails the threshold
+                        }
                     }
                 }
             }
