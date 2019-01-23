@@ -22,6 +22,6 @@ Dependency-Track and the Dependency-Track Jenkins Plugin are Copyright (c) Steve
 
 Permission to modify and redistribute is granted under the terms of the Apache 2.0 license.
 
-  [wiki]: https://wiki.jenkins.io/display/JENKINS/OWASP+Dependency-Track+Plugin
-  [license-image]: https://img.shields.io/badge/license-apache%20v2-brightgreen.svg
-  [license-url]: https://github.com/jenkinsci/dependency-track-plugin/blob/master/LICENSE.txt
+[wiki]: https://wiki.jenkins.io/display/JENKINS/OWASP+Dependency-Track+Plugin
+[license-image]: https://img.shields.io/badge/license-apache%20v2-brightgreen.svg
+[license-url]: https://github.com/jenkinsci/dependency-track-plugin/blob/master/LICENSE.txt
