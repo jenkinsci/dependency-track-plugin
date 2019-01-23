@@ -1,6 +1,7 @@
 [![Build Status](https://ci.jenkins.io/buildStatus/icon?job=Plugins/dependency-track-plugin/master)](https://ci.jenkins.io/job/Plugins/job/dependency-track-plugin)
 [![License][license-image]][license-url]
 [![Plugin Version](https://img.shields.io/jenkins/plugin/v/dependency-track.svg)](https://plugins.jenkins.io/dependency-track)
+[![JIRA](https://img.shields.io/badge/issue_tracker-JIRA-red.svg)](https://issues.jenkins-ci.org/browse/JENKINS-55661?jql=component%20%3D%20dependency-track-plugin)
 [![Website](https://img.shields.io/badge/https://-dependencytrack.org-blue.svg)](https://dependencytrack.org/)
 [![Documentation](https://img.shields.io/badge/read-documentation-blue.svg)](https://docs.dependencytrack.org/)
 
