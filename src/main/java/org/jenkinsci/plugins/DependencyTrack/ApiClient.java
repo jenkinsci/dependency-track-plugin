@@ -18,12 +18,15 @@ package org.jenkinsci.plugins.DependencyTrack;
 import hudson.FilePath;
 import hudson.remoting.Base64;
 import net.sf.json.JSONObject;
+
 import org.apache.commons.lang.StringUtils;
 import javax.json.Json;
+import javax.json.JsonArray;
 import javax.json.JsonObject;
 import javax.json.JsonObjectBuilder;
 import javax.json.JsonReader;
 import javax.json.JsonValue;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -31,9 +34,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.StringReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.UUID;
 
 public class ApiClient {
@@ -43,6 +52,8 @@ public class ApiClient {
     private static final String BOM_TOKEN_URL = "/api/v1/bom/token";
     private static final String BOM_UPLOAD_URL = "/api/v1/bom";
     private static final String SCAN_UPLOAD_URL = "/api/v1/scan";
+    private static final String SEARCH_URL = "/api/v1/project";
+	private static final Object EQUAL_SIGN = "=";
 
     private final String baseUrl;
     private final String apiKey;
@@ -73,8 +84,61 @@ public class ApiClient {
             throw new ApiClientException("An error occurred while retrieving findings", e);
         }
     }
+    
+	public String getFindings(String projectName, String version) throws ApiClientException {
+		String projectUuid = getProjectUUID(projectName, version);
+		return getFindings(projectUuid);
+	}
 
-    public UploadResult upload(String projectId, String projectName, String projectVersion, FilePath artifact,
+	private String getProjectUUID(String projectName, String version) throws ApiClientException {
+		try {
+			Map<String, Object> params = new HashMap<>(1);
+			params.put("searchText", projectName);
+			final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + SEARCH_URL + "?" + getQuery(params)).openConnection();
+			conn.setDoOutput(true);
+			conn.setDoInput(true);
+			conn.setRequestMethod("GET");
+			conn.setRequestProperty(API_KEY_HEADER, apiKey);			
+			conn.connect();
+			if (conn.getResponseCode() == 200) {
+				JsonReader reader = Json.createReader(new StringReader(getResponseBody(conn.getInputStream())));
+				JsonArray projectResponse = reader.readArray();
+				reader.close();
+				for (JsonValue jsonValue : projectResponse) {
+					JsonReader tempReader = Json.createReader(new StringReader(jsonValue.toString()));
+					JsonObject object = tempReader.readObject();
+					tempReader.close();
+					if(object.getString("version").equalsIgnoreCase(version)) {
+						return object.getString("uuid");
+					}
+				}
+            } else {
+                throw new ApiClientException("An error occurred while retrieving findings - HTTP response code: " + conn.getResponseCode() + " " + conn.getResponseMessage());
+            }
+		} catch (IOException ex) {
+			throw new ApiClientException("An error occurred while retrieving findings", ex);
+		}
+		return null;
+	}
+	
+	private String getQuery(Map<String, Object> params) throws ApiClientException {
+		StringBuilder builder = new StringBuilder();
+		try {			
+			for (Entry<String, Object> entry : params.entrySet()) {
+				Object value = entry.getValue();
+				if ( null == value ) 
+					continue;
+				builder.append(URLEncoder.encode(entry.getKey(), "UTF-8"));
+				builder.append(EQUAL_SIGN);
+				builder.append(URLEncoder.encode(value.toString(), "UTF-8"));
+			}
+		} catch (UnsupportedEncodingException ex) {
+			throw new ApiClientException("An UnsupportedEncodingException occurred while retrieving findings", ex);
+		}
+		return builder.toString();
+	}
+
+	public UploadResult upload(String projectId, String projectName, String projectVersion, FilePath artifact,
                           boolean isScanResult, boolean autoCreateProject) throws IOException {
         final String encodedScan;
         try {

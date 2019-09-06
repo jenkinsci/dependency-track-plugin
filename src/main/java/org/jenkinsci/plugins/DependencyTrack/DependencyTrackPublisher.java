@@ -219,7 +219,12 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
                     logger.log(Messages.Builder_Polling());
                 }
                 logger.log(Messages.Builder_Findings_Processing());
-                final String jsonResponseBody = apiClient.getFindings(this.projectId);
+                String jsonResponseBody = null;
+                if (null == this.projectId) {
+                	jsonResponseBody = apiClient.getFindings(this.projectName, this.projectVersion);
+                } else {
+                	jsonResponseBody = apiClient.getFindings(this.projectId); 
+                }
                 final FindingParser parser = new FindingParser(build.getNumber(), jsonResponseBody).parse();
                 final ArrayList<Finding> findings = parser.getFindings();
                 final SeverityDistribution severityDistribution = parser.getSeverityDistribution();
