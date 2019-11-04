@@ -29,7 +29,9 @@ Asynchronous publishing simply uploads the SBOM to Dependency-Track and the job 
 ## Job Configuration
 Once configured with a valid URL and API key, simply configure a job to publish the artifact.
    
+   
 ![job configuration](https://raw.githubusercontent.com/jenkinsci/dependency-track-plugin/master/docs/images/jenkins-job-publish.png)
+
 
 **Dependency-Track project:** Specifies the unique project ID to upload scan results to. This dropdown will be automatically populated with a list of projects.
 
@@ -40,7 +42,9 @@ Once configured with a valid URL and API key, simply configure a job to publish 
 * Dependency-Check Scan Result (XML)
 * Synchronous mode: Uploads a SBOM to Dependency-Track and waits for Dependency-Track to process and return results. The results returned are identical to the auditable findings but exclude findings that have previously been suppressed. Analysis decisions and vulnerability details are included in the response. Synchronous mode is possible with Dependency-Track v3.3.1 and higher.
 
+
 ![risk thresholds](https://raw.githubusercontent.com/jenkinsci/dependency-track-plugin/master/docs/images/jenkins-job-thresholds.png)
+
 
 When Synchronous mode is enabled, thresholds can be defined which can optionally put the job into an UNSTABLE or FAILURE state.
 
@@ -50,6 +54,7 @@ When Synchronous mode is enabled, thresholds can be defined which can optionally
 
 ## Global Configuration
 To setup, navigate to Jenkins > System Configuration and complete the Dependency-Track section.
+
 
 ![global configuration](https://raw.githubusercontent.com/jenkinsci/dependency-track-plugin/master/docs/images/jenkins-global-odt.png)
 
