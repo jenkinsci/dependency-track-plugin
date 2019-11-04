@@ -33,6 +33,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
@@ -60,8 +61,8 @@ public class ApiClient {
     public String lookupProject(String projectName, String projectVersion) throws ApiClientException {
         try {
             final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + PROJECT_LOOKUP_URL + "?"
-                    + PROJECT_LOOKUP_NAME_PARAM + "=" + projectName + "&"
-                    + PROJECT_LOOKUP_VERSION_PARAM + "=" + projectVersion)
+                    + PROJECT_LOOKUP_NAME_PARAM + "=" + URLEncoder.encode(projectName, StandardCharsets.UTF_8.name()) + "&"
+                    + PROJECT_LOOKUP_VERSION_PARAM + "=" + URLEncoder.encode(projectVersion, StandardCharsets.UTF_8.name()))
                     .openConnection();
             conn.setDoOutput(true);
             conn.setDoInput(true);
