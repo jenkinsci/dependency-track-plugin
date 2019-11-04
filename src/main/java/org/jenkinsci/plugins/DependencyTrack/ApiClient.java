@@ -43,6 +43,9 @@ public class ApiClient {
     private static final String BOM_TOKEN_URL = "/api/v1/bom/token";
     private static final String BOM_UPLOAD_URL = "/api/v1/bom";
     private static final String SCAN_UPLOAD_URL = "/api/v1/scan";
+    private static final String PROJECT_LOOKUP_URL = "/api/v1/project/lookup";
+    private static final String PROJECT_LOOKUP_NAME_PARAM = "name";
+    private static final String PROJECT_LOOKUP_VERSION_PARAM = "version";
 
     private final String baseUrl;
     private final String apiKey;
@@ -52,6 +55,28 @@ public class ApiClient {
         this.baseUrl = baseUrl;
         this.apiKey = apiKey;
         this.logger = logger;
+    }
+
+    public String lookupProject(String projectName, String projectVersion) throws ApiClientException {
+        try {
+            final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + PROJECT_LOOKUP_URL + "?"
+                    + PROJECT_LOOKUP_NAME_PARAM + "=" + projectName + "&"
+                    + PROJECT_LOOKUP_VERSION_PARAM + "=" + projectVersion)
+                    .openConnection();
+            conn.setDoOutput(true);
+            conn.setDoInput(true);
+            conn.setRequestMethod("GET");
+            conn.setRequestProperty(API_KEY_HEADER, apiKey);
+            conn.connect();
+            // Checks the server response
+            if (conn.getResponseCode() == 200) {
+                return getResponseBody(conn.getInputStream());
+            } else {
+                throw new ApiClientException("An error occurred while looking up project id - HTTP response code: " + conn.getResponseCode() + " " + conn.getResponseMessage());
+            }
+        } catch (IOException e) {
+            throw new ApiClientException("An error occurred while looking up project id", e);
+        }
     }
 
     public String getFindings(String projectUuid) throws ApiClientException {

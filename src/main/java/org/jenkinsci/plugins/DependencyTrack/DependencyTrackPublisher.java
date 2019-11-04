@@ -218,6 +218,12 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
                     }
                     logger.log(Messages.Builder_Polling());
                 }
+                if (this.projectId == null) {
+                    // project was auto-created. Fetch it's new uuid so that we can look up the results
+                    logger.log(Messages.Builder_Project_Lookup());
+                    final String jsonResponseBody = apiClient.lookupProject(this.projectName, this.projectVersion);
+                    this.projectId = new ProjectLookupParser(jsonResponseBody).parse().getProject().getUuid();
+                }
                 logger.log(Messages.Builder_Findings_Processing());
                 final String jsonResponseBody = apiClient.getFindings(this.projectId);
                 final FindingParser parser = new FindingParser(build.getNumber(), jsonResponseBody).parse();
