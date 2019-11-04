@@ -18,9 +18,9 @@ identify and reduce risk from the use of third-party and open source components.
 The Dependency-Track Jenkins plugin aids in publishing [CycloneDX](https://cyclonedx.org/) and [SPDX](https://spdx.org/) 
 Software Bill-of-Materials (SBOM) to the Dependency-Track platform.
 
-Publishing BoMs can be performed asynchronously or synchronously.
+Publishing SBOMs can be performed asynchronously or synchronously.
 
-Asynchronous publishing simply uploads the BoM to Dependency-Track and the job continues. Synchronous publishing waits for Dependency-Track to process the BoM after being uploaded. Synchronous publishing has the benefit of displaying interactive job trends and per build findings.
+Asynchronous publishing simply uploads the SBOM to Dependency-Track and the job continues. Synchronous publishing waits for Dependency-Track to process the SBOM after being uploaded. Synchronous publishing has the benefit of displaying interactive job trends and per build findings.
 
 ![job trend](https://raw.githubusercontent.com/jenkinsci/dependency-track-plugin/master/docs/images/jenkins-job-trend.png)
 
@@ -38,7 +38,7 @@ Once configured with a valid URL and API key, simply configure a job to publish 
 **Artifact Type:** Options are:
 * Software Bill of Material (CycloneDX or SPDX)
 * Dependency-Check Scan Result (XML)
-* Synchronous mode: Uploads a BoM to Dependency-Track and waits for Dependency-Track to process and return results. The results returned are identical to the auditable findings but exclude findings that have previously been suppressed. Analysis decisions and vulnerability details are included in the response. Synchronous mode is possible with Dependency-Track v3.3.1 and higher.
+* Synchronous mode: Uploads a SBOM to Dependency-Track and waits for Dependency-Track to process and return results. The results returned are identical to the auditable findings but exclude findings that have previously been suppressed. Analysis decisions and vulnerability details are included in the response. Synchronous mode is possible with Dependency-Track v3.3.1 and higher.
 
 ![risk thresholds](https://raw.githubusercontent.com/jenkinsci/dependency-track-plugin/master/docs/images/jenkins-job-thresholds.png)
 
@@ -61,6 +61,6 @@ Dependency-Track and the Dependency-Track Jenkins Plugin are Copyright (c) Steve
 
 Permission to modify and redistribute is granted under the terms of the Apache 2.0 license.
 
-[wiki]: https://wiki.jenkins.io/display/JENKINS/OWASP+Dependency-Track+Plugin
+[Supply Chain Component Analysis]: https://www.owasp.org/index.php/Component_Analysis
 [license-image]: https://img.shields.io/badge/license-apache%20v2-brightgreen.svg
 [license-url]: https://github.com/jenkinsci/dependency-track-plugin/blob/master/LICENSE.txt
