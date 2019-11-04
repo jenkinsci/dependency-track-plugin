@@ -6,14 +6,52 @@
 [![Documentation](https://img.shields.io/badge/read-documentation-blue.svg)](https://docs.dependencytrack.org/)
 
 
-Dependency-Track Jenkins Plugin
-==============================
+# Dependency-Track Jenkins Plugin
 
-Dependency-Track is an intelligent Software Composition Analysis (SCA) platform that allows organizations to identify 
-and reduce risk from the use of third-party and open source components.
+Dependency-Track is an intelligent Software [Supply Chain Component Analysis] platform that allows organizations to 
+identify and reduce risk from the use of third-party and open source components. 
 
+![ecosystem overview](https://raw.githubusercontent.com/DependencyTrack/dependency-track/master/docs/images/integrations.png)
+
+## Plugin Description 
 The Dependency-Track Jenkins plugin aids in publishing [CycloneDX](https://cyclonedx.org/) and [SPDX](https://spdx.org/) 
-BOMs as well as Dependency-Check XML reports to the Dependency-Track platform.
+Software Bill-of-Materials (SBOM) to the Dependency-Track platform.
+
+Publishing BoMs can be performed asynchronously or synchronously.
+
+Asynchronous publishing simply uploads the BoM to Dependency-Track and the job continues. Synchronous publishing waits for Dependency-Track to process the BoM after being uploaded. Synchronous publishing has the benefit of displaying interactive job trends and per build findings.
+
+![job trend](https://raw.githubusercontent.com/jenkinsci/dependency-track-plugin/master/docs/images/jenkins-job-trend.png)
+
+![findings](https://raw.githubusercontent.com/jenkinsci/dependency-track-plugin/master/docs/images/jenkins-job-findings.png)
+
+## Job Configuration
+Once configured with a valid URL and API key, simply configure a job to publish the artifact.
+   
+![job configuration](https://raw.githubusercontent.com/jenkinsci/dependency-track-plugin/master/docs/images/jenkins-job-publish.png)
+
+**Dependency-Track project:** Specifies the unique project ID to upload scan results to. This dropdown will be automatically populated with a list of projects.
+
+**Artifact:** Specifies the file to upload. Paths are relative from the Jenkins workspace.
+
+**Artifact Type:** Options are:
+* Software Bill of Material (CycloneDX or SPDX)
+* Dependency-Check Scan Result (XML)
+* Synchronous mode: Uploads a BoM to Dependency-Track and waits for Dependency-Track to process and return results. The results returned are identical to the auditable findings but exclude findings that have previously been suppressed. Analysis decisions and vulnerability details are included in the response. Synchronous mode is possible with Dependency-Track v3.3.1 and higher.
+
+![risk thresholds](https://raw.githubusercontent.com/jenkinsci/dependency-track-plugin/master/docs/images/jenkins-job-thresholds.png)
+
+When Synchronous mode is enabled, thresholds can be defined which can optionally put the job into an UNSTABLE or FAILURE state.
+
+**Total Findings:** Sets the threshold for the total number of critical, high, medium, or low severity findings allowed. If the number of findings equals or is greater than the threshold for any one of the severities, the job status will be changed to UNSTABLE or FAILURE.
+
+**New Findings:** Sets the threshold for the number of new critical, high, medium, or low severity findings allowed. If the number of new findings equals or is greater than the previous builds finding for any one of the severities, the job status will be changed to UNSTABLE or FAILURE.
+
+## Global Configuration
+To setup, navigate to Jenkins > System Configuration and complete the Dependency-Track section.
+
+![global configuration](https://raw.githubusercontent.com/jenkinsci/dependency-track-plugin/master/docs/images/jenkins-global-odt.png)
+
 
 Copyright & License
 -------------------
