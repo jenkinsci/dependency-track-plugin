@@ -15,7 +15,9 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
-public class ApiClientException extends Exception {
+import java.io.IOException;
+
+public class ApiClientException extends IOException {
 
     public ApiClientException(String message) {
         super(message);
