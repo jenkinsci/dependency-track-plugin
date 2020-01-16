@@ -15,6 +15,7 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
+import hudson.AbortException;
 import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -178,91 +179,90 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
 
         if (StringUtils.isBlank(artifact)) {
             logger.log(Messages.Builder_Artifact_Unspecified());
-            build.setResult(Result.FAILURE);
-            return;
+            throw new AbortException("Artifact not specified");
         }
         final FilePath artifactFilePath = new FilePath(filePath, artifact);
         if (projectId == null && (projectName == null || projectVersion == null)) {
             logger.log(Messages.Builder_Result_InvalidArguments());
-            build.setResult(Result.FAILURE);
+            throw new AbortException("Invalid arguments");
+        }
+
+        if (!filePath.exists()) {
+            logger.log(Messages.Builder_Artifact_NonExist());
+            throw new AbortException("Nonexistent artifact");
+        }
+        final ApiClient.UploadResult uploadResult = apiClient.upload(projectId, projectName, projectVersion,
+                artifactFilePath, isScanResult, autoCreateProject);
+
+        if (!uploadResult.isSuccess()) {
+            throw new AbortException("Dependency Track server upload failed");
+        }
+
+        if (synchronous && isScanResult) {
+            logger.log(Messages.Builder_Artifact_NonBomSync());
             return;
         }
-        try {
-            if (!filePath.exists()) {
-                logger.log(Messages.Builder_Artifact_NonExist());
-                build.setResult(Result.FAILURE);
-                return;
-            }
-            final ApiClient.UploadResult uploadResult = apiClient.upload(projectId, projectName, projectVersion,
-                    artifactFilePath, isScanResult, autoCreateProject);
 
-            if (!uploadResult.isSuccess()) {
-                build.setResult(Result.FAILURE); //todo: make configurable
-                return;
-            }
-
-            if (synchronous && isScanResult) {
-                logger.log(Messages.Builder_Artifact_NonBomSync());
-                return;
-            }
-
-            if (uploadResult.getToken() != null && synchronous) {
-                final long timeout = System.currentTimeMillis() + (60000L * getDescriptor().getDependencyTrackPollingTimeout());
+        if (uploadResult.getToken() != null && synchronous) {
+            final long timeout = System.currentTimeMillis() + (60000L * getDescriptor().getDependencyTrackPollingTimeout());
+            Thread.sleep(10000);
+            logger.log(Messages.Builder_Polling());
+            while (apiClient.isTokenBeingProcessed(uploadResult.getToken())) {
                 Thread.sleep(10000);
+                if (timeout < System.currentTimeMillis()) {
+                    logger.log(Messages.Builder_Polling_Timeout_Exceeded());
+                    // XXX this seems like a fatal error
+                    throw new AbortException("Dependency Track server response timeout");
+                }
                 logger.log(Messages.Builder_Polling());
-                while (apiClient.isTokenBeingProcessed(uploadResult.getToken())) {
-                    Thread.sleep(10000);
-                    if (timeout < System.currentTimeMillis()) {
-                        logger.log(Messages.Builder_Polling_Timeout_Exceeded());
-                        return;
-                    }
-                    logger.log(Messages.Builder_Polling());
-                }
-                if (this.projectId == null) {
-                    // project was auto-created. Fetch it's new uuid so that we can look up the results
-                    logger.log(Messages.Builder_Project_Lookup());
-                    final String jsonResponseBody = apiClient.lookupProject(this.projectName, this.projectVersion);
-                    this.projectId = new ProjectLookupParser(jsonResponseBody).parse().getProject().getUuid();
-                }
-                logger.log(Messages.Builder_Findings_Processing());
-                final String jsonResponseBody = apiClient.getFindings(this.projectId);
-                final FindingParser parser = new FindingParser(build.getNumber(), jsonResponseBody).parse();
-                final ArrayList<Finding> findings = parser.getFindings();
-                final SeverityDistribution severityDistribution = parser.getSeverityDistribution();
-                final ResultAction projectAction = new ResultAction(build, findings, severityDistribution);
-                build.addAction(projectAction);
+            }
+            if (this.projectId == null) {
+                // project was auto-created. Fetch it's new uuid so that we can look up the results
+                logger.log(Messages.Builder_Project_Lookup());
+                final String jsonResponseBody = apiClient.lookupProject(this.projectName, this.projectVersion);
+                this.projectId = new ProjectLookupParser(jsonResponseBody).parse().getProject().getUuid();
+            }
+            logger.log(Messages.Builder_Findings_Processing());
+            final String jsonResponseBody = apiClient.getFindings(this.projectId);
+            final FindingParser parser = new FindingParser(build.getNumber(), jsonResponseBody).parse();
+            final ArrayList<Finding> findings = parser.getFindings();
+            final SeverityDistribution severityDistribution = parser.getSeverityDistribution();
+            final ResultAction projectAction = new ResultAction(build, findings, severityDistribution);
+            build.addAction(projectAction);
 
-                // Get previous results and evaluate to thresholds
-                final Run previousBuild = build.getPreviousBuild();
-                final RiskGate riskGate = new RiskGate(getThresholds());
-                if (previousBuild != null) {
-                    final ResultAction previousResults = previousBuild.getAction(ResultAction.class);
-                    if (previousResults != null) {
-                        final Result result = riskGate.evaluate(
-                                previousResults.getSeverityDistribution(),
-                                previousResults.getFindings(),
-                                severityDistribution,
-                                findings);
-                        evaluateRiskGates(build, logger, result);
-                    } else { // Resolves https://issues.jenkins-ci.org/browse/JENKINS-58387
-                        final Result result = riskGate.evaluate(severityDistribution, new ArrayList<>(), severityDistribution, findings);
-                        evaluateRiskGates(build, logger, result);
-                    }
+            // Get previous results and evaluate to thresholds
+            final Run previousBuild = build.getPreviousBuild();
+            final RiskGate riskGate = new RiskGate(getThresholds());
+            if (previousBuild != null) {
+                final ResultAction previousResults = previousBuild.getAction(ResultAction.class);
+                if (previousResults != null) {
+                    final Result result = riskGate.evaluate(
+                            previousResults.getSeverityDistribution(),
+                            previousResults.getFindings(),
+                            severityDistribution,
+                            findings);
+                    evaluateRiskGates(build, logger, result);
                 } else { // Resolves https://issues.jenkins-ci.org/browse/JENKINS-58387
                     final Result result = riskGate.evaluate(severityDistribution, new ArrayList<>(), severityDistribution, findings);
                     evaluateRiskGates(build, logger, result);
                 }
+            } else { // Resolves https://issues.jenkins-ci.org/browse/JENKINS-58387
+                final Result result = riskGate.evaluate(severityDistribution, new ArrayList<>(), severityDistribution, findings);
+                evaluateRiskGates(build, logger, result);
             }
-        } catch (ApiClientException e) {
-            logger.log(e.getMessage());
-            build.setResult(Result.FAILURE); //todo: make configurable
         }
     }
 
-    private void evaluateRiskGates(final Run<?, ?> build, final ConsoleLogger logger, final Result result) {
+    private void evaluateRiskGates(final Run<?, ?> build, final ConsoleLogger logger, final Result result) throws AbortException {
         if (Result.SUCCESS != result) {
             logger.log(Messages.Builder_Threshold_Exceed());
-            build.setResult(result); // only set the result if the evaluation fails the threshold
+            if (Result.FAILURE == result) {
+                // attempt to halt the build
+                throw new AbortException("Severity distribution failure thresholds exceeded");
+            } else {
+                // allow build to proceed, but mark overall build unstable
+                build.setResult(result);
+            }
         }
     }
 
