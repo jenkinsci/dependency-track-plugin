@@ -62,16 +62,12 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
     private String projectName;
     private String projectVersion;
     private final String artifact;
-    private final String artifactType;
-    private final boolean isScanResult;
     private final boolean synchronous;
 
     // Fields in config.jelly must match the parameter names
     @DataBoundConstructor
-    public DependencyTrackPublisher(final String artifact, final String artifactType, final boolean synchronous) {
+    public DependencyTrackPublisher(final String artifact, final boolean synchronous) {
         this.artifact = artifact;
-        this.artifactType = artifactType;
-        this.isScanResult = artifactType == null || !"bom".equals(artifactType);
         this.synchronous = synchronous;
 
         this.projectId = null;
@@ -119,15 +115,6 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
     public String getArtifact() {
         return artifact;
     }
-
-    /**
-     * Retrieves the type of artifact (bom or scanResult). This is a per-build config item.
-     * This method must match the value in <tt>config.jelly</tt>.
-     */
-    public String getArtifactType() {
-        return artifactType;
-    }
-
 
     /**
      * Retrieves the project name to upload to. This is a per-build config item.
@@ -192,15 +179,10 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
             throw new AbortException("Nonexistent artifact");
         }
         final ApiClient.UploadResult uploadResult = apiClient.upload(projectId, projectName, projectVersion,
-                artifactFilePath, isScanResult, autoCreateProject);
+                artifactFilePath, autoCreateProject);
 
         if (!uploadResult.isSuccess()) {
             throw new AbortException("Dependency Track server upload failed");
-        }
-
-        if (synchronous && isScanResult) {
-            logger.log(Messages.Builder_Artifact_NonBomSync());
-            return;
         }
 
         if (uploadResult.getToken() != null && synchronous) {

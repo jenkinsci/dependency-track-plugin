@@ -43,7 +43,6 @@ public class ApiClient {
     private static final String PROJECT_FINDINGS_URL = "/api/v1/finding/project";
     private static final String BOM_TOKEN_URL = "/api/v1/bom/token";
     private static final String BOM_UPLOAD_URL = "/api/v1/bom";
-    private static final String SCAN_UPLOAD_URL = "/api/v1/scan";
     private static final String PROJECT_LOOKUP_URL = "/api/v1/project/lookup";
     private static final String PROJECT_LOOKUP_NAME_PARAM = "name";
     private static final String PROJECT_LOOKUP_VERSION_PARAM = "version";
@@ -101,7 +100,7 @@ public class ApiClient {
     }
 
     public UploadResult upload(String projectId, String projectName, String projectVersion, FilePath artifact,
-                          boolean isScanResult, boolean autoCreateProject) throws IOException {
+                          boolean autoCreateProject) throws IOException {
         final String encodedScan;
         try {
             encodedScan = Base64.encode(artifact.readToString().getBytes(StandardCharsets.UTF_8));
@@ -109,8 +108,6 @@ public class ApiClient {
             logger.log(Messages.Builder_Error_Processing() + ": " + e.getMessage());
             return new UploadResult(false);
         }
-        String uploadUrl = isScanResult ? SCAN_UPLOAD_URL : BOM_UPLOAD_URL;
-        String jsonAttribute = isScanResult ? "scan" : "bom";
         // Creates the JSON payload that will be sent to Dependency-Track
         JsonObjectBuilder jsonObjectBuilder = Json.createObjectBuilder();
         if (projectId != null) {
@@ -120,11 +117,11 @@ public class ApiClient {
             jsonObjectBuilder.add("projectVersion", projectVersion);
             jsonObjectBuilder.add("autoCreate", autoCreateProject);
         }
-        jsonObjectBuilder.add(jsonAttribute, encodedScan);
+        jsonObjectBuilder.add("bom", encodedScan);
         JsonObject jsonObject = jsonObjectBuilder.build();
         byte[] payloadBytes = jsonObject.toString().getBytes(StandardCharsets.UTF_8);
         // Creates the request and connects
-        final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + uploadUrl).openConnection();
+        final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + BOM_UPLOAD_URL).openConnection();
         conn.setDoOutput(true);
         conn.setDoInput(true);
         conn.setRequestMethod("PUT");

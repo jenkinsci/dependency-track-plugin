@@ -35,14 +35,11 @@ Once configured with a valid URL and API key, simply configure a job to publish 
 
 <p><br></p>
 
-**Dependency-Track project:** Specifies the unique project ID to upload scan results to. This dropdown will be automatically populated with a list of projects.
+**Dependency-Track project:** Specifies the unique project ID to upload SBOM to. This dropdown will be automatically populated with a list of projects.
 
 **Artifact:** Specifies the file to upload. Paths are relative from the Jenkins workspace.
 
-**Artifact Type:** Options are:
-* Software Bill of Material (CycloneDX or SPDX)
-* Dependency-Check Scan Result (XML)
-* Synchronous mode: Uploads a SBOM to Dependency-Track and waits for Dependency-Track to process and return results. The results returned are identical to the auditable findings but exclude findings that have previously been suppressed. Analysis decisions and vulnerability details are included in the response. Synchronous mode is possible with Dependency-Track v3.3.1 and higher.
+** Synchronous mode:** Uploads a SBOM to Dependency-Track and waits for Dependency-Track to process and return results. The results returned are identical to the auditable findings but exclude findings that have previously been suppressed. Analysis decisions and vulnerability details are included in the response. Synchronous mode is possible with Dependency-Track v3.3.1 and higher.
 
 <p><br></p>
 
@@ -71,6 +68,6 @@ Dependency-Track and the Dependency-Track Jenkins Plugin are Copyright (c) Steve
 
 Permission to modify and redistribute is granted under the terms of the Apache 2.0 license.
 
-[Supply Chain Component Analysis]: https://www.owasp.org/index.php/Component_Analysis
+[Supply Chain Component Analysis]: https://owasp.org/www-community/Component_Analysis
 [license-image]: https://img.shields.io/badge/license-apache%20v2-brightgreen.svg
 [license-url]: https://github.com/jenkinsci/dependency-track-plugin/blob/master/LICENSE.txt

@@ -24,13 +24,6 @@ limitations under the License.
         <f:textbox id="artifact"/>
     </f:entry>
 
-    <f:entry name="artifactType" title="${%artifactType.choose}" field="artifactType">
-        <select name="artifactType">
-            <option selected="${instance.artifactType.equals('bom')? 'true':null}" value="bom">${%artifactType.bom}</option>
-            <option selected="${instance.artifactType.equals('scanResult')? 'true':null}" value="scanResult">${%artifactType.scanResult}</option>
-        </select>
-    </f:entry>
-
     <f:entry title="${%enable.synchronous}" field="synchronous" description="" help="/plugin/dependency-track/help-dt-synchronous-mode.html">
         <f:checkbox name="synchronous" checked="${instance.isSynchronous()}"/>
     </f:entry>
