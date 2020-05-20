@@ -266,7 +266,7 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
      * The class is marked as public so that it can be accessed from views.
      * <p/>
      * <p/>
-     * See <tt>src/main/resources/org/jenkinsci/plugins/DependencyCheck/DependencyTrackBuilder/*.jelly</tt>
+     * See <tt>src/main/resources/org/jenkinsci/plugins/DependencyTrack/DependencyTrackBuilder/*.jelly</tt>
      * for the actual HTML fragment for the configuration screen.
      */
     @Extension @Symbol("dependencyTrackPublisher") // This indicates to Jenkins that this is an implementation of an extension point.
@@ -296,8 +296,8 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
         private int dependencyTrackPollingTimeout;
 
         /**
-         * Default constructor. Obtains the Descriptor used in DependencyCheckBuilder as this contains
-         * the global Dependency-Check Jenkins plugin configuration.
+         * Default constructor. Obtains the Descriptor used in DependencyTrackPublisher as this contains
+         * the global Dependency-Track Jenkins plugin configuration.
          */
         public DescriptorImpl() {
             super(DependencyTrackPublisher.class);
