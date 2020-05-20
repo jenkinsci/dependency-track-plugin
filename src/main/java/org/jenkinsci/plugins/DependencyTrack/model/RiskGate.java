@@ -16,6 +16,7 @@
 package org.jenkinsci.plugins.DependencyTrack.model;
 
 import hudson.model.Result;
+
 import java.io.Serializable;
 import java.util.List;
 
@@ -31,10 +32,11 @@ public class RiskGate implements Serializable {
 
     /**
      * Evaluates if the current results meet or exceed the defined threshold.
-     * @param previousDistribution
-     * @param previousFindings
-     * @param currentDistribution
-     * @param currentFindings
+     *
+     * @param previousDistribution previousDistribution
+     * @param previousFindings previousFindings
+     * @param currentDistribution currentDistribution
+     * @param currentFindings currentFindings
      * @return a Result
      */
     public Result evaluate(final SeverityDistribution previousDistribution,

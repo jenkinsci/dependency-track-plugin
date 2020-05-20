@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>3.23</version>
+        <version>4.1</version>
     </parent>
 
     <artifactId>dependency-track</artifactId>
@@ -41,7 +41,8 @@
     </licenses>
 
     <properties>
-        <jenkins.version>1.625.3</jenkins.version>
+        <jenkins.version>2.222.3</jenkins.version>
+        <configuration-as-code.version>1.40</configuration-as-code.version>
         <java.level>8</java.level>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
@@ -57,34 +58,29 @@
         </snapshotRepository>
     </distributionManagement>
 
-    <build>
-        <plugins>
-            <!-- TODO: Remove once Javadoc is fixed -->
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-javadoc-plugin</artifactId>
-                <configuration>
-                    <additionalparam>-Xdoclint:none</additionalparam>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
-
     <dependencies>
-        <dependency>
-            <groupId>org.jenkins-ci.plugins</groupId>
-            <artifactId>structs</artifactId>
-            <version>1.10</version>
-        </dependency>
         <dependency>
             <groupId>org.glassfish</groupId>
             <artifactId>javax.json</artifactId>
-            <version>1.0.4</version>
+            <version>1.1.4</version>
         </dependency>
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.7</version>
+            <version>3.10</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.jenkins</groupId>
+            <artifactId>configuration-as-code</artifactId>
+            <version>${configuration-as-code.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.jenkins.configuration-as-code</groupId>
+            <artifactId>test-harness</artifactId>
+            <version>${configuration-as-code.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
