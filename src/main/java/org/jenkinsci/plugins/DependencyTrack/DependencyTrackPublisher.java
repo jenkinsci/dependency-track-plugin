@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.jenkinsci.plugins.DependencyTrack;
 
 import hudson.AbortException;
@@ -40,6 +41,7 @@ import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+
 import javax.annotation.Nonnull;
 import javax.json.Json;
 import javax.json.JsonArray;
@@ -59,9 +61,13 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
     private static final long serialVersionUID = 480115440498217963L;
 
     private String projectId;
+
     private String projectName;
+
     private String projectVersion;
+
     private final String artifact;
+
     private final boolean synchronous;
 
     // Fields in config.jelly must match the parameter names
@@ -77,7 +83,9 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
 
     /**
      * Sets the project ID to upload to. This is a per-build config item. This
-     * method must match the value in <tt>config.jelly</tt>.
+     * method must match the value in <code>config.jelly</code>.
+     *
+     * @param projectId a build's projectId
      **/
     @DataBoundSetter
     public void setProjectId(String projectId) {
@@ -86,6 +94,8 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
 
     /**
      * Sets the project name to upload to. This is a per-build config item.
+     *
+     * @param projectName a build's project name to upload to
      **/
     @DataBoundSetter
     public void setProjectName(String projectName) {
@@ -94,6 +104,8 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
 
     /**
      * Sets the project name to upload to. This is a per-build config item.
+     *
+     * @param projectVersion a build's project version to upload to
      **/
     @DataBoundSetter
     public void setProjectVersion(String projectVersion) {
@@ -102,7 +114,9 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
 
     /**
      * Retrieves the project ID to upload to. This is a per-build config item.
-     * This method must match the value in <tt>config.jelly</tt>.
+     * This method must match the value in <code>config.jelly</code>.
+     *
+     * @return a build's projectId
      */
     public String getProjectId() {
         return projectId;
@@ -110,7 +124,9 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
 
     /**
      * Retrieves the path and filename of the artifact. This is a per-build config item.
-     * This method must match the value in <tt>config.jelly</tt>.
+     * This method must match the value in <code>config.jelly</code>.
+     *
+     * @return a build's path and filename of the artifact
      */
     public String getArtifact() {
         return artifact;
@@ -118,7 +134,9 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
 
     /**
      * Retrieves the project name to upload to. This is a per-build config item.
-     * This method must match the value in <tt>config.jelly</tt>.
+     * This method must match the value in <code>config.jelly</code>.
+     *
+     * @return a build's project name to upload to
      */
     public String getProjectName() {
         return projectName;
@@ -126,15 +144,19 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
 
     /**
      * Retrieves the project version to upload to. This is a per-build config item.
-     * This method must match the value in <tt>config.jelly</tt>.
+     * This method must match the value in <code>config.jelly</code>.
+     *
+     * @return a build's project version to upload to
      */
     public String getProjectVersion() {
         return projectVersion;
     }
 
     /**
-     * Retrieves is synchronous mode is enabled or not. This is a per-build config item.
-     * This method must match the value in <tt>config.jelly</tt>.
+     * Retrieves whether synchronous mode is enabled or not. This is a per-build config item.
+     * This method must match the value in <code>config.jelly</code>.
+     *
+     * @return {@code true} if synchronous mode is enabled for this build
      */
     public boolean isSynchronous() {
         return synchronous;
@@ -262,14 +284,13 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
     }
 
     /**
-     * Descriptor for {@link DependencyTrackPublisher}. Used as a singleton.
+     * <p>Descriptor for {@link DependencyTrackPublisher}. Used as a singleton.
      * The class is marked as public so that it can be accessed from views.
-     * <p/>
-     * <p/>
-     * See <tt>src/main/resources/org/jenkinsci/plugins/DependencyTrack/DependencyTrackBuilder/*.jelly</tt>
-     * for the actual HTML fragment for the configuration screen.
+     * <p>See <code>src/main/resources/org/jenkinsci/plugins/DependencyCheck/DependencyTrackBuilder/*.jelly</code> for the actual HTML
+     * fragment for the configuration screen.
      */
-    @Extension @Symbol("dependencyTrackPublisher") // This indicates to Jenkins that this is an implementation of an extension point.
+    @Extension
+    @Symbol("dependencyTrackPublisher") // This indicates to Jenkins that this is an implementation of an extension point.
     public static final class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Serializable {
 
         private static final long serialVersionUID = -2018722914973282748L;
@@ -296,8 +317,8 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
         private int dependencyTrackPollingTimeout;
 
         /**
-         * Default constructor. Obtains the Descriptor used in DependencyTrackPublisher as this contains
-         * the global Dependency-Track Jenkins plugin configuration.
+         * Default constructor. Obtains the Descriptor used in DependencyCheckBuilder as this contains
+         * the global Dependency-Check Jenkins plugin configuration.
          */
         public DescriptorImpl() {
             super(DependencyTrackPublisher.class);
@@ -311,6 +332,8 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
 
         /**
          * Retrieve the projects to populate the dropdown.
+         *
+         * @return ListBoxModel
          */
         public ListBoxModel doFillProjectIdItems() {
             final ListBoxModel projects = new ListBoxModel();
@@ -368,6 +391,7 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
 
         /**
          * Performs input validation when submitting the global config
+         *
          * @param value The value of the URL as specified in the global config
          * @return a FormValidation object
          */
@@ -379,12 +403,13 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
          * Performs an on-the-fly check of the Dependency-Track URL and api key
          * parameters by making a simple call to the server and validating
          * the response code.
-         * @param dependencyTrackUrl the base URL to Dependency-Track
+         *
+         * @param dependencyTrackUrl    the base URL to Dependency-Track
          * @param dependencyTrackApiKey the API key to use for authentication
          * @return FormValidation
          */
         public FormValidation doTestConnection(@QueryParameter final String dependencyTrackUrl,
-                                               @QueryParameter final String dependencyTrackApiKey) {
+            @QueryParameter final String dependencyTrackApiKey) {
             try {
                 final String baseUrl = PluginUtil.parseBaseUrl(dependencyTrackUrl);
                 final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + "/api/v1/project").openConnection();
@@ -408,19 +433,41 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
 
         /**
          * Takes the /apply/save step in the global config and saves the JSON data.
-         * @param req the request
+         *
+         * @param req      the request
          * @param formData the form data
          * @return a boolean
          * @throws FormException an exception validating form input
          */
         @Override
         public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
+            req.bindJSON(this, formData);
             dependencyTrackUrl = formData.getString("dependencyTrackUrl");
             dependencyTrackApiKey = formData.getString("dependencyTrackApiKey");
             dependencyTrackAutoCreateProjects = formData.getBoolean("dependencyTrackAutoCreateProjects");
             dependencyTrackPollingTimeout = formData.getInt("dependencyTrackPollingTimeout");
             save();
             return super.configure(req, formData);
+        }
+
+        @DataBoundSetter
+        public void setDependencyTrackUrl(String dependencyTrackUrl) {
+            this.dependencyTrackUrl = dependencyTrackUrl;
+        }
+
+        @DataBoundSetter
+        public void setDependencyTrackApiKey(String dependencyTrackApiKey) {
+            this.dependencyTrackApiKey = dependencyTrackApiKey;
+        }
+
+        @DataBoundSetter
+        public void setDependencyTrackAutoCreateProjects(boolean dependencyTrackAutoCreateProjects) {
+            this.dependencyTrackAutoCreateProjects = dependencyTrackAutoCreateProjects;
+        }
+
+        @DataBoundSetter
+        public void setDependencyTrackPollingTimeout(int dependencyTrackPollingTimeout) {
+            this.dependencyTrackPollingTimeout = dependencyTrackPollingTimeout;
         }
 
         /**
@@ -432,29 +479,28 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
         }
 
         /**
-         * This method returns the global configuration for dependencyTrackUrl.
+         * @return global configuration for dependencyTrackUrl
          */
         public String getDependencyTrackUrl() {
             return PluginUtil.parseBaseUrl(dependencyTrackUrl);
         }
 
         /**
-         * This method returns the global configuration for dependencyTrackApiKey.
+         * @return global configuration for dependencyTrackApiKey.
          */
         public String getDependencyTrackApiKey() {
             return dependencyTrackApiKey;
         }
 
         /**
-         * This method returns the global configuration for
-         * dependencyTrackAutoCreateProjects.
+         * @return the global configuration for dependencyTrackAutoCreateProjects.
          */
         public boolean isDependencyTrackAutoCreateProjects() {
             return dependencyTrackAutoCreateProjects;
         }
 
         /**
-         * This method returns the global configuration for dependencyTrackPollingTimeout.
+         * @return global configuration for dependencyTrackPollingTimeout.
          */
         public int getDependencyTrackPollingTimeout() {
             if (dependencyTrackPollingTimeout <= 0) {
