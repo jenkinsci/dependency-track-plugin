@@ -61,13 +61,10 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
     private static final long serialVersionUID = 480115440498217963L;
 
     private String projectId;
-
     private String projectName;
-
     private String projectVersion;
-
     private final String artifact;
-
+    private final String artifactType; // keep for backward compatibility
     private final boolean synchronous;
 
     // Fields in config.jelly must match the parameter names
@@ -75,6 +72,20 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
     public DependencyTrackPublisher(final String artifact, final boolean synchronous) {
         this.artifact = artifact;
         this.synchronous = synchronous;
+        this.artifactType = null;
+
+        this.projectId = null;
+        this.projectName = null;
+        this.projectVersion = null;
+    }
+
+    // Fields in config.jelly must match the parameter names
+    // keep for backward compatibility
+    @DataBoundConstructor
+    public DependencyTrackPublisher(final String artifact, final String artifactType, final boolean synchronous) {
+        this.artifact = artifact;
+        this.synchronous = synchronous;
+        this.artifactType = artifactType;
 
         this.projectId = null;
         this.projectName = null;
@@ -177,6 +188,10 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
                         @Nonnull final TaskListener listener) throws InterruptedException, IOException {
 
         ConsoleLogger logger = new ConsoleLogger(listener);
+        if (artifactType != null) {
+            logger.log("Artifact type was specified. This option is no longer supported and will be ignored.");
+        }
+
         final ApiClient apiClient = new ApiClient(
                 getDescriptor().getDependencyTrackUrl(), getDescriptor().getDependencyTrackApiKey(), logger);
 
