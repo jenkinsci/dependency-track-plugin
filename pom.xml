@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>4.1</version>
+        <version>4.12</version>
     </parent>
 
     <artifactId>dependency-track</artifactId>
@@ -42,7 +42,7 @@
 
     <properties>
         <jenkins.version>2.222.3</jenkins.version>
-        <configuration-as-code.version>1.40</configuration-as-code.version>
+        <configuration-as-code.version>1.44</configuration-as-code.version>
         <java.level>8</java.level>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     </properties>
@@ -67,7 +67,7 @@
         <dependency>
             <groupId>org.apache.commons</groupId>
             <artifactId>commons-lang3</artifactId>
-            <version>3.10</version>
+            <version>3.11</version>
         </dependency>
 
         <dependency>
