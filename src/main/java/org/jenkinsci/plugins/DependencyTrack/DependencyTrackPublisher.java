@@ -210,7 +210,7 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
             throw new AbortException("Invalid arguments");
         }
 
-        if (!filePath.exists()) {
+        if (!artifactFilePath.exists()) {
             logger.log(Messages.Builder_Artifact_NonExist());
             throw new AbortException("Nonexistent artifact");
         }
