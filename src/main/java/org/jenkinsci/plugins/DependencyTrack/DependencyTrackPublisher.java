@@ -81,7 +81,6 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
 
     // Fields in config.jelly must match the parameter names
     // keep for backward compatibility
-    @DataBoundConstructor
     public DependencyTrackPublisher(final String artifact, final String artifactType, final boolean synchronous) {
         this.artifact = artifact;
         this.synchronous = synchronous;
