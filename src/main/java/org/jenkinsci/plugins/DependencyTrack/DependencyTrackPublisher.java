@@ -205,7 +205,7 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
             throw new AbortException("Artifact not specified");
         }
         final FilePath artifactFilePath = new FilePath(filePath, artifact);
-        if (projectId == null && (projectName == null || projectVersion == null)) {
+        if (StringUtils.isBlank(projectId) && (StringUtils.isBlank(projectName) || StringUtils.isBlank(projectVersion))) {
             logger.log(Messages.Builder_Result_InvalidArguments());
             throw new AbortException("Invalid arguments");
         }
