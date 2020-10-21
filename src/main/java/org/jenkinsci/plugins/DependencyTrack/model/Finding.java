@@ -16,7 +16,9 @@
 package org.jenkinsci.plugins.DependencyTrack.model;
 
 import java.io.Serializable;
+import lombok.Value;
 
+@Value
 public class Finding implements Serializable {
 
     private static final long serialVersionUID = 5309487290800777874L;
@@ -26,26 +28,4 @@ public class Finding implements Serializable {
     private final Analysis analysis;
     private final String matrix;
 
-    public Finding(Component component, Vulnerability vulnerability, Analysis analysis, String matrix) {
-        this.component = component;
-        this.vulnerability = vulnerability;
-        this.analysis = analysis;
-        this.matrix = matrix;
-    }
-
-    public Component getComponent() {
-        return component;
-    }
-
-    public Vulnerability getVulnerability() {
-        return vulnerability;
-    }
-
-    public Analysis getAnalysis() {
-        return analysis;
-    }
-
-    public String getMatrix() {
-        return matrix;
-    }
 }

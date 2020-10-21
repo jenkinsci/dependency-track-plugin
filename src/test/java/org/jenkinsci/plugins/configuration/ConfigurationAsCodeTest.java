@@ -4,6 +4,7 @@ import io.jenkins.plugins.casc.misc.ConfiguredWithCode;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
 import jenkins.model.Jenkins;
 import org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher;
+import org.jenkinsci.plugins.DependencyTrack.DescriptorImpl;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -20,8 +21,7 @@ public class ConfigurationAsCodeTest {
     @ConfiguredWithCode("dependency_track_test_config.yml")
     public void shouldSupportConfigurationAsCode() throws Exception {
         Jenkins jenkins = Jenkins.get();
-        DependencyTrackPublisher.DescriptorImpl descriptor =
-            (DependencyTrackPublisher.DescriptorImpl) jenkins.getDescriptor(DependencyTrackPublisher.class);
+        DescriptorImpl descriptor = (DescriptorImpl) jenkins.getDescriptor(DependencyTrackPublisher.class);
 
         assertEquals("https://example.org/deptrack", descriptor.getDependencyTrackUrl());
         assertEquals("R4nD0m", descriptor.getDependencyTrackApiKey());

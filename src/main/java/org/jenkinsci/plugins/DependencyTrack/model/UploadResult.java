@@ -1,11 +1,11 @@
 /*
- * This file is part of Dependency-Track Jenkins plugin.
+ * Copyright 2020 OWASP.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,15 +15,21 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.model;
 
-import java.io.Serializable;
 import lombok.Value;
 
 @Value
-public class Analysis implements Serializable {
+public class UploadResult {
 
-    private static final long serialVersionUID = 9143258740219702420L;
+	private final boolean success;
+	private final String token;
 
-    private final String state;
-    private final boolean isSuppressed;
+	public UploadResult(boolean success) {
+		this(success, null);
+	}
+
+	public UploadResult(boolean success, String token) {
+		this.success = success;
+		this.token = token;
+	}
 
 }

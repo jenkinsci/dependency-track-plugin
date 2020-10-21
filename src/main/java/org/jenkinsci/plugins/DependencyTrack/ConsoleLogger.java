@@ -26,7 +26,11 @@ public class ConsoleLogger extends LineTransformationOutputStream {
     private transient final PrintStream logger;
 
     public ConsoleLogger(TaskListener listener) {
-        this.logger = listener.getLogger();
+        logger = listener.getLogger();
+    }
+    
+    public ConsoleLogger() {
+        logger = System.err;
     }
 
     /**
@@ -39,6 +43,9 @@ public class ConsoleLogger extends LineTransformationOutputStream {
 
     /**
      * Changes each new line to append the prefix before logging
+     * @param b
+     * @param len
+     * @throws java.io.IOException
      */
     @Override
     protected void eol(byte[] b, int len) throws IOException {

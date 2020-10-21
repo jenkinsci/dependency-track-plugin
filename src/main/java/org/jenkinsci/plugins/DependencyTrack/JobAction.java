@@ -26,7 +26,7 @@ import java.util.List;
 
 public class JobAction implements Action {
 
-    private Job<?, ?> project;
+    private final Job<?, ?> project;
 
     public JobAction(final Job<?, ?> project) {
         this.project = project;
@@ -56,7 +56,6 @@ public class JobAction implements Action {
      *
      * @return {@code true} if the trend is visible, false otherwise
      */
-    @SuppressWarnings("unused") // Called by jelly view
     public boolean isTrendVisible() {
         final List<? extends Run<?, ?>> builds = project.getBuilds();
         int count = 0;
@@ -79,7 +78,6 @@ public class JobAction implements Action {
      * @return the UI model as JSON
      */
     @JavaScriptMethod
-    @SuppressWarnings("unused") // Called by jelly view
     public JSONArray getSeverityDistributionTrend() {
         final List<SeverityDistribution> severityDistributions = new ArrayList<>();
         final List<? extends Run<?, ?>> builds = project.getBuilds();

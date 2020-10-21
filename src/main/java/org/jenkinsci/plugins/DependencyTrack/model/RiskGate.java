@@ -24,7 +24,7 @@ public class RiskGate implements Serializable {
 
     private static final long serialVersionUID = 171256230735670985L;
 
-    private Thresholds thresholds;
+    private final Thresholds thresholds;
 
     public RiskGate(Thresholds thresholds) {
         this.thresholds = thresholds;

@@ -15,14 +15,16 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.transformer;
 
+import java.util.List;
+import java.util.Locale;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Analysis;
 import org.jenkinsci.plugins.DependencyTrack.model.Component;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.Severity;
 import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
-import java.util.List;
 
 /**
  * Converts a list of Findings into a data structure suitable
@@ -192,16 +194,6 @@ public class FindingsTransformer {
     }
 
     private String convert(String str) {
-        char ch[] = str.toCharArray();
-        for (int i = 0; i < str.length(); i++) {
-            if (i == 0 && ch[i] != ' ' || ch[i] != ' ' && ch[i - 1] == ' ') {
-                if (ch[i] >= 'a' && ch[i] <= 'z') {
-                    ch[i] = (char)(ch[i] - 'a' + 'A');
-                }
-            } else if (ch[i] >= 'A' && ch[i] <= 'Z') {
-                ch[i] = (char) (ch[i] + 'a' - 'A');
-            }
-        }
-        return new String(ch);
+        return StringUtils.capitalize(str.toLowerCase(Locale.ROOT));
     }
 }

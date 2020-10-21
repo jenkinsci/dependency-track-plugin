@@ -15,85 +15,74 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
+import java.util.List;
+import java.util.stream.Collectors;
+import lombok.experimental.UtilityClass;
 import net.sf.json.JSONArray;
+import net.sf.json.JSONNull;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Analysis;
 import org.jenkinsci.plugins.DependencyTrack.model.Component;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.Severity;
-import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
-import java.util.ArrayList;
 
-public class FindingParser {
+@UtilityClass
+class FindingParser {
 
-    private final String jsonResponse;
-    private ArrayList<Finding> findings;
-    private SeverityDistribution severityDistribution;
-
-    public FindingParser(int buildNumber, String jsonResponse) {
-        this.severityDistribution = new SeverityDistribution(buildNumber);
-        this.jsonResponse = jsonResponse;
-    }
-
-    public FindingParser parse() {
-        final ArrayList<Finding> findings = new ArrayList<>();
+    List<Finding> parse(String jsonResponse) {
         final JSONArray jsonArray = JSONArray.fromObject(jsonResponse);
-        for (int i = 0; i < jsonArray.size(); i++) {
-            final Finding finding = parseFinding(jsonArray.getJSONObject(i));
-            if (!finding.getAnalysis().isSuppressed()) {
-                findings.add(finding);
-                severityDistribution.add(finding.getVulnerability().getSeverity());
-            }
-        }
-        this.findings = findings;
-        return this;
+		return jsonArray.stream()
+                .map(o -> parseFinding((JSONObject) o))
+                .collect(Collectors.toList());
     }
 
     private Finding parseFinding(JSONObject json) {
         final Component component = parseComponent(json.getJSONObject("component"));
         final Vulnerability vulnerability = parseVulnerability(json.getJSONObject("vulnerability"));
         final Analysis analysis = parseAnalysis(json.optJSONObject("analysis"));
-        final String matrix = StringUtils.trimToNull(json.getString("matrix"));
+        final String matrix = getKeyOrNull(json, "matrix");
         return new Finding(component, vulnerability, analysis, matrix);
     }
 
     private Component parseComponent(JSONObject json) {
-        final String uuid = StringUtils.trimToNull(json.getString("uuid"));
-        final String name = StringUtils.trimToNull(json.getString("name"));
-        final String group = StringUtils.trimToNull(json.optString("group"));
-        final String version = StringUtils.trimToNull(json.optString("version"));
-        final String purl = StringUtils.trimToNull(json.optString("purl"));
+        final String uuid = getKeyOrNull(json, "uuid");
+        final String name = getKeyOrNull(json, "name");
+        final String group = getKeyOrNull(json, "group");
+        final String version = getKeyOrNull(json, "version");
+        final String purl = getKeyOrNull(json, "purl");
         return new Component(uuid, name, group, version, purl);
     }
 
     private Vulnerability parseVulnerability(JSONObject json) {
-        final String uuid = StringUtils.trimToNull(json.getString("uuid"));
-        final String source = StringUtils.trimToNull(json.getString("source"));
-        final String vulnId = StringUtils.trimToNull(json.optString("vulnId"));
-        final String title = StringUtils.trimToNull(json.optString("title"));
-        final String subtitle = StringUtils.trimToNull(json.optString("subtitle"));
-        final String description = StringUtils.trimToNull(json.optString("description"));
-        final String recommendation = StringUtils.trimToNull(json.optString("recommendation"));
+        final String uuid = getKeyOrNull(json, "uuid");
+        final String source = getKeyOrNull(json, "source");
+        final String vulnId = getKeyOrNull(json, "vulnId");
+        final String title = getKeyOrNull(json, "title");
+        final String subtitle = getKeyOrNull(json, "subtitle");
+        final String description = getKeyOrNull(json, "description");
+        final String recommendation = getKeyOrNull(json, "recommendation");
         final Severity severity = Severity.valueOf(json.optString("severity"));
         final Integer severityRank = json.optInt("severityRank");
         final Integer cweId = json.optInt("cweId");
-        final String cweName = StringUtils.trimToNull(json.optString("cweName"));
+        final String cweName = getKeyOrNull(json, "cweName");
         return new Vulnerability(uuid, source, vulnId, title, subtitle, description, recommendation, severity, severityRank, cweId, cweName);
     }
 
     private Analysis parseAnalysis(JSONObject json) {
-        final String state = StringUtils.trimToNull(json.optString("state"));
+        final String state = getKeyOrNull(json, "state");
         final boolean isSuppressed = json.optBoolean("isSuppressed", false);
         return new Analysis(state, isSuppressed);
     }
 
-    public ArrayList<Finding> getFindings() {
-        return findings;
-    }
-
-    public SeverityDistribution getSeverityDistribution() {
-        return severityDistribution;
+    private String getKeyOrNull(JSONObject json, String key) {
+        // key can be null. but it may also be JSONNull!
+        // optString and getString do not check if v is JSONNull. instead they return just v.toString() which will be "null"!
+        Object v = json.opt(key);
+        if (v instanceof JSONNull) {
+            v = null;
+        }
+        return v == null ? null : StringUtils.trimToNull(v.toString());
     }
 }

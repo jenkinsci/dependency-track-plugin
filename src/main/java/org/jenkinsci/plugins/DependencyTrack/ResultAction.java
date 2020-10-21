@@ -25,19 +25,19 @@ import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.jenkinsci.plugins.DependencyTrack.transformer.FindingsTransformer;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import lombok.Getter;
 
+@Getter
 public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction {
 
     private transient Run<?, ?> run; // transient: see RunAction2, and JENKINS-45892
-    private ArrayList<Finding> findings;
-    private SeverityDistribution severityDistribution;
-    private List<JobAction> projectActions;
+    private final List<Finding> findings;
+    private final SeverityDistribution severityDistribution;
 
-    public ResultAction(Run<?, ?> build, ArrayList<Finding> findings, SeverityDistribution severityDistribution) {
+    public ResultAction(Run<?, ?> build, List<Finding> findings, SeverityDistribution severityDistribution) {
         this.findings = findings;
         this.severityDistribution = severityDistribution;
     }
@@ -70,18 +70,6 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
     @Override
     public Collection<? extends Action> getProjectActions() {
         return Collections.singleton(new JobAction(run.getParent()));
-    }
-
-    public Run getRun() {
-        return run;
-    }
-
-    public SeverityDistribution getSeverityDistribution() {
-        return severityDistribution;
-    }
-
-    public List<Finding> getFindings() {
-        return findings;
     }
 
     /**

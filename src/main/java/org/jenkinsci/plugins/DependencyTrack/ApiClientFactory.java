@@ -1,11 +1,11 @@
 /*
- * This file is part of Dependency-Track Jenkins plugin.
+ * Copyright 2020 OWASP.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -13,17 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jenkinsci.plugins.DependencyTrack.model;
+package org.jenkinsci.plugins.DependencyTrack;
 
-import java.io.Serializable;
-import lombok.Value;
+/**
+ *
+ * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
+ */
+@FunctionalInterface
+interface ApiClientFactory {
 
-@Value
-public class Analysis implements Serializable {
-
-    private static final long serialVersionUID = 9143258740219702420L;
-
-    private final String state;
-    private final boolean isSuppressed;
-
+    ApiClient create(final String baseUrl, final String apiKey, final ConsoleLogger logger);
 }

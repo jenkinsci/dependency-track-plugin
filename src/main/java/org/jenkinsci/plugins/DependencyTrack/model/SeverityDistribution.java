@@ -16,50 +16,26 @@
 package org.jenkinsci.plugins.DependencyTrack.model;
 
 import java.io.Serializable;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
+@RequiredArgsConstructor
+@EqualsAndHashCode
+@Getter
+@ToString
 public class SeverityDistribution implements Serializable {
 
     private static final long serialVersionUID = 8144779189066349036L;
 
-    private int buildNumber;
+    private final int buildNumber;
     private int critical;
     private int high;
     private int medium;
     private int low;
     private int info;
     private int unassigned;
-
-    public SeverityDistribution(int buildNumber) {
-        this.buildNumber = buildNumber;
-    }
-
-    public int getBuildNumber() {
-        return buildNumber;
-    }
-
-    public int getCritical() {
-        return critical;
-    }
-
-    public int getHigh() {
-        return high;
-    }
-
-    public int getMedium() {
-        return medium;
-    }
-
-    public int getLow() {
-        return low;
-    }
-
-    public int getInfo() {
-        return info;
-    }
-
-    public int getUnassigned() {
-        return unassigned;
-    }
 
     public void add(Severity severity) {
         if (Severity.CRITICAL == severity) {

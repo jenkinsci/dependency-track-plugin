@@ -16,7 +16,9 @@
 package org.jenkinsci.plugins.DependencyTrack.model;
 
 import java.io.Serializable;
+import lombok.Value;
 
+@Value
 public class Component implements Serializable {
 
     private static final long serialVersionUID = -4825926766668357091L;
@@ -27,31 +29,4 @@ public class Component implements Serializable {
     private final String version;
     private final String purl;
 
-    public Component(String uuid, String name, String group, String version, String purl) {
-        this.uuid = uuid;
-        this.name = name;
-        this.group = group;
-        this.version = version;
-        this.purl = purl;
-    }
-
-    public String getUuid() {
-        return uuid;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getGroup() {
-        return group;
-    }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public String getPurl() {
-        return purl;
-    }
 }
