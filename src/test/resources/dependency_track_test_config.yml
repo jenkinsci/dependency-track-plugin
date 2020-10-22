@@ -4,3 +4,4 @@ unclassified:
     dependencyTrackApiKey: R4nD0m
     dependencyTrackAutoCreateProjects: false
     dependencyTrackPollingTimeout: 5
+    dependencyTrackPollingInterval: 1

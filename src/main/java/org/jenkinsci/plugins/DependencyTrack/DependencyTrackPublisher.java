@@ -142,10 +142,11 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
 
     private void publishAnalysisResult(ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build) throws InterruptedException, ApiClientException, AbortException {
         final long timeout = System.currentTimeMillis() + (60000L * getDescriptor().getDependencyTrackPollingTimeout());
-        Thread.sleep(10000);
+        final long interval = 1000L * getDescriptor().getDependencyTrackPollingInterval();
+        Thread.sleep(interval);
         logger.log(Messages.Builder_Polling());
         while (apiClient.isTokenBeingProcessed(token)) {
-            Thread.sleep(10000);
+            Thread.sleep(interval);
             if (timeout < System.currentTimeMillis()) {
                 logger.log(Messages.Builder_Polling_Timeout_Exceeded());
                 // XXX this seems like a fatal error

@@ -8,9 +8,7 @@ import org.jenkinsci.plugins.DependencyTrack.DescriptorImpl;
 import org.junit.Rule;
 import org.junit.Test;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class ConfigurationAsCodeTest {
 
@@ -23,9 +21,12 @@ public class ConfigurationAsCodeTest {
         Jenkins jenkins = Jenkins.get();
         DescriptorImpl descriptor = (DescriptorImpl) jenkins.getDescriptor(DependencyTrackPublisher.class);
 
-        assertEquals("https://example.org/deptrack", descriptor.getDependencyTrackUrl());
-        assertEquals("R4nD0m", descriptor.getDependencyTrackApiKey());
-        assertFalse(descriptor.isDependencyTrackAutoCreateProjects());
-        assertEquals(5, descriptor.getDependencyTrackPollingTimeout());
+        assertThat(descriptor)
+                .returns("https://example.org/deptrack", DescriptorImpl::getDependencyTrackUrl)
+                .returns("R4nD0m", DescriptorImpl::getDependencyTrackApiKey)
+                .returns(false, DescriptorImpl::isDependencyTrackAutoCreateProjects)
+                .returns(5, DescriptorImpl::getDependencyTrackPollingTimeout)
+                .returns(1, DescriptorImpl::getDependencyTrackPollingInterval)
+                ;
     }
 }

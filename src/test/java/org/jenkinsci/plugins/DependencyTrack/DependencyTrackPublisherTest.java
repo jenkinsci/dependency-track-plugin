@@ -24,7 +24,6 @@ import io.jenkins.plugins.casc.misc.JenkinsConfiguredRule;
 import java.io.File;
 import java.io.IOException;
 import java.util.Collections;
-import org.jenkinsci.plugins.DependencyTrack.model.Project;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
 import org.junit.Before;
 import org.junit.Rule;

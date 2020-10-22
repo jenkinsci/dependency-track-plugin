@@ -167,7 +167,7 @@ public class FindingsTransformer {
     private String generateSeverityField(Severity severity) {
         return "<div style=\"height:24px;margin:-4px;\">\n" +
                 "<div class=\"severity-" + severity.name().toLowerCase() + "-bg text-center pull-left\" style=\"width:24px; height:24px; color:#ffffff\">\n" +
-                "  <i class=\"fa fa-bug\" style=\"font-size:12px; padding:6px\" aria-hidden=\"true\"></i>\n" +
+                "  <i class=\"fas fa-bug\" style=\"font-size:12px; padding:6px\" aria-hidden=\"true\"></i>\n" +
                 "</div>\n" +
                 "<div class=\"text-center pull-left\" style=\"height:24px;\">\n" +
                 "  <div style=\"font-size:12px; padding:4px\"><span class=\"severity-value\">" + convert(severity.name()) + "</span></div>\n" +

@@ -78,6 +78,13 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
      */
     @Setter(onMethod_ = {@DataBoundSetter})
     private int dependencyTrackPollingTimeout;
+    
+    /**
+     * Defines the number of seconds to wait between two checks for 
+     * Dependency-Track to process a job (Synchronous Publishing Mode).
+     */
+    @Setter(onMethod_ = {@DataBoundSetter})
+    private int dependencyTrackPollingInterval;
 
     /**
      * Default constructor. Obtains the Descriptor used in
@@ -194,6 +201,16 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
             return 5;
         }
         return dependencyTrackPollingTimeout;
+    }
+
+    /**
+     * @return global configuration for dependencyTrackPollingInterval.
+     */
+    public int getDependencyTrackPollingInterval() {
+        if (dependencyTrackPollingInterval <= 0) {
+            return 10;
+        }
+        return dependencyTrackPollingInterval;
     }
     
     private ApiClient getClient(final String baseUrl, final String apiKey) {
