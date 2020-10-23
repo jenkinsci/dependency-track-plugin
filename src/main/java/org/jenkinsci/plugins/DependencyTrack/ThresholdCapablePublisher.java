@@ -18,17 +18,14 @@ package org.jenkinsci.plugins.DependencyTrack;
 import hudson.tasks.Recorder;
 import org.jenkinsci.plugins.DependencyTrack.model.Thresholds;
 import org.kohsuke.stapler.DataBoundSetter;
-import java.io.Serializable;
-import lombok.Data;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.Setter;
 
-@Data
+@Getter
 @Setter(onMethod_ = {@DataBoundSetter})
 @EqualsAndHashCode(callSuper = false)
-public abstract class ThresholdCapablePublisher extends Recorder implements Serializable {
-
-    private static final long serialVersionUID = 8844465732219790336L;
+abstract class ThresholdCapablePublisher extends Recorder {
 
     private Integer unstableTotalCritical;
     private Integer unstableTotalHigh;
