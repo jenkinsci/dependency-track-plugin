@@ -16,7 +16,6 @@
 package org.jenkinsci.plugins.DependencyTrack;
 
 import hudson.FilePath;
-import hudson.remoting.Base64;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -35,6 +34,7 @@ import java.util.stream.Collectors;
 import lombok.RequiredArgsConstructor;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
@@ -186,7 +186,7 @@ public class ApiClient {
                           boolean autoCreateProject) throws IOException {
         final String encodedScan;
         try {
-            encodedScan = Base64.encode(artifact.readToString().getBytes(StandardCharsets.UTF_8));
+            encodedScan = Base64.encodeBase64String(artifact.readToString().getBytes(StandardCharsets.UTF_8));
         } catch (IOException | InterruptedException e) {
             logger.log(Messages.Builder_Error_Processing() + ": " + e.getMessage());
             return new UploadResult(false);

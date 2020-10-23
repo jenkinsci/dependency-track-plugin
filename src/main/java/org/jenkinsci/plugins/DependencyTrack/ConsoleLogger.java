@@ -22,7 +22,7 @@ import java.io.PrintStream;
 
 public class ConsoleLogger extends LineTransformationOutputStream {
 
-    private static final String PREFIX = "[" + DependencyTrackPlugin.PLUGIN_NAME + "] ";
+    private static final String PREFIX = "[DependencyTrack] ";
     private transient final PrintStream logger;
 
     public ConsoleLogger(TaskListener listener) {
