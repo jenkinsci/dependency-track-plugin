@@ -64,6 +64,7 @@ public class FindingsTransformer {
         c4.put("title", "Vulnerability");
         c4.put("visible", true);
         c4.put("filterable", true);
+        c4.put("type", "html");
         c4.put("sortValue", "vulnerability.vulnId");
         columns.add(c4);
 
@@ -72,6 +73,9 @@ public class FindingsTransformer {
         c5.put("title", "Severity");
         c5.put("visible", true);
         c5.put("filterable", true);
+        c5.put("sorted", true);
+        c5.put("direction", "ASC");
+        c5.put("type", "html");
         c5.put("sortValue", "vulnerability.severityRank");
         columns.add(c5);
 
@@ -165,13 +169,9 @@ public class FindingsTransformer {
     }
 
     private String generateSeverityField(Severity severity) {
-        return "<div style=\"height:24px;margin:-4px;\">\n" +
-                "<div class=\"severity-" + severity.name().toLowerCase() + "-bg text-center pull-left\" style=\"width:24px; height:24px; color:#ffffff\">\n" +
-                "  <i class=\"fas fa-bug\" style=\"font-size:12px; padding:6px\" aria-hidden=\"true\"></i>\n" +
-                "</div>\n" +
-                "<div class=\"text-center pull-left\" style=\"height:24px;\">\n" +
-                "  <div style=\"font-size:12px; padding:4px\"><span class=\"severity-value\">" + convert(severity.name()) + "</span></div>\n" +
-                "</div>\n" +
+        return "<div class=\"severity\">\n" +
+                "  <i class=\"fas fa-bug severity-" + severity.name().toLowerCase() + "-bg\" aria-hidden=\"true\"></i>\n" +
+                "  <span>\n" + convert(severity.name()) + "</span>\n" +
                 "</div>";
     }
 
@@ -183,14 +183,7 @@ public class FindingsTransformer {
         if (cweId == null || cweName == null) {
             return null;
         }
-        return generateTruncatedStringField("CWE-" + cweId + " " + cweName);
-    }
-
-    private String generateTruncatedStringField(String in) {
-        if (in == null) {
-            return null;
-        }
-        return "<div class=\"truncate-ellipsis\"><span>" + in + "</span></div>";
+        return "<div class=\"truncate-ellipsis\"><span>CWE-" + cweId + " " + cweName + "</span></div>";
     }
 
     private String convert(String str) {

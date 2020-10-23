@@ -1,4 +1,7 @@
+/* global Prototype */
+
 (function ($) {
+    'use strict';
     /**
      * Solves Bootstrap and Prototype.js conflict.
      *

@@ -125,3 +125,22 @@ tr:hover td, .table-hover tbody tr:hover th {
     overflow: hidden;
     text-overflow: ellipsis;
 }
+td .severity {
+    display:grid;
+    columns:2;
+    column-gap: 4px;
+    grid-template-columns: 26px auto;
+}
+td .severity > i {
+	grid-column: 1;
+	color: white;
+	width: 26px;
+	padding: 6px;
+	height: 26px;
+}
+td .severity > span {
+    grid-column: 2;
+}
+#findings-table {
+    hyphens: auto;
+}
