@@ -20,6 +20,15 @@ limitations under the License.
         <f:select id="projectId"/>
     </f:entry>
 
+    <j:if test="${descriptor.isDependencyTrackAutoCreateProjects()}">
+    <f:entry title="${%projectName}" field="projectName" help="/plugin/dependency-track/help-dt-projectname.html">
+        <f:textbox id="projectName"/>
+    </f:entry>
+    <f:entry title="${%projectVersion}" field="projectVersion" help="/plugin/dependency-track/help-dt-projectversion.html">
+        <f:textbox id="projectVersion"/>
+    </f:entry>
+    </j:if>
+
     <f:entry title="${%artifact}" field="artifact" help="/plugin/dependency-track/help-dt-artifact.html">
         <f:textbox id="artifact"/>
     </f:entry>
