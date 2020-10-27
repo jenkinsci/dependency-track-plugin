@@ -17,18 +17,16 @@ package org.jenkinsci.plugins.DependencyTrack;
 
 import hudson.model.Action;
 import hudson.model.Run;
-import jenkins.model.RunAction2;
-import jenkins.tasks.SimpleBuildStep;
-import net.sf.json.JSONObject;
-import net.sf.json.JsonConfig;
-import org.jenkinsci.plugins.DependencyTrack.model.Finding;
-import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
-import org.jenkinsci.plugins.DependencyTrack.transformer.FindingsTransformer;
-import org.kohsuke.stapler.bind.JavaScriptMethod;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import jenkins.model.RunAction2;
+import jenkins.tasks.SimpleBuildStep;
 import lombok.Getter;
+import net.sf.json.JSONArray;
+import org.jenkinsci.plugins.DependencyTrack.model.Finding;
+import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
+import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 @Getter
 public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction {
@@ -78,23 +76,8 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
      * @return the UI model as JSON
      */
     @JavaScriptMethod
-    @SuppressWarnings("unused") // Called by jelly view
-    public JSONObject getFindingsJson() {
-        final FindingsTransformer transformer = new FindingsTransformer();
-        return transformer.transform(findings);
-    }
-
-    /**
-     * Returns a JSON response with the statistics for severity.
-     *
-     * @return the UI model as JSON
-     */
-    @JavaScriptMethod
-    @SuppressWarnings("unused") // Called by jelly view
-    public JSONObject getSeverityDistributionJson() {
-        JsonConfig jsonConfig = new JsonConfig();
-        jsonConfig.setExcludes( new String[]{ "buildNumber"} );
-        return JSONObject.fromObject(severityDistribution, jsonConfig);
+    public JSONArray getFindingsJson() {
+        return JSONArray.fromObject(findings);
     }
 
 }
