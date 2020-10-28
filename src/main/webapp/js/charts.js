@@ -5,6 +5,9 @@
     dtrackTrendAction.getSeverityDistributionTrend(result => {
         const data = result.responseJSON || [];
         if (data.length) {
+            const container = document.getElementById('dtrackTrend-history-chart');
+            const textColor = window.getComputedStyle(container).getPropertyValue('color');
+            const fontFamily = window.getComputedStyle(container).getPropertyValue('font-family');
             const options = {
                 tooltip: {
                     trigger: 'axis'
@@ -13,7 +16,11 @@
                     data: ['Critical', 'High', 'Medium', 'Low', 'Info', 'Unassigned'],
                     orient: 'horizontal',
                     x: 'center',
-                    y: 'bottom'
+                    y: 'bottom',
+                    textStyle: {
+                        color: textColor,
+                        fontFamily,
+                    }
                 },
                 grid: {
                     left: '20',
@@ -40,6 +47,10 @@
                     }
                 ],
                 color: ['#dc0000', '#fd8c00', '#fdc500', '#4cae4c', '#357abd', '#c0c0c0'],
+                textStyle: {
+                    color: textColor,
+                    fontFamily,
+                },
                 series: [
                     {
                         name: 'Critical',
@@ -74,7 +85,7 @@
                 ]
             };
 
-            const chart = echarts.init(document.getElementById('dtrackTrend-history-chart'));
+            const chart = echarts.init(container);
             chart.setOption(options);
             chart.resize();
             window.addEventListener('resize', () => {

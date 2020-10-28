@@ -12,6 +12,7 @@
         <l:main-panel>
             <link rel="preload" as="style" type="text/css" href="${resURL}/plugin/dependency-track/css/bootstrap.min.css" onload="this.rel='stylesheet'" />
             <link rel="preload" as="style" type="text/css" href="${resURL}/plugin/dependency-track/css/bootstrap-vue.min.css" onload="this.rel='stylesheet'" />
+            <link rel="preload" as="style" type="text/css" href="${resURL}/plugin/dependency-track/css/result-action.css" onload="this.rel='stylesheet'" />
 
             <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/libs/vue.min.js" defer="defer"></script>
             <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/libs/bootstrap-vue.min.js" defer="defer"></script>
