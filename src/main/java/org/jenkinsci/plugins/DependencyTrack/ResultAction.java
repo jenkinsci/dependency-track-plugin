@@ -67,7 +67,9 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
 
     @Override
     public Collection<? extends Action> getProjectActions() {
-        return Collections.singleton(new JobAction(run.getParent()));
+        // an instance of JobAction may has been added already by DependencyTrackPublisher#getProjectAction(hudson.model.AbstractProject)
+        JobAction action = run.getParent().getAction(JobAction.class);
+        return action == null ? Collections.singleton(new JobAction(run.getParent())) : Collections.emptyList();
     }
 
     /**
