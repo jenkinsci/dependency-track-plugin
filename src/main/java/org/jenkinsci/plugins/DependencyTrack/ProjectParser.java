@@ -29,10 +29,6 @@ import org.jenkinsci.plugins.DependencyTrack.model.Project;
 @UtilityClass
 class ProjectParser {
 
-    Project parse(String json) {
-        return parse(JSONObject.fromObject(json));
-    }
-
     Project parse(JSONObject json) {
         final String lastInheritedRiskScoreStr = getKeyOrNull(json, "lastInheritedRiskScore");
         final String activeStr = getKeyOrNull(json, "active");
@@ -69,7 +65,7 @@ class ProjectParser {
 
     private List<String> parseTags(JSONArray tagArray) {
         return tagArray.stream()
-                .map(o -> ((JSONObject) o).getString("name"))
+                .map(o -> getKeyOrNull((JSONObject) o, "name"))
                 .filter(StringUtils::isNotBlank)
                 .collect(Collectors.toList());
     }

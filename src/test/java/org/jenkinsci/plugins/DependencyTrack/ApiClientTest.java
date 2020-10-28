@@ -24,6 +24,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.time.LocalDateTime;
+import java.time.Month;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import org.assertj.core.api.InstanceOfAssertFactories;
@@ -134,7 +137,7 @@ public class ApiClientTest {
                         case 1:
                             return response.sendString(Mono.just("[{\"name\":\"Project 1\",\"uuid\":\"uuid-1\",\"version\":null},{\"name\":\"Project 2\",\"uuid\":\"uuid-2\",\"version\":\"null\"}]"));
                         case 2:
-                            return response.sendString(Mono.just("[{\"name\":\"Project 3\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\"}]"));
+                            return response.sendString(Mono.just("[{\"name\":\"Project 3\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\",\"lastBomImportStr\":\"2007-12-03T10:15:30\",\"tags\":[{\"name\":\"tag1\"},{\"name\":\"tag2\"},{\"name\":null}]}]"));
                     }
                     return response.sendNotFound();
                 }))
@@ -146,7 +149,7 @@ public class ApiClientTest {
         assertThat(projects).containsExactly(
                 Project.builder().name("Project 1").uuid("uuid-1").tags(Collections.emptyList()).build(),
                 Project.builder().name("Project 2").uuid("uuid-2").tags(Collections.emptyList()).build(),
-                Project.builder().name("Project 3").uuid("uuid-3").version("1.2.3").tags(Collections.emptyList()).build()
+                Project.builder().name("Project 3").uuid("uuid-3").version("1.2.3").tags(Arrays.asList("tag1", "tag2")).lastBomImport(LocalDateTime.of(2007, Month.DECEMBER, 3, 10, 15, 30)).build()
         );
     }
 
