@@ -14,3 +14,19 @@ body, #app .table, #app .card {
     background-color: var(--input-color, #fff);
     color: var(--text-color, #495057);
 }
+/*
+adjust bootstrap-colors for severities
+*/
+#app .progress-bar.bg-warning {
+    background-color: #fd8c00 !important;
+}
+#app .progress-bar.bg-primary {
+    background-color: #ffc107 !important;
+}
+#app .badge.badge-warning {
+    background-color: #fd8c00;
+    color: #fff;
+}
+#app .badge.badge-primary {
+    background-color: #ffc107;
+}
