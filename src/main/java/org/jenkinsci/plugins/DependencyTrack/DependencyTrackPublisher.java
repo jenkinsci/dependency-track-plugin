@@ -157,8 +157,8 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
     private void publishAnalysisResult(ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build) throws InterruptedException, ApiClientException, AbortException {
         final long timeout = System.currentTimeMillis() + (60000L * descriptor.getDependencyTrackPollingTimeout());
         final long interval = 1000L * descriptor.getDependencyTrackPollingInterval();
-        Thread.sleep(interval);
         logger.log(Messages.Builder_Polling());
+        Thread.sleep(interval);
         while (apiClient.isTokenBeingProcessed(token)) {
             Thread.sleep(interval);
             if (timeout < System.currentTimeMillis()) {
@@ -166,7 +166,6 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
                 // XXX this seems like a fatal error
                 throw new AbortException("Dependency Track server response timeout");
             }
-            logger.log(Messages.Builder_Polling());
         }
         if (StringUtils.isBlank(projectId)) {
             // project was auto-created. Fetch it's new uuid so that we can look up the results
