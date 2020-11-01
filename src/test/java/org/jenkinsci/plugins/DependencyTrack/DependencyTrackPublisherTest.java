@@ -28,6 +28,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Collections;
+import org.jenkinsci.plugins.DependencyTrack.model.Project;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
 import org.junit.Rule;
 import org.junit.Test;
@@ -153,6 +154,25 @@ public class DependencyTrackPublisherTest {
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed(eq("token-1"))).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
         when(client.getFindings(eq("uuid-1"))).thenReturn(Collections.emptyList());
+        
+        assertThatCode(() -> uut.perform(build, workDir, launcher, listener)).doesNotThrowAnyException();
+        verify(client, times(2)).isTokenBeingProcessed(eq("token-1"));
+        verify(client).getFindings(eq("uuid-1"));
+    }
+
+    @Test
+    public void testPerformSyncWithoutProjectId() throws IOException {
+        when(listener.getLogger()).thenReturn(System.err);
+        File tmp = tmpDir.newFile();
+        FilePath workDir = new FilePath(tmpDir.getRoot());
+        DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
+        uut.setProjectName("name-1");
+        uut.setProjectVersion("version-1");
+        
+        when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
+        when(client.isTokenBeingProcessed(eq("token-1"))).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
+        when(client.getFindings(eq("uuid-1"))).thenReturn(Collections.emptyList());
+        when(client.lookupProject(eq("name-1"), eq("version-1"))).thenReturn(Project.builder().uuid("uuid-1").build());
         
         assertThatCode(() -> uut.perform(build, workDir, launcher, listener)).doesNotThrowAnyException();
         verify(client, times(2)).isTokenBeingProcessed(eq("token-1"));

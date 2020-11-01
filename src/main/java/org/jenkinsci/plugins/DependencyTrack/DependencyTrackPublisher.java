@@ -26,7 +26,6 @@ import hudson.model.TaskListener;
 import hudson.tasks.BuildStepMonitor;
 import java.io.IOException;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.List;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import java.util.Optional;
@@ -184,37 +183,25 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
         build.addAction(projectAction);
 
         // Get previous results and evaluate to thresholds
-        final Run previousBuild = build.getPreviousBuild();
-        final RiskGate riskGate = new RiskGate(getThresholds());
-        if (previousBuild != null) {
-            final ResultAction previousResults = previousBuild.getAction(ResultAction.class);
-            if (previousResults != null) {
-                final Result result = riskGate.evaluate(
-                        previousResults.getSeverityDistribution(),
-                        previousResults.getFindings(),
-                        severityDistribution,
-                        findings);
-                evaluateRiskGates(build, logger, result);
-            } else { // Resolves https://issues.jenkins-ci.org/browse/JENKINS-58387
-                final Result result = riskGate.evaluate(severityDistribution, Collections.emptyList(), severityDistribution, findings);
-                evaluateRiskGates(build, logger, result);
-            }
-        } else { // Resolves https://issues.jenkins-ci.org/browse/JENKINS-58387
-            final Result result = riskGate.evaluate(severityDistribution, Collections.emptyList(), severityDistribution, findings);
-            evaluateRiskGates(build, logger, result);
-        }
+        final SeverityDistribution previousSeverityDistribution = Optional.ofNullable(build.getPreviousBuild())
+                .map(previousBuild -> previousBuild.getAction(ResultAction.class))
+                .map(ResultAction::getSeverityDistribution)
+                .orElse(new SeverityDistribution(0));
+        
+        evaluateRiskGates(build, logger, severityDistribution, previousSeverityDistribution);
     }
 
-    private void evaluateRiskGates(final Run<?, ?> build, final ConsoleLogger logger, final Result result) throws AbortException {
-        if (Result.SUCCESS != result) {
+    private void evaluateRiskGates(final Run<?, ?> build, final ConsoleLogger logger, final SeverityDistribution currentDistribution, final SeverityDistribution previousDistribution) throws AbortException {
+        final RiskGate riskGate = new RiskGate(getThresholds());
+        final Result result = riskGate.evaluate(currentDistribution, previousDistribution);
+        if (result.isWorseOrEqualTo(Result.UNSTABLE) && result.isCompleteBuild()) {
             logger.log(Messages.Builder_Threshold_Exceed());
-            if (Result.FAILURE == result) {
-                // attempt to halt the build
-                throw new AbortException("Severity distribution failure thresholds exceeded");
-            } else {
-                // allow build to proceed, but mark overall build unstable
-                build.setResult(result);
-            }
+            // allow build to proceed, but mark overall build unstable
+            build.setResult(result);
+        }
+        if (result.isWorseThan(Result.UNSTABLE) && result.isCompleteBuild()) {
+            // attempt to halt the build
+            throw new AbortException(Messages.Builder_Threshold_Exceed());
         }
     }
 
