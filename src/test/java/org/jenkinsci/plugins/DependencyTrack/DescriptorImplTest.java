@@ -84,19 +84,24 @@ public class DescriptorImplTest {
     public void doTestConnectionTest() throws ApiClientException {
         // custom factory here so we can check that doTestConnection strips trailing slashes from the url
         ApiClientFactory factory = mock(ApiClientFactory.class);
-        when(factory.create(eq("url"), eq("key"), any(ConsoleLogger.class))).thenReturn(client);
+        when(factory.create(eq("http:///url.tld"), eq("key"), any(ConsoleLogger.class))).thenReturn(client);
         when(client.testConnection()).thenReturn("test").thenThrow(ApiClientException.class);
         uut = new DescriptorImpl(factory);
         
-        assertThat(uut.doTestConnection("url", "key"))
+        assertThat(uut.doTestConnection("http:///url.tld", "key"))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
                 .hasMessage("Connection successful - test")
                 .hasNoCause();
         
-        assertThat(uut.doTestConnection("url/", "key"))
+        assertThat(uut.doTestConnection("http:///url.tld/", "key"))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                 .hasMessageStartingWith("Connection failed")
                 .hasMessageContaining(ApiClientException.class.getCanonicalName())
+                .hasNoCause();
+        
+         assertThat(uut.doTestConnection("url", ""))
+                .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.WARNING)
+                .hasMessage("URL must be valid and Api-Key must not be empty")
                 .hasNoCause();
     }
     
