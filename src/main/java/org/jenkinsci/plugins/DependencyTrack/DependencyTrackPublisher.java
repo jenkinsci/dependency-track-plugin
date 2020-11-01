@@ -29,6 +29,7 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import java.util.Optional;
 import jenkins.tasks.SimpleBuildStep;
 import lombok.Getter;
 import lombok.Setter;
@@ -43,7 +44,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 
 @Getter
 @Setter(onMethod_ = {@DataBoundSetter})
-public class DependencyTrackPublisher extends ThresholdCapablePublisher implements SimpleBuildStep, Serializable {
+public final class DependencyTrackPublisher extends ThresholdCapablePublisher implements SimpleBuildStep, Serializable {
 
     private static final long serialVersionUID = 480115440498217963L;
 
@@ -73,8 +74,26 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
      * config item.
      */
     private final boolean synchronous;
+
+    /**
+     * Specifies the base URL to Dependency-Track v3 or higher.
+     */
+    private String dependencyTrackUrl;
+
+    /**
+     * Specifies an API Key used for authentication.
+     */
+    private String dependencyTrackApiKey;
+
+    /**
+     * Specifies whether the API key provided has the PROJECT_CREATION_UPLOAD
+     * permission.
+     */
+    private Boolean autoCreateProjects;
     
-    private transient final ApiClientFactory clientFactory;
+    private transient ApiClientFactory clientFactory;
+    private transient DescriptorImpl descriptor;
+    private transient boolean overrideGlobals;
     
     // Fields in config.jelly must match the parameter names
     @DataBoundConstructor
@@ -86,6 +105,7 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
         this.artifact = artifact;
         this.synchronous = synchronous;
         this.clientFactory = clientFactory;
+        descriptor = getDescriptor();
     }
 
     /**
@@ -105,13 +125,10 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
             @NonNull final TaskListener listener) throws InterruptedException, IOException {
 
         final ConsoleLogger logger = new ConsoleLogger(listener);
-        final DescriptorImpl descriptor = getDescriptor();
 
-        final ApiClient apiClient = clientFactory.create(descriptor.getDependencyTrackUrl(), descriptor.getDependencyTrackApiKey(), logger);
+        final ApiClient apiClient = clientFactory.create(getEffectiveUrl(), getEffectiveApiKey(), logger);
 
-        logger.log(Messages.Builder_Publishing() + " - " + descriptor.getDependencyTrackUrl());
-
-        final boolean autoCreateProject = descriptor.isDependencyTrackAutoCreateProjects();
+        logger.log(Messages.Builder_Publishing() + " - " + getEffectiveUrl());
 
         if (StringUtils.isBlank(artifact)) {
             logger.log(Messages.Builder_Artifact_Unspecified());
@@ -129,7 +146,7 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
         }
 
         final UploadResult uploadResult = apiClient.upload(projectId, projectName, projectVersion,
-                artifactFilePath, autoCreateProject);
+                artifactFilePath, isEffectiveAutoCreateProjects());
 
         if (!uploadResult.isSuccess()) {
             throw new AbortException("Dependency Track server upload failed");
@@ -141,8 +158,8 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
     }
 
     private void publishAnalysisResult(ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build) throws InterruptedException, ApiClientException, AbortException {
-        final long timeout = System.currentTimeMillis() + (60000L * getDescriptor().getDependencyTrackPollingTimeout());
-        final long interval = 1000L * getDescriptor().getDependencyTrackPollingInterval();
+        final long timeout = System.currentTimeMillis() + (60000L * descriptor.getDependencyTrackPollingTimeout());
+        final long interval = 1000L * descriptor.getDependencyTrackPollingInterval();
         Thread.sleep(interval);
         logger.log(Messages.Builder_Polling());
         while (apiClient.isTokenBeingProcessed(token)) {
@@ -220,4 +237,60 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
         return BuildStepMonitor.NONE;
     }
 
+    /**
+     * restore transient fields after deserialization
+     * 
+     * @return this
+     * @throws java.io.ObjectStreamException never
+     */
+    private Object readResolve() throws java.io.ObjectStreamException {
+        if (clientFactory == null) {
+            clientFactory = ApiClient::new;
+        }
+        if (descriptor == null) {
+            descriptor = getDescriptor();
+        }
+        overrideGlobals = StringUtils.isNotBlank(dependencyTrackUrl) || StringUtils.isNotBlank(dependencyTrackApiKey) || autoCreateProjects != null;
+        return this;
+    }
+    
+    /**
+     * deletes values of optional fields if they are not needed/active before serialization
+     * 
+     * @return this
+     * @throws java.io.ObjectStreamException never
+     */
+    private Object writeReplace() throws java.io.ObjectStreamException {
+        if (!overrideGlobals) {
+            dependencyTrackUrl = null;
+            dependencyTrackApiKey = null;
+            autoCreateProjects = null;
+        }
+        if (!isEffectiveAutoCreateProjects()) {
+            projectName = null;
+            projectVersion = null;
+        }
+        return this;
+    }
+    
+    /**
+     * @return effective dependencyTrackUrl
+     */
+    private String getEffectiveUrl() {
+        return Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElse(descriptor.getDependencyTrackUrl());
+    }
+
+    /**
+     * @return effective dependencyTrackApiKey
+     */
+    private String getEffectiveApiKey() {
+        return Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElse(descriptor.getDependencyTrackApiKey());
+    }
+
+    /**
+     * @return effective autoCreateProjects
+     */
+    public boolean isEffectiveAutoCreateProjects() {
+        return Optional.ofNullable(autoCreateProjects).orElse(descriptor.isDependencyTrackAutoCreateProjects());
+    }
 }

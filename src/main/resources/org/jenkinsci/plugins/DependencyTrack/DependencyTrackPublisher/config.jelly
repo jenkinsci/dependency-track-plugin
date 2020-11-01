@@ -20,7 +20,7 @@ limitations under the License.
         <f:select id="projectId"/>
     </f:entry>
 
-    <j:if test="${descriptor.isDependencyTrackAutoCreateProjects()}">
+    <j:if test="${instance.isEffectiveAutoCreateProjects()}">
     <f:entry title="${%projectName}" field="projectName" help="/plugin/dependency-track/help-dt-projectname.html">
         <f:textbox id="projectName"/>
     </f:entry>
@@ -36,6 +36,19 @@ limitations under the License.
     <f:entry title="${%enable.synchronous}" field="synchronous" description="" help="/plugin/dependency-track/help-dt-synchronous-mode.html">
         <f:checkbox name="synchronous" checked="${instance.isSynchronous()}"/>
     </f:entry>
+
+    <f:optionalBlock inline="true" field="overrideGlobals" title="${%overrideGlobals}">
+    <f:entry title="${%dependencytrack.url}" field="dependencyTrackUrl" help="/plugin/dependency-track/help-dt-url.html">
+        <f:textbox id="dependencytrack.url" />
+    </f:entry>
+    <f:entry title="${%dependencytrack.apikey}" field="dependencyTrackApiKey" help="/plugin/dependency-track/help-dt-apikey.html">
+        <f:textbox id="dependencytrack.apikey" />
+    </f:entry>
+    <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnection" with="dependencyTrackUrl,dependencyTrackApiKey" />
+    <f:entry title="${%dependencytrack.autocreate}" field="autoCreateProjects" help="/plugin/dependency-track/help-dt-autocreate.html">
+        <f:checkbox id="dependencytrack.autocreate" />
+    </f:entry>
+    </f:optionalBlock>
 
     <f:advanced title="Risk Gate Thresholds" align="left">
         <f:section title="Risk Gate Thresholds - Synchronous Mode Only">

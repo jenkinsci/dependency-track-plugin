@@ -33,6 +33,7 @@ import org.mockito.junit.MockitoRule;
 import org.mockito.quality.Strictness;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -81,14 +82,18 @@ public class DescriptorImplTest {
 
     @Test
     public void doTestConnectionTest() throws ApiClientException {
+        // custom factory here so we can check that doTestConnection strips trailing slashes from the url
+        ApiClientFactory factory = mock(ApiClientFactory.class);
+        when(factory.create(eq("url"), eq("key"), any(ConsoleLogger.class))).thenReturn(client);
         when(client.testConnection()).thenReturn("test").thenThrow(ApiClientException.class);
+        uut = new DescriptorImpl(factory);
         
         assertThat(uut.doTestConnection("url", "key"))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
                 .hasMessage("Connection successful - test")
                 .hasNoCause();
         
-        assertThat(uut.doTestConnection("url", "key"))
+        assertThat(uut.doTestConnection("url/", "key"))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                 .hasMessageStartingWith("Connection failed")
                 .hasMessageContaining(ApiClientException.class.getCanonicalName())
