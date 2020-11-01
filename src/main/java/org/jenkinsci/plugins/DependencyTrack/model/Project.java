@@ -4,7 +4,6 @@ import java.io.Serializable;
 import java.time.LocalDateTime;
 import java.util.List;
 import lombok.Builder;
-import lombok.Singular;
 import lombok.Value;
 
 @Value
