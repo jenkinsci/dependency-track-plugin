@@ -18,8 +18,6 @@ package org.jenkinsci.plugins.DependencyTrack;
 import hudson.AbortException;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractProject;
-import hudson.model.Action;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
@@ -203,11 +201,6 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
             // attempt to halt the build
             throw new AbortException(Messages.Builder_Threshold_Exceed());
         }
-    }
-
-    @Override
-    public Action getProjectAction(AbstractProject<?, ?> project) {
-        return new JobAction(project);
     }
 
     /**
