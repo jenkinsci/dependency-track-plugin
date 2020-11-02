@@ -44,7 +44,6 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -184,9 +183,13 @@ public class DependencyTrackPublisherTest {
         when(listener.getLogger()).thenReturn(System.err);
         File tmp = tmpDir.newFile();
         FilePath workDir = new FilePath(tmpDir.getRoot());
-        ApiClientFactory factorySpy = mock(ApiClientFactory.class);
-        when(factorySpy.create(eq("foo"), eq("bar"), any(ConsoleLogger.class))).thenReturn(client);
-        final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, factorySpy);
+        ApiClientFactory factory = (url, apiKey, logger) -> {
+            assertThat(url).isEqualTo("foo");
+            assertThat(apiKey).isEqualTo("bar");
+            assertThat(logger).isInstanceOf(ConsoleLogger.class);
+            return client;
+        };
+        final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, factory);
         uut.setProjectId("uuid-1");
         uut.setAutoCreateProjects(Boolean.TRUE);
         uut.setDependencyTrackUrl("foo");

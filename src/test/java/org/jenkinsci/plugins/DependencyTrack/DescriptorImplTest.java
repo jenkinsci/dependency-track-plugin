@@ -33,7 +33,6 @@ import org.mockito.junit.MockitoRule;
 import org.mockito.quality.Strictness;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -57,7 +56,7 @@ public class DescriptorImplTest {
     private DescriptorImpl uut;
     
     @Before
-    public void setup() {        
+    public void setup() {
         uut = new DescriptorImpl((url, apiKey, logger) -> client);
     }
 
@@ -83,8 +82,12 @@ public class DescriptorImplTest {
     @Test
     public void doTestConnectionTest() throws ApiClientException {
         // custom factory here so we can check that doTestConnection strips trailing slashes from the url
-        ApiClientFactory factory = mock(ApiClientFactory.class);
-        when(factory.create(eq("http:///url.tld"), eq("key"), any(ConsoleLogger.class))).thenReturn(client);
+        ApiClientFactory factory = (url, apiKey, logger) -> {
+            assertThat(url).isEqualTo("http:///url.tld");
+            assertThat(apiKey).isEqualTo("key");
+            assertThat(logger).isInstanceOf(ConsoleLogger.class);
+            return client;
+        };
         when(client.testConnection()).thenReturn("test").thenThrow(ApiClientException.class);
         uut = new DescriptorImpl(factory);
         
@@ -99,7 +102,7 @@ public class DescriptorImplTest {
                 .hasMessageContaining(ApiClientException.class.getCanonicalName())
                 .hasNoCause();
         
-         assertThat(uut.doTestConnection("url", ""))
+        assertThat(uut.doTestConnection("url", ""))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.WARNING)
                 .hasMessage("URL must be valid and Api-Key must not be empty")
                 .hasNoCause();
