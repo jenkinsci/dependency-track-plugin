@@ -49,34 +49,33 @@ import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
-
 /**
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
 public class DependencyTrackPublisherTest {
-    
+
     @Rule
     public MockitoRule rule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
-    
+
     @Rule
     public TemporaryFolder tmpDir = new TemporaryFolder();
 
     @Rule
     public JenkinsConfiguredRule r = new JenkinsConfiguredRule();
-    
+
     @Mock
     private Run build;
-    
+
     @Mock
     private TaskListener listener;
-    
+
     @Mock
     private Launcher launcher;
-    
+
     @Mock
     private ApiClient client;
-    
+
     private final ApiClientFactory clientFactory = (url, apiKey, logger) -> client;
 
     @Test
@@ -85,22 +84,22 @@ public class DependencyTrackPublisherTest {
         FilePath workDir = new FilePath(tmpDir.getRoot());
         final DependencyTrackPublisher uut1 = new DependencyTrackPublisher("", false, clientFactory);
         assertThatCode(() -> uut1.perform(build, workDir, launcher, listener)).isInstanceOf(AbortException.class).hasMessage("Artifact not specified");
-        
+
         File artifact = tmpDir.newFile();
         // uuid and name and version missing
         final DependencyTrackPublisher uut2 = new DependencyTrackPublisher(artifact.getName(), false, clientFactory);
         assertThatCode(() -> uut2.perform(build, workDir, launcher, listener)).isInstanceOf(AbortException.class).hasMessage("Invalid arguments");
-        
+
         // version missing
         final DependencyTrackPublisher uut3 = new DependencyTrackPublisher(artifact.getName(), false, clientFactory);
         uut2.setProjectName("name");
         assertThatCode(() -> uut3.perform(build, workDir, launcher, listener)).isInstanceOf(AbortException.class).hasMessage("Invalid arguments");
-        
+
         // name missing
         final DependencyTrackPublisher uut4 = new DependencyTrackPublisher(artifact.getName(), false, clientFactory);
         uut2.setProjectVersion("version");
         assertThatCode(() -> uut4.perform(build, workDir, launcher, listener)).isInstanceOf(AbortException.class).hasMessage("Invalid arguments");
-        
+
         // file not within workdir
         final DependencyTrackPublisher uut5 = new DependencyTrackPublisher("foo", false, clientFactory);
         uut2.setProjectId("uuid-1");
@@ -114,29 +113,30 @@ public class DependencyTrackPublisherTest {
         FilePath workDir = new FilePath(tmpDir.getRoot());
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, clientFactory);
         uut.setProjectId("uuid-1");
-        
+
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false)))
                 .thenReturn(new UploadResult(true))
                 .thenReturn(new UploadResult(false));
-        
+
         assertThatCode(() -> uut.perform(build, workDir, launcher, listener)).doesNotThrowAnyException();
         verify(client, never()).getFindings(anyString());
         verify(client, never()).lookupProject(anyString(), anyString());
-        
+
         assertThatCode(() -> uut.perform(build, workDir, launcher, listener)).isInstanceOf(AbortException.class).hasMessage("Dependency Track server upload failed");
     }
 
     @Test
     public void testPerformAsyncWithoutProjectId() throws IOException {
+        r.jenkins.getDescriptorByType(DescriptorImpl.class).setDependencyTrackPollingInterval(1);
         when(listener.getLogger()).thenReturn(System.err);
         File tmp = tmpDir.newFile();
         FilePath workDir = new FilePath(tmpDir.getRoot());
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, clientFactory);
         uut.setProjectName("name-1");
         uut.setProjectVersion("version-1");
-        
+
         when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
-        
+
         assertThatCode(() -> uut.perform(build, workDir, launcher, listener)).doesNotThrowAnyException();
         verify(client, never()).lookupProject(anyString(), anyString());
         verify(client, never()).getFindings(anyString());
@@ -149,11 +149,11 @@ public class DependencyTrackPublisherTest {
         FilePath workDir = new FilePath(tmpDir.getRoot());
         DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
         uut.setProjectId("uuid-1");
-        
+
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed(eq("token-1"))).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
         when(client.getFindings(eq("uuid-1"))).thenReturn(Collections.emptyList());
-        
+
         assertThatCode(() -> uut.perform(build, workDir, launcher, listener)).doesNotThrowAnyException();
         verify(client, times(2)).isTokenBeingProcessed(eq("token-1"));
         verify(client).getFindings(eq("uuid-1"));
@@ -161,23 +161,24 @@ public class DependencyTrackPublisherTest {
 
     @Test
     public void testPerformSyncWithoutProjectId() throws IOException {
+        r.jenkins.getDescriptorByType(DescriptorImpl.class).setDependencyTrackPollingInterval(1);
         when(listener.getLogger()).thenReturn(System.err);
         File tmp = tmpDir.newFile();
         FilePath workDir = new FilePath(tmpDir.getRoot());
         DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
         uut.setProjectName("name-1");
         uut.setProjectVersion("version-1");
-        
+
         when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed(eq("token-1"))).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
         when(client.getFindings(eq("uuid-1"))).thenReturn(Collections.emptyList());
         when(client.lookupProject(eq("name-1"), eq("version-1"))).thenReturn(Project.builder().uuid("uuid-1").build());
-        
+
         assertThatCode(() -> uut.perform(build, workDir, launcher, listener)).doesNotThrowAnyException();
         verify(client, times(2)).isTokenBeingProcessed(eq("token-1"));
         verify(client).getFindings(eq("uuid-1"));
     }
-    
+
     @Test
     public void testUseOfOverridenProperties() throws IOException {
         when(listener.getLogger()).thenReturn(System.err);
@@ -194,13 +195,13 @@ public class DependencyTrackPublisherTest {
         uut.setAutoCreateProjects(Boolean.TRUE);
         uut.setDependencyTrackUrl("foo");
         uut.setDependencyTrackApiKey("bar");
-        
+
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(true)))
                 .thenReturn(new UploadResult(false));
-        
+
         assertThatCode(() -> uut.perform(build, workDir, launcher, listener)).isInstanceOf(AbortException.class).hasMessage("Dependency Track server upload failed");
     }
-    
+
     @Test
     public void serializationTest() throws IOException, ClassNotFoundException {
         File tmp = tmpDir.newFile();
@@ -209,22 +210,22 @@ public class DependencyTrackPublisherTest {
         uut.setDependencyTrackUrl("foo");
         uut.setDependencyTrackApiKey("bar");
         uut.setOverrideGlobals(false);
-        
+
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
             oos.writeObject(uut);
         }
-        
+
         try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()))) {
             assertThat(ois.readObject()).isInstanceOfSatisfying(DependencyTrackPublisher.class, actual -> {
-               assertThat(actual.getDependencyTrackUrl()).isNull();
-               assertThat(actual.getDependencyTrackApiKey()).isNull();
-               assertThat(actual.getAutoCreateProjects()).isNull();
-               assertThat(actual.isOverrideGlobals()).isFalse();
+                assertThat(actual.getDependencyTrackUrl()).isNull();
+                assertThat(actual.getDependencyTrackApiKey()).isNull();
+                assertThat(actual.getAutoCreateProjects()).isNull();
+                assertThat(actual.isOverrideGlobals()).isFalse();
             });
         }
     }
-    
+
     @Test
     public void deserializationTest() throws IOException, ClassNotFoundException {
         File tmp = tmpDir.newFile();
@@ -233,20 +234,20 @@ public class DependencyTrackPublisherTest {
         uut.setDependencyTrackUrl("foo");
         uut.setDependencyTrackApiKey("bar");
         uut.setOverrideGlobals(true);
-        
+
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
             oos.writeObject(uut);
         }
-        
+
         try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()))) {
             assertThat(ois.readObject()).isInstanceOfSatisfying(DependencyTrackPublisher.class, actual -> {
-               assertThat(actual.getDependencyTrackUrl()).isEqualTo("foo");
-               assertThat(actual.getDependencyTrackApiKey()).isEqualTo("bar");
-               assertThat(actual.getAutoCreateProjects()).isTrue();
-               assertThat(actual.isOverrideGlobals()).isTrue();
+                assertThat(actual.getDependencyTrackUrl()).isEqualTo("foo");
+                assertThat(actual.getDependencyTrackApiKey()).isEqualTo("bar");
+                assertThat(actual.getAutoCreateProjects()).isTrue();
+                assertThat(actual.isOverrideGlobals()).isTrue();
             });
         }
     }
-    
+
 }
