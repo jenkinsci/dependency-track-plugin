@@ -47,14 +47,14 @@ public class DescriptorImplTest {
 
     @Rule
     public JenkinsConfiguredRule r = new JenkinsConfiguredRule();
-    
+
     @Rule
     public MockitoRule rule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
-    
+
     @Mock
     private ApiClient client;
     private DescriptorImpl uut;
-    
+
     @Before
     public void setup() {
         uut = new DescriptorImpl((url, apiKey, logger) -> client);
@@ -67,13 +67,13 @@ public class DescriptorImplTest {
         projects.add(Project.builder().name("Project 2").uuid("uuid-2").version("1.2.3").build());
         doReturn(projects).doThrow(new ApiClientException("test failure"))
                 .when(client).getProjects();
-        
+
         assertThat(uut.doFillProjectIdItems()).usingElementComparatorOnFields("name", "value", "selected").containsExactly(
                 new ListBoxModel.Option("-- Select Project --", null, false),
                 new ListBoxModel.Option("Project 1", "uuid-1", false),
                 new ListBoxModel.Option("Project 2 1.2.3", "uuid-2", false)
         );
-        
+
         assertThat(uut.doFillProjectIdItems()).usingElementComparatorOnFields("name", "value", "selected").containsExactly(
                 new ListBoxModel.Option(Messages.Builder_Error_Projects() + ": test failure", null, false)
         );
@@ -90,24 +90,24 @@ public class DescriptorImplTest {
         };
         when(client.testConnection()).thenReturn("test").thenThrow(ApiClientException.class);
         uut = new DescriptorImpl(factory);
-        
+
         assertThat(uut.doTestConnection("http:///url.tld", "key"))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
                 .hasMessage("Connection successful - test")
                 .hasNoCause();
-        
+
         assertThat(uut.doTestConnection("http:///url.tld/", "key"))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                 .hasMessageStartingWith("Connection failed")
                 .hasMessageContaining(ApiClientException.class.getCanonicalName())
                 .hasNoCause();
-        
+
         assertThat(uut.doTestConnection("url", ""))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.WARNING)
                 .hasMessage("URL must be valid and Api-Key must not be empty")
                 .hasNoCause();
     }
-    
+
     @Test
     public void doCheckDependencyTrackUrlTest() {
         assertThat(uut.doCheckDependencyTrackUrl("http://foo.bar/")).isEqualTo(FormValidation.ok());
@@ -117,27 +117,27 @@ public class DescriptorImplTest {
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                 .hasMessage("The specified value is not a valid URL");
     }
-    
+
     @Test
     public void getDependencyTrackUrlTest() {
         uut.setDependencyTrackUrl("http://foo.bar/");
         assertThat(uut.getDependencyTrackUrl()).isEqualTo("http://foo.bar");
-        
+
         uut.setDependencyTrackUrl("http://foo.bar");
         assertThat(uut.getDependencyTrackUrl()).isEqualTo("http://foo.bar");
     }
-    
+
     @Test
     public void getDependencyTrackPollingTimeoutTest() {
         assertThat(uut.getDependencyTrackPollingTimeout()).isEqualTo(5);
-        
+
         uut.setDependencyTrackPollingTimeout(0);
         assertThat(uut.getDependencyTrackPollingTimeout()).isEqualTo(5);
-        
+
         uut.setDependencyTrackPollingTimeout(Integer.MAX_VALUE);
         assertThat(uut.getDependencyTrackPollingTimeout()).isEqualTo(Integer.MAX_VALUE);
     }
-    
+
     @Test
     public void configureTest() throws Descriptor.FormException {
         StaplerRequest req = mock(StaplerRequest.class);
@@ -146,9 +146,9 @@ public class DescriptorImplTest {
                 .element("dependencyTrackApiKey", "api-key")
                 .element("dependencyTrackAutoCreateProjects", true)
                 .element("dependencyTrackPollingTimeout", 7);
-        
+
         uut.configure(req, formData);
-        
+
         verify(req).bindJSON(eq(uut), eq(formData));
         assertThat(uut.getDependencyTrackUrl()).isEqualTo("https://foo.bar");
         assertThat(uut.getDependencyTrackApiKey()).isEqualTo("api-key");
