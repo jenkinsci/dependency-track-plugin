@@ -177,7 +177,7 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
         final SeverityDistribution severityDistribution = new SeverityDistribution(build.getNumber());
         findings.stream().map(Finding::getVulnerability).map(Vulnerability::getSeverity).forEach(severityDistribution::add);
         final ResultAction projectAction = new ResultAction(build, findings, severityDistribution);
-        build.addAction(projectAction);
+        build.addOrReplaceAction(projectAction);
 
         // Get previous results and evaluate to thresholds
         final SeverityDistribution previousSeverityDistribution = Optional.ofNullable(build.getPreviousBuild())
