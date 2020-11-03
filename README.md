@@ -12,10 +12,6 @@
 Dependency-Track is an intelligent Software [Supply Chain Component Analysis] platform that allows organizations to 
 identify and reduce risk from the use of third-party and open source components. 
 
-## Seeking New Maintainer
-Due to time constraints, other commitments, and the values of the Jenkins project not aligning to my own, I am seeking 
-a new maintainer. Create a ticket on https://issues.jenkins-ci.org/ if interested.
-
 ![ecosystem overview](https://raw.githubusercontent.com/DependencyTrack/dependency-track/master/docs/images/integrations.png)
 
 ## Plugin Description 
