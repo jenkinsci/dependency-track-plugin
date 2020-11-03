@@ -22,5 +22,5 @@ package org.jenkinsci.plugins.DependencyTrack;
 @FunctionalInterface
 interface ApiClientFactory {
 
-    ApiClient create(final String baseUrl, final String apiKey, final ConsoleLogger logger);
+    ApiClient create(final String baseUrl, final String apiKey, final ConsoleLogger logger, int connectionTimeout, int readTimeout);
 }

@@ -85,6 +85,20 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
      */
     @Setter(onMethod_ = {@DataBoundSetter})
     private int dependencyTrackPollingInterval;
+    
+    /**
+     * the connection-timeout in seconds for every call to DT
+     */
+    @Getter
+    @Setter(onMethod_ = {@DataBoundSetter})
+    private int dependencyTrackConnectionTimeout;
+
+    /**
+     * the read-timeout in seconds for every call to DT
+     */
+    @Getter
+    @Setter(onMethod_ = {@DataBoundSetter})
+    private int dependencyTrackReadTimeout;
 
     /**
      * Default constructor. Obtains the Descriptor used in
@@ -218,6 +232,6 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
     }
     
     private ApiClient getClient(final String baseUrl, final String apiKey) {
-        return clientFactory.create(baseUrl, apiKey, new ConsoleLogger());
+        return clientFactory.create(baseUrl, apiKey, new ConsoleLogger(), Math.max(dependencyTrackConnectionTimeout, 0), Math.max(dependencyTrackReadTimeout, 0));
     }
 }

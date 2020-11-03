@@ -52,8 +52,9 @@ public class ApiClient {
 	private static final String HEADER_CONTENT_TYPE = "Content-Type";
 	private static final String HEADER_ACCEPT = "Accept";
 	private static final String MEDIATYPE_JSON = "application/json";
-    static final String API_KEY_HEADER = "X-Api-Key";
     private static final String API_URL = "/api/v1";
+    private static final int MS_TO_S_FACTOR = 1000;
+    static final String API_KEY_HEADER = "X-Api-Key";
     static final String PROJECT_FINDINGS_URL = API_URL + "/finding/project";
     static final String BOM_URL = API_URL + "/bom";
     static final String BOM_TOKEN_URL = BOM_URL + "/token";
@@ -62,15 +63,36 @@ public class ApiClient {
     static final String PROJECT_LOOKUP_NAME_PARAM = "name";
     static final String PROJECT_LOOKUP_VERSION_PARAM = "version";
 
+    /**
+     * the base url to DT instance without trailing slashes, e.g.
+     * "http://host.tld:port"
+     */
     private final String baseUrl;
+
+    /**
+     * the api key to authorize with against DT
+     */
     private final String apiKey;
+
     private final ConsoleLogger logger;
-	
+
+    /**
+     * the connection-timeout in seconds for every call to DT
+     */
+    private final int connectionTimeout;
+
+    /**
+     * the read-timeout in seconds for every call to DT
+     */
+    private final int readTimeout;
+
 	public String testConnection() throws ApiClientException {
 		try {
 			final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + PROJECT_URL).openConnection();
 			conn.setRequestProperty(HEADER_ACCEPT, MEDIATYPE_JSON);
 			conn.setRequestProperty(API_KEY_HEADER, apiKey);
+            conn.setConnectTimeout(connectionTimeout * MS_TO_S_FACTOR);
+            conn.setReadTimeout(readTimeout * MS_TO_S_FACTOR);
 			conn.connect();
 			if (conn.getResponseCode() == HTTP_OK) {
 				return conn.getHeaderField("X-Powered-By");
@@ -102,6 +124,8 @@ public class ApiClient {
 			final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + PROJECT_URL + "?limit=500&page=" + page).openConnection();
 			conn.setRequestProperty(HEADER_ACCEPT, MEDIATYPE_JSON);
             conn.setRequestProperty(API_KEY_HEADER, apiKey);
+            conn.setConnectTimeout(connectionTimeout * MS_TO_S_FACTOR);
+            conn.setReadTimeout(readTimeout * MS_TO_S_FACTOR);
             conn.setDoOutput(true);
             conn.connect();
 			if (conn.getResponseCode() == HTTP_OK) {
@@ -131,6 +155,8 @@ public class ApiClient {
             conn.setDoOutput(true);
             conn.setRequestProperty(API_KEY_HEADER, apiKey);
 			conn.setRequestProperty(HEADER_ACCEPT, MEDIATYPE_JSON);
+            conn.setConnectTimeout(connectionTimeout * MS_TO_S_FACTOR);
+            conn.setReadTimeout(readTimeout * MS_TO_S_FACTOR);
             conn.connect();
             // Checks the server response
             if (conn.getResponseCode() == HTTP_OK) {
@@ -164,6 +190,8 @@ public class ApiClient {
             conn.setDoOutput(true);
             conn.setRequestProperty(API_KEY_HEADER, apiKey);
 			conn.setRequestProperty(HEADER_ACCEPT, MEDIATYPE_JSON);
+            conn.setConnectTimeout(connectionTimeout * MS_TO_S_FACTOR);
+            conn.setReadTimeout(readTimeout * MS_TO_S_FACTOR);
             conn.connect();
             // Checks the server response
             if (conn.getResponseCode() == HTTP_OK) {
@@ -208,6 +236,8 @@ public class ApiClient {
         conn.setRequestMethod("PUT");
         conn.setRequestProperty(HEADER_CONTENT_TYPE, MEDIATYPE_JSON);
 		conn.setRequestProperty(HEADER_ACCEPT, MEDIATYPE_JSON);
+        conn.setConnectTimeout(connectionTimeout * MS_TO_S_FACTOR);
+        conn.setReadTimeout(readTimeout * MS_TO_S_FACTOR);
         conn.setRequestProperty("Content-Length", Integer.toString(payloadBytes.length));
         conn.setRequestProperty(API_KEY_HEADER, apiKey);
         conn.connect();
@@ -263,6 +293,8 @@ public class ApiClient {
             conn.setDoOutput(true);
             conn.setRequestProperty(API_KEY_HEADER, apiKey);
 			conn.setRequestProperty(HEADER_ACCEPT, MEDIATYPE_JSON);
+            conn.setConnectTimeout(connectionTimeout * MS_TO_S_FACTOR);
+            conn.setReadTimeout(readTimeout * MS_TO_S_FACTOR);
             conn.connect();
             if (conn.getResponseCode() == HTTP_OK) {
                 try (InputStream in = new BufferedInputStream(conn.getInputStream())) {

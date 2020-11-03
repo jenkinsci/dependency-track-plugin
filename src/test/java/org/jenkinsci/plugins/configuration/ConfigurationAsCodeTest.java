@@ -27,6 +27,8 @@ public class ConfigurationAsCodeTest {
                 .returns(false, DescriptorImpl::isDependencyTrackAutoCreateProjects)
                 .returns(5, DescriptorImpl::getDependencyTrackPollingTimeout)
                 .returns(1, DescriptorImpl::getDependencyTrackPollingInterval)
+                .returns(1, DescriptorImpl::getDependencyTrackConnectionTimeout)
+                .returns(3, DescriptorImpl::getDependencyTrackReadTimeout)
                 ;
     }
 }

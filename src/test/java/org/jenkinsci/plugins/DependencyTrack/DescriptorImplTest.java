@@ -57,7 +57,7 @@ public class DescriptorImplTest {
 
     @Before
     public void setup() {
-        uut = new DescriptorImpl((url, apiKey, logger) -> client);
+        uut = new DescriptorImpl((url, apiKey, logger, connTimeout, readTimeout) -> client);
     }
 
     @Test
@@ -82,7 +82,7 @@ public class DescriptorImplTest {
     @Test
     public void doTestConnectionTest() throws ApiClientException {
         // custom factory here so we can check that doTestConnection strips trailing slashes from the url
-        ApiClientFactory factory = (url, apiKey, logger) -> {
+        ApiClientFactory factory = (url, apiKey, logger, connTimeout, readTimeout) -> {
             assertThat(url).isEqualTo("http:///url.tld");
             assertThat(apiKey).isEqualTo("key");
             assertThat(logger).isInstanceOf(ConsoleLogger.class);

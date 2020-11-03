@@ -81,7 +81,7 @@ public class ApiClientTest {
     }
     
     private ApiClient createClient() {
-        return new ApiClient(String.format("http://%s:%d", server.host(), server.port()), API_KEY, logger);
+        return new ApiClient(String.format("http://%s:%d", server.host(), server.port()), API_KEY, logger, 1, 1);
     }
 
     @Test

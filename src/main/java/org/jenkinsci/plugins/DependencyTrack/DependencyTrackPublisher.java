@@ -123,7 +123,7 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
 
         final ConsoleLogger logger = new ConsoleLogger(listener);
 
-        final ApiClient apiClient = clientFactory.create(getEffectiveUrl(), getEffectiveApiKey(), logger);
+        final ApiClient apiClient = clientFactory.create(getEffectiveUrl(), getEffectiveApiKey(), logger, descriptor.getDependencyTrackConnectionTimeout(), descriptor.getDependencyTrackReadTimeout());
 
         logger.log(Messages.Builder_Publishing() + " - " + getEffectiveUrl());
 

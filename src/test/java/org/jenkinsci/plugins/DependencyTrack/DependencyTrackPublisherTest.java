@@ -76,7 +76,7 @@ public class DependencyTrackPublisherTest {
     @Mock
     private ApiClient client;
 
-    private final ApiClientFactory clientFactory = (url, apiKey, logger) -> client;
+    private final ApiClientFactory clientFactory = (url, apiKey, logger, connTimeout, readTimeout) -> client;
 
     @Test
     public void testPerformPrechecks() throws IOException {
@@ -184,7 +184,7 @@ public class DependencyTrackPublisherTest {
         when(listener.getLogger()).thenReturn(System.err);
         File tmp = tmpDir.newFile();
         FilePath workDir = new FilePath(tmpDir.getRoot());
-        ApiClientFactory factory = (url, apiKey, logger) -> {
+        ApiClientFactory factory = (url, apiKey, logger, connTimeout, readTimeout) -> {
             assertThat(url).isEqualTo("foo");
             assertThat(apiKey).isEqualTo("bar");
             assertThat(logger).isInstanceOf(ConsoleLogger.class);

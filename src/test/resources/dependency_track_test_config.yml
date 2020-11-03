@@ -5,3 +5,5 @@ unclassified:
     dependencyTrackAutoCreateProjects: false
     dependencyTrackPollingTimeout: 5
     dependencyTrackPollingInterval: 1
+    dependencyTrackConnectionTimeout: 1
+    dependencyTrackReadTimeout: 3
