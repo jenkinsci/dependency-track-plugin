@@ -28,6 +28,7 @@ import java.util.List;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import java.util.Optional;
 import jenkins.tasks.SimpleBuildStep;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
@@ -88,8 +89,14 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
      */
     private Boolean autoCreateProjects;
     
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     private transient ApiClientFactory clientFactory;
+
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
     private transient DescriptorImpl descriptor;
+
     private transient boolean overrideGlobals;
     
     // Fields in config.jelly must match the parameter names
