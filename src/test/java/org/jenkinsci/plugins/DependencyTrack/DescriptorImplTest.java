@@ -88,12 +88,17 @@ public class DescriptorImplTest {
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
         };
-        when(client.testConnection()).thenReturn("test").thenThrow(ApiClientException.class);
+        when(client.testConnection()).thenReturn("Dependency-Track v3.8.0").thenReturn("test").thenThrow(ApiClientException.class);
         uut = new DescriptorImpl(factory);
 
         assertThat(uut.doTestConnection("http:///url.tld", "key"))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
-                .hasMessage("Connection successful - test")
+                .hasMessage("Connection successful - Dependency-Track v3.8.0")
+                .hasNoCause();
+
+        assertThat(uut.doTestConnection("http:///url.tld/", "key"))
+                .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
+                .hasMessageStartingWith("Connection failed - test")
                 .hasNoCause();
 
         assertThat(uut.doTestConnection("http:///url.tld/", "key"))

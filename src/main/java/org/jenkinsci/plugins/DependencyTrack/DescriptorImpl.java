@@ -152,7 +152,8 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
         if (doCheckDependencyTrackUrl(dependencyTrackUrl).kind == FormValidation.Kind.OK && StringUtils.isNotBlank(dependencyTrackApiKey)) {
             try {
                 final ApiClient apiClient = getClient(PluginUtil.parseBaseUrl(dependencyTrackUrl), dependencyTrackApiKey);
-                return FormValidation.ok("Connection successful - " + apiClient.testConnection());
+                final String result = apiClient.testConnection();
+                return StringUtils.startsWith(result, "Dependency-Track v") ? FormValidation.ok("Connection successful - " + result) : FormValidation.error("Connection failed - " + result);
             } catch (ApiClientException e) {
                 return FormValidation.error(e, "Connection failed");
             }

@@ -93,13 +93,13 @@ public class ApiClientTest {
                 .route(routes -> routes.get(ApiClient.PROJECT_URL, (request, response) -> {
                     assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
                     assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-                    return response.addHeader("X-Powered-By", "test").send();
+                    return response.addHeader("X-Powered-By", "Dependency-Track v3.8.0").send();
                 }))
                 .bindNow();
 
         ApiClient uut = createClient();
 
-        assertThat(uut.testConnection()).isEqualTo("test");
+        assertThat(uut.testConnection()).isEqualTo("Dependency-Track v3.8.0");
     }
 
     @Test
