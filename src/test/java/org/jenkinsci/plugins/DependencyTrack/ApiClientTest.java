@@ -51,6 +51,7 @@ import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -115,6 +116,24 @@ public class ApiClientTest {
         assertThatCode(() -> uut.testConnection()).isInstanceOf(ApiClientException.class)
                 .hasNoCause()
                 .hasMessage("Authentication or authorization failure");
+    }
+
+    @Test
+    public void testConnectionTestInternalError() {
+        server = HttpServer.create()
+                .host("localhost")
+                .port(0)
+                .route(routes -> routes.get(ApiClient.PROJECT_URL, (request, response) -> response.status(HttpResponseStatus.INTERNAL_SERVER_ERROR).sendString(Mono.just("something went wrong"))))
+                .bindNow();
+
+        ApiClient uut = createClient();
+
+        assertThatCode(() -> uut.testConnection()).isInstanceOf(ApiClientException.class)
+                .hasNoCause()
+                .hasMessage("An error occurred connecting to Dependency-Track");
+        
+        verify(logger).log(startsWith("An error occurred connecting to Dependency-Track - HTTP response code: 500"));
+        verify(logger).log(eq("something went wrong"));
     }
 
     @Test()

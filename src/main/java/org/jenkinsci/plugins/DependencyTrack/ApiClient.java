@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
@@ -98,13 +99,16 @@ public class ApiClient {
                 return conn.getHeaderField("X-Powered-By");
             } else if (conn.getResponseCode() == HTTP_UNAUTHORIZED || conn.getResponseCode() == HTTP_FORBIDDEN) {
                 throw new ApiClientException("Authentication or authorization failure");
+            } else {
+                logger.log("An error occurred connecting to Dependency-Track - HTTP response code: " + conn.getResponseCode() + " " + conn.getResponseMessage());
+                logHttpError(conn);
+                throw new ApiClientException("An error occurred connecting to Dependency-Track");
             }
         } catch (ApiClientException e) {
             throw e;
         } catch (IOException e) {
             throw new ApiClientException("An error occurred connecting to Dependency-Track", e);
         }
-        throw new ApiClientException("An error occurred connecting to Dependency-Track");
     }
 
     public List<Project> getProjects() throws ApiClientException {
@@ -174,6 +178,7 @@ public class ApiClient {
                     throw new ApiClientException("An error occurred while looking up project id", e);
                 }
             } else {
+                logHttpError(conn);
                 throw new ApiClientException("An error occurred while looking up project id - HTTP response code: " + conn.getResponseCode() + " " + conn.getResponseMessage());
             }
         } catch (ApiClientException e) {
@@ -201,6 +206,7 @@ public class ApiClient {
                     throw new ApiClientException("An error occurred while retrieving findings", e);
                 }
             } else {
+                logHttpError(conn);
                 throw new ApiClientException("An error occurred while retrieving findings - HTTP response code: " + conn.getResponseCode() + " " + conn.getResponseMessage());
             }
         } catch (ApiClientException e) {
@@ -270,16 +276,20 @@ public class ApiClient {
                 }
             case HTTP_BAD_REQUEST:
                 logger.log(Messages.Builder_Payload_Invalid());
+                logHttpError(conn);
                 break;
             case HTTP_UNAUTHORIZED:
                 logger.log(Messages.Builder_Unauthorized());
+                logHttpError(conn);
                 break;
             case HTTP_NOT_FOUND:
                 logger.log(Messages.Builder_Project_NotFound());
+                logHttpError(conn);
                 break;
             default:
                 logger.log(Messages.Builder_Error_Connect() + ": "
                         + conn.getResponseCode() + " " + conn.getResponseMessage());
+                logHttpError(conn);
                 break;
         }
         return new UploadResult(false);
@@ -304,6 +314,7 @@ public class ApiClient {
                 }
             } else {
                 logger.log("An acceptable response was not returned: " + conn.getResponseCode());
+                logHttpError(conn);
                 throw new ApiClientException("An acceptable response was not returned - HTTP response code: " + conn.getResponseCode() + " " + conn.getResponseMessage());
             }
         } catch (ApiClientException e) {
@@ -316,5 +327,13 @@ public class ApiClient {
     private String getResponseBody(InputStream in) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
         return reader.lines().collect(Collectors.joining());
+    }
+
+    private void logHttpError(final HttpURLConnection conn) {
+        try (InputStream in = new BufferedInputStream(conn.getErrorStream())) {
+            logger.log(getResponseBody(in));
+        } catch (UncheckedIOException | IOException ignore) {
+            // ignored ... the error stream might have been closed already or whatever
+        }
     }
 }
