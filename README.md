@@ -1,4 +1,4 @@
-[![Build Status](https://ci.jenkins.io/buildStatus/icon?job=Plugins/dependency-track-plugin/master)](https://ci.jenkins.io/job/Plugins/job/dependency-track-plugin)
+[![Build Status](https://github.com/jenkinsci/dependency-track-plugin/workflows/CI%20build/badge.svg)](https://github.com/jenkinsci/dependency-track-plugin/actions?query=workflow%3ACI%20build)
 [![License][license-image]][license-url]
 [![Plugin Version](https://img.shields.io/jenkins/plugin/v/dependency-track.svg)](https://plugins.jenkins.io/dependency-track)
 [![Jenkins Plugin Installs](https://img.shields.io/jenkins/plugin/i/dependency-track.svg?color=blue)](https://plugins.jenkins.io/dependency-track)

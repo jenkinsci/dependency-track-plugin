@@ -1,4 +1,4 @@
-name: build-with-tests
+name: CI build
 
 on: [push, pull_request]
 
