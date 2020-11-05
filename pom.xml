@@ -41,7 +41,7 @@
     </licenses>
 
     <properties>
-        <jenkins.version>2.235.1</jenkins.version>
+        <jenkins.version>2.249.2</jenkins.version>
         <configuration-as-code.version>1.44</configuration-as-code.version>
         <java.level>8</java.level>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

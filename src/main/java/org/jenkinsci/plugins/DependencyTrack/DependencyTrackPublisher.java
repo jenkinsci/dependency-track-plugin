@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import hudson.EnvVars;
 import java.util.Optional;
 import jenkins.tasks.SimpleBuildStep;
 import lombok.AccessLevel;
@@ -115,19 +116,16 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
     /**
      * This method is called whenever the build step is executed.
      *
-     * @param build A Run object
-     * @param filePath A FilePath object
-     * @param launcher A Launcher object
-     * @param listener A BuildListener object
-     * @throws java.lang.InterruptedException
-     * @throws java.io.IOException
+     * @param run a build this is running as a part of
+     * @param workspace a workspace to use for any file operations
+     * @param env environment variables applicable to this step
+     * @param launcher a way to start processes
+     * @param listener a place to send output
+     * @throws InterruptedException if the step is interrupted
+     * @throws IOException if something goes wrong
      */
     @Override
-    public void perform(@NonNull final Run<?, ?> build,
-            @NonNull final FilePath filePath,
-            @NonNull final Launcher launcher,
-            @NonNull final TaskListener listener) throws InterruptedException, IOException {
-
+    public void perform(@NonNull Run<?, ?> run, @NonNull FilePath workspace, @NonNull EnvVars env, @NonNull Launcher launcher, @NonNull TaskListener listener) throws InterruptedException, IOException {
         final ConsoleLogger logger = new ConsoleLogger(listener);
 
         final ApiClient apiClient = clientFactory.create(getEffectiveUrl(), getEffectiveApiKey(), logger, descriptor.getDependencyTrackConnectionTimeout(), descriptor.getDependencyTrackReadTimeout());
@@ -143,7 +141,7 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
             throw new AbortException("Invalid arguments");
         }
 
-        final FilePath artifactFilePath = new FilePath(filePath, artifact);
+        final FilePath artifactFilePath = new FilePath(workspace, artifact);
         if (!artifactFilePath.exists()) {
             logger.log(Messages.Builder_Artifact_NonExist());
             throw new AbortException("Nonexistent artifact " + artifact);
@@ -157,7 +155,7 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
         }
 
         if (synchronous && StringUtils.isNotBlank(uploadResult.getToken())) {
-            publishAnalysisResult(logger, apiClient, uploadResult.getToken(), build);
+            publishAnalysisResult(logger, apiClient, uploadResult.getToken(), run);
         }
     }
 
