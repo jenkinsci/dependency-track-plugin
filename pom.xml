@@ -31,6 +31,11 @@
                 <role>developer</role>
             </roles>
         </developer>
+		<developer>
+			<name>Ronny Perinke</name>
+			<id>sephiroth-j</id>
+			<timezone>1</timezone>
+		</developer>
     </developers>
 
     <licenses>
