@@ -17,11 +17,13 @@ package org.jenkinsci.plugins.DependencyTrack;
 
 import hudson.model.Action;
 import hudson.model.Run;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import jenkins.model.RunAction2;
 import jenkins.tasks.SimpleBuildStep;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import net.sf.json.JSONArray;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
@@ -29,7 +31,10 @@ import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 @Getter
-public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction {
+@EqualsAndHashCode
+public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction, Serializable {
+    
+    private static final long serialVersionUID = 9144544646132489130L;
 
     private transient Run<?, ?> run; // transient: see RunAction2, and JENKINS-45892
     private final List<Finding> findings;
