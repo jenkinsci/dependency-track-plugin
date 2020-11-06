@@ -42,7 +42,6 @@ import org.jenkinsci.plugins.DependencyTrack.model.Project;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
-import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
@@ -97,17 +96,14 @@ public class ApiClient {
             conn.connect();
             if (conn.getResponseCode() == HTTP_OK) {
                 return conn.getHeaderField("X-Powered-By");
-            } else if (conn.getResponseCode() == HTTP_UNAUTHORIZED || conn.getResponseCode() == HTTP_FORBIDDEN) {
-                throw new ApiClientException("Authentication or authorization failure");
             } else {
-                logger.log("An error occurred connecting to Dependency-Track - HTTP response code: " + conn.getResponseCode() + " " + conn.getResponseMessage());
                 logHttpError(conn);
-                throw new ApiClientException("An error occurred connecting to Dependency-Track");
+                throw new ApiClientException(Messages.ApiClient_Error_Connection(conn.getResponseCode(), conn.getResponseMessage()));
             }
         } catch (ApiClientException e) {
             throw e;
         } catch (IOException e) {
-            throw new ApiClientException("An error occurred connecting to Dependency-Track", e);
+            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
         }
     }
 
@@ -145,7 +141,7 @@ public class ApiClient {
         } catch (ApiClientException e) {
             throw e;
         } catch (IOException e) {
-            throw new ApiClientException("An error occurred connecting to Dependency-Track", e);
+            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
         }
         return Collections.emptyList();
     }
@@ -175,16 +171,16 @@ public class ApiClient {
                     }
                     return builder.build();
                 } catch (IOException e) {
-                    throw new ApiClientException("An error occurred while looking up project id", e);
+                    throw new ApiClientException(Messages.ApiClient_Error_ProjectLookup(projectName, projectVersion, conn.getResponseCode(), conn.getResponseMessage()), e);
                 }
             } else {
                 logHttpError(conn);
-                throw new ApiClientException("An error occurred while looking up project id - HTTP response code: " + conn.getResponseCode() + " " + conn.getResponseMessage());
+                throw new ApiClientException(Messages.ApiClient_Error_ProjectLookup(projectName, projectVersion, conn.getResponseCode(), conn.getResponseMessage()));
             }
         } catch (ApiClientException e) {
             throw e;
         } catch (IOException e) {
-            throw new ApiClientException("An error occurred while looking up project id", e);
+            throw new ApiClientException(Messages.ApiClient_Error_ProjectLookup(projectName, projectVersion, StringUtils.EMPTY, StringUtils.EMPTY), e);
         }
     }
 
@@ -203,16 +199,16 @@ public class ApiClient {
                 try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
                     return FindingParser.parse(getResponseBody(in));
                 } catch (IOException e) {
-                    throw new ApiClientException("An error occurred while retrieving findings", e);
+                    throw new ApiClientException(Messages.ApiClient_Error_RetrieveFindings(conn.getResponseCode(), conn.getResponseMessage()), e);
                 }
             } else {
                 logHttpError(conn);
-                throw new ApiClientException("An error occurred while retrieving findings - HTTP response code: " + conn.getResponseCode() + " " + conn.getResponseMessage());
+                throw new ApiClientException(Messages.ApiClient_Error_RetrieveFindings(conn.getResponseCode(), conn.getResponseMessage()));
             }
         } catch (ApiClientException e) {
             throw e;
         } catch (IOException e) {
-            throw new ApiClientException("An error occurred while retrieving findings", e);
+            throw new ApiClientException(Messages.ApiClient_Error_RetrieveFindings(StringUtils.EMPTY, StringUtils.EMPTY), e);
         }
     }
 
@@ -266,13 +262,12 @@ public class ApiClient {
                 String responseBody = null;
                 try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
                     responseBody = getResponseBody(in);
-                } finally {
-                    if (StringUtils.isNotBlank(responseBody)) {
-                        final JSONObject json = JSONObject.fromObject(responseBody);
-                        return new UploadResult(true, StringUtils.trimToNull(json.getString("token")));
-                    } else {
-                        return new UploadResult(true);
-                    }
+                }
+                if (StringUtils.isNotBlank(responseBody)) {
+                    final JSONObject json = JSONObject.fromObject(responseBody);
+                    return new UploadResult(true, StringUtils.trimToNull(json.getString("token")));
+                } else {
+                    return new UploadResult(true);
                 }
             case HTTP_BAD_REQUEST:
                 logger.log(Messages.Builder_Payload_Invalid());
@@ -310,21 +305,21 @@ public class ApiClient {
                     final JSONObject jsonObject = JSONObject.fromObject(getResponseBody(in));
                     return jsonObject.getBoolean("processing");
                 } catch (IOException e) {
-                    throw new ApiClientException("An error occurred while checking if a token is being processed", e);
+                    throw new ApiClientException(Messages.ApiClient_Error_TokenProcessing(conn.getResponseCode(), conn.getResponseMessage()), e);
                 }
             } else {
                 logger.log("An acceptable response was not returned: " + conn.getResponseCode());
                 logHttpError(conn);
-                throw new ApiClientException("An acceptable response was not returned - HTTP response code: " + conn.getResponseCode() + " " + conn.getResponseMessage());
+                throw new ApiClientException(Messages.ApiClient_Error_TokenProcessing(conn.getResponseCode(), conn.getResponseMessage()));
             }
         } catch (ApiClientException e) {
             throw e;
         } catch (IOException e) {
-            throw new ApiClientException("An error occurred while checking if a token is being processed", e);
+            throw new ApiClientException(Messages.ApiClient_Error_TokenProcessing(StringUtils.EMPTY, StringUtils.EMPTY), e);
         }
     }
 
-    private String getResponseBody(InputStream in) throws IOException {
+    private String getResponseBody(InputStream in) {
         BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
         return reader.lines().collect(Collectors.joining());
     }

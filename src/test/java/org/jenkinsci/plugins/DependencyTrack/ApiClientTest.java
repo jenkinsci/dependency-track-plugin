@@ -51,7 +51,6 @@ import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -115,7 +114,7 @@ public class ApiClientTest {
 
         assertThatCode(() -> uut.testConnection()).isInstanceOf(ApiClientException.class)
                 .hasNoCause()
-                .hasMessage("Authentication or authorization failure");
+                .hasMessage(Messages.ApiClient_Error_Connection(401, "Unauthorized"));
     }
 
     @Test
@@ -130,9 +129,8 @@ public class ApiClientTest {
 
         assertThatCode(() -> uut.testConnection()).isInstanceOf(ApiClientException.class)
                 .hasNoCause()
-                .hasMessage("An error occurred connecting to Dependency-Track");
+                .hasMessage(Messages.ApiClient_Error_Connection(500, "Internal Server Error"));
         
-        verify(logger).log(startsWith("An error occurred connecting to Dependency-Track - HTTP response code: 500"));
         verify(logger).log(eq("something went wrong"));
     }
 
@@ -332,7 +330,7 @@ public class ApiClientTest {
 
         assertThatCode(() -> uut.isTokenBeingProcessed("foo")).isInstanceOf(ApiClientException.class)
                 .hasNoCause()
-                .hasMessage("An acceptable response was not returned - HTTP response code: 404 Not Found");
+                .hasMessage(Messages.ApiClient_Error_TokenProcessing(404, "Not Found"));
 
         assertThat(uut.isTokenBeingProcessed("uuid-1")).isTrue();
     }
