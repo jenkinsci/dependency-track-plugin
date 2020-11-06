@@ -16,33 +16,34 @@
 package org.jenkinsci.plugins.DependencyTrack;
 
 import hudson.console.LineTransformationOutputStream;
-import hudson.model.TaskListener;
 import java.io.IOException;
 import java.io.PrintStream;
 
-public class ConsoleLogger extends LineTransformationOutputStream {
+class ConsoleLogger extends LineTransformationOutputStream {
 
     private static final String PREFIX = "[DependencyTrack] ";
-    private transient final PrintStream logger;
+    private final PrintStream logger;
 
-    public ConsoleLogger(TaskListener listener) {
-        logger = listener.getLogger();
+    protected ConsoleLogger(PrintStream logger) {
+        this.logger = logger;
     }
-    
-    public ConsoleLogger() {
-        logger = System.err;
+
+    ConsoleLogger() {
+        this(System.err);
     }
 
     /**
      * Log messages to the builds console.
+     *
      * @param message The message to log
      */
     protected void log(String message) {
-        logger.println(PREFIX + message.replaceAll("\\n", "\n" + PREFIX));
+        logger.println(PREFIX + message.replace("\n", "\n" + PREFIX));
     }
 
     /**
      * Changes each new line to append the prefix before logging
+     *
      * @param b
      * @param len
      * @throws java.io.IOException

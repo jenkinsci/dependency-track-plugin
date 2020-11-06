@@ -30,6 +30,7 @@ import hudson.EnvVars;
 import java.util.Optional;
 import jenkins.tasks.SimpleBuildStep;
 import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
@@ -43,6 +44,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 
 @Getter
 @Setter(onMethod_ = {@DataBoundSetter})
+@EqualsAndHashCode(callSuper = true)
 public final class DependencyTrackPublisher extends ThresholdCapablePublisher implements SimpleBuildStep, Serializable {
 
     private static final long serialVersionUID = 480115440498217963L;
@@ -126,7 +128,7 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
      */
     @Override
     public void perform(@NonNull Run<?, ?> run, @NonNull FilePath workspace, @NonNull EnvVars env, @NonNull Launcher launcher, @NonNull TaskListener listener) throws InterruptedException, IOException {
-        final ConsoleLogger logger = new ConsoleLogger(listener);
+        final ConsoleLogger logger = new ConsoleLogger(listener.getLogger());
 
         final ApiClient apiClient = clientFactory.create(getEffectiveUrl(), getEffectiveApiKey(), logger, descriptor.getDependencyTrackConnectionTimeout(), descriptor.getDependencyTrackReadTimeout());
 
