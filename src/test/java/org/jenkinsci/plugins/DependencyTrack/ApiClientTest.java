@@ -304,7 +304,7 @@ public class ApiClientTest {
         when(mockFile.getPath()).thenReturn(tmpDir.getRoot().getPath());
         FilePath fileWithError = new FilePath(mockFile);
         assertThat(uut.upload(null, "p1", "v1", fileWithError, true)).isEqualTo(new UploadResult(false));
-        verify(logger).log(startsWith(Messages.Builder_Error_Processing()));
+        verify(logger).log(startsWith(Messages.Builder_Error_Processing(tmpDir.getRoot().getPath(), "")));
     }
 
     @Test

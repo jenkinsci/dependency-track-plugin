@@ -137,7 +137,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
             });
         } catch (ApiClientException e) {
             projects.clear();
-            projects.add(Messages.Builder_Error_Projects() + ": " + e.getLocalizedMessage(), null);
+            projects.add(Messages.Builder_Error_Projects(e.getLocalizedMessage()), null);
         }
         return projects;
     }

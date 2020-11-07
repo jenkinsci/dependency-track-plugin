@@ -136,25 +136,27 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
 
         if (StringUtils.isBlank(artifact)) {
             logger.log(Messages.Builder_Artifact_Unspecified());
-            throw new AbortException("Artifact not specified");
+            throw new AbortException(Messages.Builder_Artifact_Unspecified());
         }
         if (StringUtils.isBlank(projectId) && (StringUtils.isBlank(projectName) || StringUtils.isBlank(projectVersion))) {
             logger.log(Messages.Builder_Result_InvalidArguments());
-            throw new AbortException("Invalid arguments");
+            throw new AbortException(Messages.Builder_Result_InvalidArguments());
         }
 
         final FilePath artifactFilePath = new FilePath(workspace, artifact);
         if (!artifactFilePath.exists()) {
-            logger.log(Messages.Builder_Artifact_NonExist());
-            throw new AbortException("Nonexistent artifact " + artifact);
+            logger.log(Messages.Builder_Artifact_NonExist(artifact));
+            throw new AbortException(Messages.Builder_Artifact_NonExist(artifact));
         }
 
         final UploadResult uploadResult = apiClient.upload(projectId, projectName, projectVersion,
                 artifactFilePath, isEffectiveAutoCreateProjects());
 
         if (!uploadResult.isSuccess()) {
-            throw new AbortException("Dependency Track server upload failed");
+            throw new AbortException(Messages.Builder_Upload_Failed());
         }
+        
+        logger.log(Messages.Builder_Success(String.format("%s/projects/%s", getEffectiveUrl(), projectId != null ? projectId : StringUtils.EMPTY)));
 
         if (synchronous && StringUtils.isNotBlank(uploadResult.getToken())) {
             publishAnalysisResult(logger, apiClient, uploadResult.getToken(), run);
@@ -171,12 +173,12 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
             if (timeout < System.currentTimeMillis()) {
                 logger.log(Messages.Builder_Polling_Timeout_Exceeded());
                 // XXX this seems like a fatal error
-                throw new AbortException("Dependency Track server response timeout");
+                throw new AbortException(Messages.Builder_Polling_Timeout_Exceeded());
             }
         }
         if (StringUtils.isBlank(projectId)) {
             // project was auto-created. Fetch it's new uuid so that we can look up the results
-            logger.log(Messages.Builder_Project_Lookup());
+            logger.log(Messages.Builder_Project_Lookup(projectName, projectVersion));
             projectId = apiClient.lookupProject(projectName, projectVersion).getUuid();
         }
         logger.log(Messages.Builder_Findings_Processing());

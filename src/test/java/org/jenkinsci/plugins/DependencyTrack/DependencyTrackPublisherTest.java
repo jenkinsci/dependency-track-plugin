@@ -87,27 +87,27 @@ public class DependencyTrackPublisherTest {
         when(listener.getLogger()).thenReturn(System.err);
         FilePath workDir = new FilePath(tmpDir.getRoot());
         final DependencyTrackPublisher uut1 = new DependencyTrackPublisher("", false, clientFactory);
-        assertThatCode(() -> uut1.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage("Artifact not specified");
+        assertThatCode(() -> uut1.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Artifact_Unspecified());
 
         File artifact = tmpDir.newFile();
         // uuid and name and version missing
         final DependencyTrackPublisher uut2 = new DependencyTrackPublisher(artifact.getName(), false, clientFactory);
-        assertThatCode(() -> uut2.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage("Invalid arguments");
+        assertThatCode(() -> uut2.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Result_InvalidArguments());
 
         // version missing
         final DependencyTrackPublisher uut3 = new DependencyTrackPublisher(artifact.getName(), false, clientFactory);
-        uut2.setProjectName("name");
-        assertThatCode(() -> uut3.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage("Invalid arguments");
+        uut3.setProjectName("name");
+        assertThatCode(() -> uut3.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Result_InvalidArguments());
 
         // name missing
         final DependencyTrackPublisher uut4 = new DependencyTrackPublisher(artifact.getName(), false, clientFactory);
-        uut2.setProjectVersion("version");
-        assertThatCode(() -> uut4.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage("Invalid arguments");
+        uut4.setProjectVersion("version");
+        assertThatCode(() -> uut4.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Result_InvalidArguments());
 
         // file not within workdir
         final DependencyTrackPublisher uut5 = new DependencyTrackPublisher("foo", false, clientFactory);
-        uut2.setProjectId("uuid-1");
-        assertThatCode(() -> uut5.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage("Invalid arguments");
+        uut5.setProjectId("uuid-1");
+        assertThatCode(() -> uut5.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Artifact_NonExist("foo"));
     }
 
     @Test
@@ -126,7 +126,7 @@ public class DependencyTrackPublisherTest {
         verify(client, never()).getFindings(anyString());
         verify(client, never()).lookupProject(anyString(), anyString());
 
-        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage("Dependency Track server upload failed");
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Upload_Failed());
     }
 
     @Test
@@ -203,7 +203,7 @@ public class DependencyTrackPublisherTest {
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(true)))
                 .thenReturn(new UploadResult(false));
 
-        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage("Dependency Track server upload failed");
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Upload_Failed());
     }
 
     @Test

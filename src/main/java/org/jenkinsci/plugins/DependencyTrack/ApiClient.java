@@ -218,7 +218,7 @@ public class ApiClient {
         try {
             encodedScan = Base64.encodeBase64String(artifact.readToString().getBytes(StandardCharsets.UTF_8));
         } catch (IOException | InterruptedException e) {
-            logger.log(Messages.Builder_Error_Processing() + ": " + e.getMessage());
+            logger.log(Messages.Builder_Error_Processing(artifact.getRemote(), e.getLocalizedMessage()));
             return new UploadResult(false);
         }
         // Creates the JSON payload that will be sent to Dependency-Track
@@ -248,17 +248,12 @@ public class ApiClient {
             os.write(payloadBytes);
             os.flush();
         } catch (IOException e) {
-            logger.log(Messages.Builder_Error_Processing() + ": " + e.getMessage());
+            logger.log(Messages.Builder_Error_Processing(artifact.getRemote(), e.getLocalizedMessage()));
             return new UploadResult(false);
         }
         // Checks the server response
         switch (conn.getResponseCode()) {
             case HTTP_OK:
-                if (projectId != null) {
-                    logger.log(Messages.Builder_Success() + " - " + projectId);
-                } else {
-                    logger.log(Messages.Builder_Success());
-                }
                 String responseBody = null;
                 try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
                     responseBody = getResponseBody(in);
@@ -282,8 +277,7 @@ public class ApiClient {
                 logHttpError(conn);
                 break;
             default:
-                logger.log(Messages.Builder_Error_Connect() + ": "
-                        + conn.getResponseCode() + " " + conn.getResponseMessage());
+                logger.log(Messages.ApiClient_Error_Connection(conn.getResponseCode(), conn.getResponseMessage()));
                 logHttpError(conn);
                 break;
         }
@@ -308,7 +302,7 @@ public class ApiClient {
                     throw new ApiClientException(Messages.ApiClient_Error_TokenProcessing(conn.getResponseCode(), conn.getResponseMessage()), e);
                 }
             } else {
-                logger.log("An acceptable response was not returned: " + conn.getResponseCode());
+                logger.log(Messages.ApiClient_Error_TokenProcessing(conn.getResponseCode(), conn.getResponseMessage()));
                 logHttpError(conn);
                 throw new ApiClientException(Messages.ApiClient_Error_TokenProcessing(conn.getResponseCode(), conn.getResponseMessage()));
             }

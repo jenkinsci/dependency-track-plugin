@@ -75,7 +75,7 @@ public class DescriptorImplTest {
         );
 
         assertThat(uut.doFillProjectIdItems()).usingElementComparatorOnFields("name", "value", "selected").containsExactly(
-                new ListBoxModel.Option(Messages.Builder_Error_Projects() + ": test failure", null, false)
+                new ListBoxModel.Option(Messages.Builder_Error_Projects("test failure"), null, false)
         );
     }
 
