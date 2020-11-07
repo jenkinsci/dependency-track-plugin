@@ -52,7 +52,7 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
 
     @Override
     public String getDisplayName() {
-        return "Dependency-Track";
+        return "Dependency-Track Report";
     }
 
     @Override

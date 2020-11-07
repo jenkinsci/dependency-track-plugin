@@ -3,7 +3,7 @@
 
     <st:header name="viewport" value="width=device-width, initial-scale=1, shrink-to-fit=no" />
 
-    <l:layout title="Dependency-Track Report for ${it.run.parent.displayName}${it.run.displayName}">
+    <l:layout title="${it.displayName} for ${it.run.parent.displayName}${it.run.displayName}">
 
         <l:side-panel>
             <st:include page="sidepanel.jelly" it="${it.run}" optional="true" />
@@ -23,7 +23,7 @@
             </script>
             <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/result-action.js" defer="defer"></script>
 
-            <h1>${it.displayName} Results for ${it.run.displayName}</h1>
+            <h1>${it.displayName} for ${it.run.displayName}</h1>
 
             <div id="app">
             <b-form-group
@@ -91,7 +91,10 @@
                     <b-icon :icon="data.detailsShowing ? 'dash-square' : 'plus-square'" v-on:click="data.toggleDetails"></b-icon> {{data.value}}
                 </template>
                 <template slot="cell(vulnerability.vulnId)" slot-scope="data">
-                    <b-badge pill="pill" variant="info">{{data.item.vulnerability.source}}</b-badge> {{data.value}}
+                    <b-badge pill="pill" variant="info">{{data.item.vulnerability.source}}</b-badge>
+                    <a v-if="data.item.vulnerability.source === 'NVD'" :href="'https://nvd.nist.gov/vuln/detail/'+data.value" title="View Details on NVD" class="vulnid" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
+                    <a v-else-if="data.item.vulnerability.source === 'OSSINDEX'" :href="'https://ossindex.sonatype.org/vuln/'+data.value" title="View Details on Sonatype OSS INDEX" class="vulnid" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
+                    <template v-else="v-else">{{data.value}}</template>
                 </template>
                 <template slot="cell(vulnerability.severityRank)" slot-scope="data">
                     <b-badge variant="danger" v-if="data.value === 0"><b-icon icon="bug-fill" font-scale="1.5"></b-icon></b-badge>
@@ -103,7 +106,7 @@
                     {{data.item.vulnerability.severity}}
                 </template>
                 <template slot="cell(vulnerability.cweId)" slot-scope="data" v-if="data.value">
-                    CWE-{{data.value}} {{data.item.vulnerability.cweName}}
+                    <a :href="'https://cwe.mitre.org/data/definitions/'+data.value+'.html'" title="View Details on MITRE" class="cweid" rel="noopener noreferrer" referrerpolicy="no-referrer">CWE-{{data.value}} {{data.item.vulnerability.cweName}}</a>
                 </template>
                 <template v-slot:row-details="row">
                     <b-card 

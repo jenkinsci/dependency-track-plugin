@@ -1,3 +1,10 @@
+a.vulnid, a.cweid {
+    font-weight: normal;
+}
+#app .badge+a.vulnid {
+    margin-left: .5ch;
+}
+
 /*
 Support for dark Theme of Jenkins in combination with bootstrap
 */
