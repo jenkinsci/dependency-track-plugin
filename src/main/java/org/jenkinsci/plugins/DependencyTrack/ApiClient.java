@@ -134,12 +134,8 @@ public class ApiClient {
                     return array.stream()
                             .map(o -> ProjectParser.parse((JSONObject) o))
                             .collect(Collectors.toList());
-                } catch (IOException e) {
-                    throw new ApiClientException("An error occurred while retrieving projects", e);
                 }
             }
-        } catch (ApiClientException e) {
-            throw e;
         } catch (IOException e) {
             throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
         }
@@ -170,8 +166,6 @@ public class ApiClient {
                         builder.version(version);
                     }
                     return builder.build();
-                } catch (IOException e) {
-                    throw new ApiClientException(Messages.ApiClient_Error_ProjectLookup(projectName, projectVersion, conn.getResponseCode(), conn.getResponseMessage()), e);
                 }
             } else {
                 logHttpError(conn);
@@ -198,8 +192,6 @@ public class ApiClient {
             if (conn.getResponseCode() == HTTP_OK) {
                 try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
                     return FindingParser.parse(getResponseBody(in));
-                } catch (IOException e) {
-                    throw new ApiClientException(Messages.ApiClient_Error_RetrieveFindings(conn.getResponseCode(), conn.getResponseMessage()), e);
                 }
             } else {
                 logHttpError(conn);
@@ -254,15 +246,14 @@ public class ApiClient {
         // Checks the server response
         switch (conn.getResponseCode()) {
             case HTTP_OK:
-                String responseBody = null;
                 try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
-                    responseBody = getResponseBody(in);
-                }
-                if (StringUtils.isNotBlank(responseBody)) {
-                    final JSONObject json = JSONObject.fromObject(responseBody);
-                    return new UploadResult(true, StringUtils.trimToNull(json.getString("token")));
-                } else {
-                    return new UploadResult(true);
+                    String responseBody = getResponseBody(in);
+                    if (StringUtils.isNotBlank(responseBody)) {
+                        final JSONObject json = JSONObject.fromObject(responseBody);
+                        return new UploadResult(true, StringUtils.trimToNull(json.getString("token")));
+                    } else {
+                        return new UploadResult(true);
+                    }
                 }
             case HTTP_BAD_REQUEST:
                 logger.log(Messages.Builder_Payload_Invalid());
@@ -298,8 +289,6 @@ public class ApiClient {
                 try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
                     final JSONObject jsonObject = JSONObject.fromObject(getResponseBody(in));
                     return jsonObject.getBoolean("processing");
-                } catch (IOException e) {
-                    throw new ApiClientException(Messages.ApiClient_Error_TokenProcessing(conn.getResponseCode(), conn.getResponseMessage()), e);
                 }
             } else {
                 logger.log(Messages.ApiClient_Error_TokenProcessing(conn.getResponseCode(), conn.getResponseMessage()));
