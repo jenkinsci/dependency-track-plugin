@@ -117,6 +117,7 @@ public class DependencyTrackPublisherTest {
         FilePath workDir = new FilePath(tmpDir.getRoot());
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, clientFactory);
         uut.setProjectId("uuid-1");
+        uut.setDependencyTrackApiKey("key");
 
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false)))
                 .thenReturn(new UploadResult(true))
@@ -131,13 +132,13 @@ public class DependencyTrackPublisherTest {
 
     @Test
     public void testPerformAsyncWithoutProjectId() throws IOException {
-        r.jenkins.getDescriptorByType(DescriptorImpl.class).setDependencyTrackPollingInterval(1);
         when(listener.getLogger()).thenReturn(System.err);
         File tmp = tmpDir.newFile();
         FilePath workDir = new FilePath(tmpDir.getRoot());
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, clientFactory);
         uut.setProjectName("name-1");
         uut.setProjectVersion("version-1");
+        uut.setDependencyTrackApiKey("key");
 
         when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
 
@@ -148,11 +149,13 @@ public class DependencyTrackPublisherTest {
 
     @Test
     public void testPerformSync() throws IOException {
+        r.jenkins.getDescriptorByType(DescriptorImpl.class).setDependencyTrackPollingInterval(1);
         when(listener.getLogger()).thenReturn(System.err);
         File tmp = tmpDir.newFile();
         FilePath workDir = new FilePath(tmpDir.getRoot());
         DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
         uut.setProjectId("uuid-1");
+        uut.setDependencyTrackApiKey("key");
 
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed(eq("token-1"))).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
@@ -172,6 +175,7 @@ public class DependencyTrackPublisherTest {
         DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
         uut.setProjectName("name-1");
         uut.setProjectVersion("version-1");
+        uut.setDependencyTrackApiKey("key");
 
         when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed(eq("token-1"))).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);

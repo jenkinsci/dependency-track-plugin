@@ -15,20 +15,31 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import hudson.model.AbstractProject;
 import hudson.model.Descriptor;
+import hudson.model.Item;
+import hudson.security.ACL;
 import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import hudson.util.Secret;
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.Optional;
+import jenkins.model.Jenkins;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
+import org.jenkinsci.plugins.plaincredentials.StringCredentials;
+import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
@@ -47,7 +58,7 @@ import org.kohsuke.stapler.StaplerRequest;
 public final class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Serializable {
 
     private static final long serialVersionUID = -2018722914973282748L;
-    
+
     private transient final ApiClientFactory clientFactory;
 
     /**
@@ -78,14 +89,14 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
      */
     @Setter(onMethod_ = {@DataBoundSetter})
     private int dependencyTrackPollingTimeout;
-    
+
     /**
-     * Defines the number of seconds to wait between two checks for 
+     * Defines the number of seconds to wait between two checks for
      * Dependency-Track to process a job (Synchronous Publishing Mode).
      */
     @Setter(onMethod_ = {@DataBoundSetter})
     private int dependencyTrackPollingInterval;
-    
+
     /**
      * the connection-timeout in seconds for every call to DT
      */
@@ -108,7 +119,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
     public DescriptorImpl() {
         this(ApiClient::new);
     }
-    
+
     DescriptorImpl(@NonNull ApiClientFactory clientFactory) {
         super(DependencyTrackPublisher.class);
         this.clientFactory = clientFactory;
@@ -124,13 +135,20 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
     /**
      * Retrieve the projects to populate the dropdown.
      *
+     * @param dependencyTrackUrl the base URL to Dependency-Track
+     * @param dependencyTrackApiKey the API key to use for authentication
+     * @param item used to lookup credentials in job config. ignored in global
      * @return ListBoxModel
      */
-    public ListBoxModel doFillProjectIdItems() {
+    public ListBoxModel doFillProjectIdItems(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable Item item) {
         final ListBoxModel projects = new ListBoxModel();
         projects.add("-- Select Project --", null);
         try {
-            final ApiClient apiClient = getClient(dependencyTrackUrl, dependencyTrackApiKey);
+            // url may come from instance-config. if empty, then take it from global config (this)
+            final String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElse(getDependencyTrackUrl());
+            // api-key may come from instance-config. if empty, then take it from global config (this)
+            final String apiKey = lookupApiKey(Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElse(getDependencyTrackApiKey()), item);
+            final ApiClient apiClient = getClient(url, apiKey);
             apiClient.getProjects().forEach(p -> {
                 String displayName = StringUtils.isNotBlank(p.getVersion()) ? p.getName() + " " + p.getVersion() : p.getName();
                 projects.add(displayName, p.getUuid());
@@ -140,6 +158,23 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
             projects.add(Messages.Builder_Error_Projects(e.getLocalizedMessage()), null);
         }
         return projects;
+    }
+
+    public ListBoxModel doFillDependencyTrackApiKeyItems(@QueryParameter String credentialsId, @AncestorInPath Item item) {
+        StandardListBoxModel result = new StandardListBoxModel();
+        if (item == null) {
+            if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
+                return result.includeCurrentValue(credentialsId);
+            }
+        } else {
+            if (!item.hasPermission(Item.EXTENDED_READ) && !item.hasPermission(CredentialsProvider.USE_ITEM)) {
+                return result.includeCurrentValue(credentialsId);
+            }
+        }
+        return result
+                .includeEmptyValue()
+                .includeAs(ACL.SYSTEM, item, StringCredentials.class, Collections.emptyList())
+                .includeCurrentValue(credentialsId);
     }
 
     /**
@@ -159,13 +194,18 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
      *
      * @param dependencyTrackUrl the base URL to Dependency-Track
      * @param dependencyTrackApiKey the API key to use for authentication
+     * @param item used to lookup credentials in job config. ignored in global
+     * config
      * @return FormValidation
      */
-    public FormValidation doTestConnection(@QueryParameter final String dependencyTrackUrl,
-            @QueryParameter final String dependencyTrackApiKey) {
-        if (doCheckDependencyTrackUrl(dependencyTrackUrl).kind == FormValidation.Kind.OK && StringUtils.isNotBlank(dependencyTrackApiKey)) {
+    public FormValidation doTestConnection(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable Item item) {
+        // url may come from instance-config. if empty, then take it from global config (this)
+        final String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElse(getDependencyTrackUrl());
+        // api-key may come from instance-config. if empty, then take it from global config (this)
+        final String apiKey = lookupApiKey(Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElse(getDependencyTrackApiKey()), item);
+        if (doCheckDependencyTrackUrl(url).kind == FormValidation.Kind.OK && StringUtils.isNotBlank(apiKey)) {
             try {
-                final ApiClient apiClient = getClient(PluginUtil.parseBaseUrl(dependencyTrackUrl), dependencyTrackApiKey);
+                final ApiClient apiClient = getClient(url, apiKey);
                 final String result = apiClient.testConnection();
                 return StringUtils.startsWith(result, "Dependency-Track v") ? FormValidation.ok("Connection successful - " + result) : FormValidation.error("Connection failed - " + result);
             } catch (ApiClientException e) {
@@ -186,10 +226,6 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
     @Override
     public boolean configure(StaplerRequest req, JSONObject formData) throws Descriptor.FormException {
         req.bindJSON(this, formData);
-        dependencyTrackUrl = formData.getString("dependencyTrackUrl");
-        dependencyTrackApiKey = formData.getString("dependencyTrackApiKey");
-        dependencyTrackAutoCreateProjects = formData.getBoolean("dependencyTrackAutoCreateProjects");
-        dependencyTrackPollingTimeout = formData.getInt("dependencyTrackPollingTimeout");
         save();
         return super.configure(req, formData);
     }
@@ -230,8 +266,16 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
         }
         return dependencyTrackPollingInterval;
     }
-    
+
     private ApiClient getClient(final String baseUrl, final String apiKey) {
         return clientFactory.create(baseUrl, apiKey, new ConsoleLogger(), Math.max(dependencyTrackConnectionTimeout, 0), Math.max(dependencyTrackReadTimeout, 0));
+    }
+
+    private String lookupApiKey(final String credentialId, final Item item) {
+        return CredentialsProvider.lookupCredentials(StringCredentials.class, item, ACL.SYSTEM, Collections.emptyList()).stream()
+                .filter(c -> c.getId().equals(credentialId))
+                .map(StringCredentials::getSecret)
+                .map(Secret::getPlainText)
+                .findFirst().orElse(StringUtils.EMPTY);
     }
 }

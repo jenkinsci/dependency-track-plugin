@@ -15,14 +15,20 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.domains.Domain;
 import hudson.model.Descriptor;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
+import hudson.util.Secret;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredRule;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import net.sf.json.JSONObject;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -68,48 +74,89 @@ public class DescriptorImplTest {
         doReturn(projects).doThrow(new ApiClientException("test failure"))
                 .when(client).getProjects();
 
-        assertThat(uut.doFillProjectIdItems()).usingElementComparatorOnFields("name", "value", "selected").containsExactly(
+        assertThat(uut.doFillProjectIdItems(null, null, null)).usingElementComparatorOnFields("name", "value", "selected").containsExactly(
                 new ListBoxModel.Option("-- Select Project --", null, false),
                 new ListBoxModel.Option("Project 1", "uuid-1", false),
                 new ListBoxModel.Option("Project 2 1.2.3", "uuid-2", false)
         );
 
-        assertThat(uut.doFillProjectIdItems()).usingElementComparatorOnFields("name", "value", "selected").containsExactly(
+        assertThat(uut.doFillProjectIdItems(null, null, null)).usingElementComparatorOnFields("name", "value", "selected").containsExactly(
                 new ListBoxModel.Option(Messages.Builder_Error_Projects("test failure"), null, false)
         );
     }
 
     @Test
-    public void doTestConnectionTest() throws ApiClientException {
+    public void doFillDependencyTrackApiKeyItems() throws IOException {
+        final String apikey = "api-key";
+        final String credentialsid = "credentials-id";
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
+        assertThat(uut.doFillDependencyTrackApiKeyItems(null, null)).usingElementComparatorOnFields("name", "value", "selected").containsExactly(
+                new ListBoxModel.Option("- none -", "", false),
+                new ListBoxModel.Option("test", credentialsid, false)
+        );
+        assertThat(uut.doFillDependencyTrackApiKeyItems(credentialsid, null)).usingElementComparatorOnFields("name", "value", "selected").containsExactly(
+                new ListBoxModel.Option("- none -", "", false),
+                new ListBoxModel.Option("test", credentialsid, false)
+        );
+    }
+
+    @Test
+    public void doTestConnectionTest() throws ApiClientException, IOException {
+        final String apikey = "api-key";
+        final String credentialsid = "credentials-id";
         // custom factory here so we can check that doTestConnection strips trailing slashes from the url
         ApiClientFactory factory = (url, apiKey, logger, connTimeout, readTimeout) -> {
             assertThat(url).isEqualTo("http:///url.tld");
-            assertThat(apiKey).isEqualTo("key");
+            assertThat(apiKey).isEqualTo(apikey);
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
         };
         when(client.testConnection()).thenReturn("Dependency-Track v3.8.0").thenReturn("test").thenThrow(ApiClientException.class);
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
         uut = new DescriptorImpl(factory);
 
-        assertThat(uut.doTestConnection("http:///url.tld", "key"))
+        assertThat(uut.doTestConnection("http:///url.tld", credentialsid, null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
                 .hasMessage("Connection successful - Dependency-Track v3.8.0")
                 .hasNoCause();
 
-        assertThat(uut.doTestConnection("http:///url.tld/", "key"))
+        assertThat(uut.doTestConnection("http:///url.tld/", credentialsid, null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                 .hasMessageStartingWith("Connection failed - test")
                 .hasNoCause();
 
-        assertThat(uut.doTestConnection("http:///url.tld/", "key"))
+        assertThat(uut.doTestConnection("http:///url.tld/", credentialsid, null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                 .hasMessageStartingWith("Connection failed")
                 .hasMessageContaining(ApiClientException.class.getCanonicalName())
                 .hasNoCause();
 
-        assertThat(uut.doTestConnection("url", ""))
+        assertThat(uut.doTestConnection("url", "", null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.WARNING)
                 .hasMessage("URL must be valid and Api-Key must not be empty")
+                .hasNoCause();
+    }
+
+    @Test
+    public void doTestConnectionTestWithEmptyArgs() throws ApiClientException, IOException {
+        final String apikey = "api-key";
+        final String credentialsid = "credentials-id";
+        // custom factory here so we can check that doTestConnection strips trailing slashes from the url
+        ApiClientFactory factory = (url, apiKey, logger, connTimeout, readTimeout) -> {
+            assertThat(url).isEqualTo("http:///url.tld");
+            assertThat(apiKey).isEqualTo(apikey);
+            assertThat(logger).isInstanceOf(ConsoleLogger.class);
+            return client;
+        };
+        when(client.testConnection()).thenReturn("Dependency-Track v3.8.0").thenReturn("test").thenThrow(ApiClientException.class);
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
+        uut = new DescriptorImpl(factory);
+        uut.setDependencyTrackApiKey(credentialsid);
+        uut.setDependencyTrackUrl("http:///url.tld/");
+
+        assertThat(uut.doTestConnection("", "", null))
+                .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
+                .hasMessage("Connection successful - Dependency-Track v3.8.0")
                 .hasNoCause();
     }
 
@@ -152,12 +199,8 @@ public class DescriptorImplTest {
                 .element("dependencyTrackAutoCreateProjects", true)
                 .element("dependencyTrackPollingTimeout", 7);
 
-        uut.configure(req, formData);
+        assertThat(uut.configure(req, formData)).isTrue();
 
         verify(req).bindJSON(eq(uut), eq(formData));
-        assertThat(uut.getDependencyTrackUrl()).isEqualTo("https://foo.bar");
-        assertThat(uut.getDependencyTrackApiKey()).isEqualTo("api-key");
-        assertThat(uut.isDependencyTrackAutoCreateProjects()).isTrue();
-        assertThat(uut.getDependencyTrackPollingTimeout()).isEqualTo(7);
     }
 }

@@ -15,6 +15,7 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
+import com.cloudbees.plugins.credentials.CredentialsProvider;
 import hudson.AbortException;
 import hudson.FilePath;
 import hudson.Launcher;
@@ -27,6 +28,7 @@ import java.io.Serializable;
 import java.util.List;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.EnvVars;
+import hudson.util.Secret;
 import java.util.Optional;
 import jenkins.tasks.SimpleBuildStep;
 import lombok.AccessLevel;
@@ -39,6 +41,7 @@ import org.jenkinsci.plugins.DependencyTrack.model.RiskGate;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
 import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
+import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
 
@@ -130,10 +133,6 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
     public void perform(@NonNull Run<?, ?> run, @NonNull FilePath workspace, @NonNull EnvVars env, @NonNull Launcher launcher, @NonNull TaskListener listener) throws InterruptedException, IOException {
         final ConsoleLogger logger = new ConsoleLogger(listener.getLogger());
 
-        final ApiClient apiClient = clientFactory.create(getEffectiveUrl(), getEffectiveApiKey(), logger, descriptor.getDependencyTrackConnectionTimeout(), descriptor.getDependencyTrackReadTimeout());
-
-        logger.log(Messages.Builder_Publishing() + " - " + getEffectiveUrl());
-
         if (StringUtils.isBlank(artifact)) {
             logger.log(Messages.Builder_Artifact_Unspecified());
             throw new AbortException(Messages.Builder_Artifact_Unspecified());
@@ -149,6 +148,8 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
             throw new AbortException(Messages.Builder_Artifact_NonExist(artifact));
         }
 
+        logger.log(Messages.Builder_Publishing() + " - " + getEffectiveUrl());
+        final ApiClient apiClient = clientFactory.create(getEffectiveUrl(), getEffectiveApiKey(run), logger, descriptor.getDependencyTrackConnectionTimeout(), descriptor.getDependencyTrackReadTimeout());
         final UploadResult uploadResult = apiClient.upload(projectId, projectName, projectVersion,
                 artifactFilePath, isEffectiveAutoCreateProjects());
 
@@ -269,10 +270,14 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
     }
 
     /**
+     * @param run needed for credential retrieval
      * @return effective dependencyTrackApiKey
      */
-    private String getEffectiveApiKey() {
-        return Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElse(descriptor.getDependencyTrackApiKey());
+    private String getEffectiveApiKey(@NonNull Run<?, ?> run) {
+        final String credId = Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElse(descriptor.getDependencyTrackApiKey());
+        StringCredentials cred = CredentialsProvider.findCredentialById(credId, StringCredentials.class, run);
+        // for compatibility reasons when updating from v2.x to 3.0: return original value as is because it may be the api-key itself.
+        return Optional.ofNullable(CredentialsProvider.track(run, cred)).map(StringCredentials::getSecret).map(Secret::getPlainText).orElse(credId);
     }
 
     /**
