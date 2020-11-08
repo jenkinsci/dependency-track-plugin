@@ -157,6 +157,12 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
             throw new AbortException(Messages.Builder_Upload_Failed());
         }
         
+        // add ResultLinkAction event it may not contain a projectId. but we want to store name version for the future.
+        final ResultLinkAction linkAction = new ResultLinkAction(getEffectiveUrl(), projectId);
+        linkAction.setProjectName(projectName);
+        linkAction.setProjectVersion(projectVersion);
+        run.addOrReplaceAction(linkAction);
+        
         logger.log(Messages.Builder_Success(String.format("%s/projects/%s", getEffectiveUrl(), projectId != null ? projectId : StringUtils.EMPTY)));
 
         if (synchronous && StringUtils.isNotBlank(uploadResult.getToken())) {
@@ -187,7 +193,15 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
         final SeverityDistribution severityDistribution = new SeverityDistribution(build.getNumber());
         findings.stream().map(Finding::getVulnerability).map(Vulnerability::getSeverity).forEach(severityDistribution::add);
         final ResultAction projectAction = new ResultAction(findings, severityDistribution);
+        projectAction.setDependencyTrackUrl(getEffectiveUrl());
+        projectAction.setProjectId(projectId);
         build.addOrReplaceAction(projectAction);
+        
+        // update ResultLinkAction with one that surely contains a projectId
+        final ResultLinkAction linkAction = new ResultLinkAction(getEffectiveUrl(), projectId);
+        linkAction.setProjectName(projectName);
+        linkAction.setProjectVersion(projectVersion);
+        build.addOrReplaceAction(linkAction);
 
         // Get previous results and evaluate to thresholds
         final SeverityDistribution previousSeverityDistribution = Optional.ofNullable(build.getPreviousBuild())

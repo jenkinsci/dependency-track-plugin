@@ -23,7 +23,12 @@
             </script>
             <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/result-action.js" defer="defer"></script>
 
-            <h1>${it.displayName} for ${it.run.displayName}</h1>
+            <h1>${it.displayName} for ${it.run.parent.displayName}${it.run.displayName}</h1>
+            <j:if test="${it.dependencyTrackUrl != null and !it.dependencyTrackUrl.isEmpty()}">
+            <div class="alert alert-warning" role="alert">
+                These results may not be up to date. Please visit <a class="alert-link" href="${it.dependencyTrackUrl}/projects/${it.projectId}">the Dependency Track project page</a> for the most recent results.
+            </div>
+            </j:if>
 
             <div id="app">
             <b-form-group
@@ -90,12 +95,12 @@
                 <template slot="cell(component.name)" slot-scope="data">
                     <b-icon :icon="data.detailsShowing ? 'dash-square' : 'plus-square'" v-on:click="data.toggleDetails"></b-icon> {{data.value}}
                 </template>
-                <template slot="cell(vulnerability.vulnId)" slot-scope="data">
+                <template slot="cell(vulnerability.vulnId)" slot-scope="data"><j:whitespace>
                     <b-badge pill="pill" variant="info">{{data.item.vulnerability.source}}</b-badge>
-                    <a v-if="data.item.vulnerability.source === 'NVD'" :href="'https://nvd.nist.gov/vuln/detail/'+data.value" title="View Details on NVD" class="vulnid" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
-                    <a v-else-if="data.item.vulnerability.source === 'OSSINDEX'" :href="'https://ossindex.sonatype.org/vuln/'+data.value" title="View Details on Sonatype OSS INDEX" class="vulnid" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
+                    <a v-if="data.item.vulnerability.source === 'NVD'" :href="'https://nvd.nist.gov/vuln/detail/'+data.value" title="View Details on NVD" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
+                    <a v-else-if="data.item.vulnerability.source === 'OSSINDEX'" :href="'https://ossindex.sonatype.org/vuln/'+data.value" title="View Details on Sonatype OSS INDEX" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
                     <template v-else="v-else">{{data.value}}</template>
-                </template>
+                </j:whitespace></template>
                 <template slot="cell(vulnerability.severityRank)" slot-scope="data">
                     <b-badge variant="danger" v-if="data.value === 0"><b-icon icon="bug-fill" font-scale="1.5"></b-icon></b-badge>
                     <b-badge variant="warning" v-if="data.value === 1"><b-icon icon="bug-fill" font-scale="1.5"></b-icon></b-badge>
@@ -106,7 +111,7 @@
                     {{data.item.vulnerability.severity}}
                 </template>
                 <template slot="cell(vulnerability.cweId)" slot-scope="data" v-if="data.value">
-                    <a :href="'https://cwe.mitre.org/data/definitions/'+data.value+'.html'" title="View Details on MITRE" class="cweid" rel="noopener noreferrer" referrerpolicy="no-referrer">CWE-{{data.value}} {{data.item.vulnerability.cweName}}</a>
+                    <a :href="'https://cwe.mitre.org/data/definitions/'+data.value+'.html'" title="View Details on MITRE" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">CWE-{{data.value}} {{data.item.vulnerability.cweName}}</a>
                 </template>
                 <template v-slot:row-details="row">
                     <b-card 
