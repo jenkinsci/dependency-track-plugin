@@ -25,7 +25,7 @@ jobs:
         run: mvn -B clean test verify package
       - name: Build with Maven and Sonar
         if: matrix.java == "11"
-        end:
+        env:
           SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
           SONAR_ORGANIZATION: ${{ secrets.SONARCLOUD_ORGANIZATION }}
         run: mvn -B clean test verify package org.sonarsource.scanner.maven:sonar-maven-plugin:3.7.0.1746:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.projectKey=org.jenkins-ci.plugins:dependency-track -Dsonar.organization=$SONAR_ORGANIZATION -Dsonar.login=$SONAR_TOKEN
