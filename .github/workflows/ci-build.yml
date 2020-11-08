@@ -21,10 +21,10 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
       - name: Build with Maven
-        if: matrix.java == "1.8"
+        if: matrix.java == '1.8'
         run: mvn -B clean test verify package
       - name: Build with Maven and Sonar
-        if: matrix.java == "11"
+        if: matrix.java == '11'
         env:
           SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
           SONAR_ORGANIZATION: ${{ secrets.SONARCLOUD_ORGANIZATION }}
