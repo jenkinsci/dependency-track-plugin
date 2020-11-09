@@ -19,7 +19,7 @@ import hudson.console.LineTransformationOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 
-class ConsoleLogger extends LineTransformationOutputStream {
+public class ConsoleLogger extends LineTransformationOutputStream {
 
     private static final String PREFIX = "[DependencyTrack] ";
     private final PrintStream logger;
