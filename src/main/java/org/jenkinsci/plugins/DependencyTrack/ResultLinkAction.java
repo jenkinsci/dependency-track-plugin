@@ -15,9 +15,8 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
-import hudson.model.Run;
+import hudson.model.Action;
 import java.io.Serializable;
-import jenkins.model.RunAction2;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +31,7 @@ import org.apache.commons.lang.StringUtils;
 @Getter
 @EqualsAndHashCode
 @RequiredArgsConstructor
-public class ResultLinkAction implements RunAction2, Serializable {
+public class ResultLinkAction implements Action, Serializable {
 
     private static final long serialVersionUID = 9144463546984654654L;
 
@@ -72,16 +71,6 @@ public class ResultLinkAction implements RunAction2, Serializable {
     @Override
     public String getUrlName() {
         return isEnabled() ? String.format("%s/projects/%s", dependencyTrackUrl, projectId) : null;
-    }
-
-    @Override
-    public void onAttached(Run<?, ?> run) {
-        // nothing to do
-    }
-
-    @Override
-    public void onLoad(Run<?, ?> run) {
-        // nothing to do
     }
 
     private boolean isEnabled() {
