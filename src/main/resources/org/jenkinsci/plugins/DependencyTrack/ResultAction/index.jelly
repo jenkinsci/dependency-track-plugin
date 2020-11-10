@@ -24,11 +24,9 @@
             <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/result-action.js" defer="defer"></script>
 
             <h1>${it.displayName} for ${it.run.parent.displayName}${it.run.displayName}</h1>
-            <j:if test="${it.dependencyTrackUrl != null and !it.dependencyTrackUrl.isEmpty()}">
             <div class="alert alert-warning" role="alert">
-                These results may not be up to date. Please visit <a class="alert-link" href="${it.dependencyTrackUrl}/projects/${it.projectId}">the Dependency Track project page</a> for the most recent results.
+                These results may not be up to date.<j:if test="${it.dependencyTrackUrl != null and !it.dependencyTrackUrl.isEmpty()}"> Please visit <a class="alert-link" href="${it.dependencyTrackUrl}/projects/${it.projectId}">the Dependency Track project page</a> for the most recent results.</j:if>
             </div>
-            </j:if>
 
             <div id="app">
             <b-form-group
