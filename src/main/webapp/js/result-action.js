@@ -33,7 +33,7 @@ if (String.prototype.trim.toString().indexOf('[native code]') === -1) {
         this.rows = items.length;
         this.currentPage = 1;
     }
-    
+
     const app = new Vue({
         el: '#app',
         data: {
@@ -65,9 +65,9 @@ if (String.prototype.trim.toString().indexOf('[native code]') === -1) {
         methods: {
             items(ctx, callback) {
                 return new Promise(resolve => view.getFindingsJson(result => {
-                    const items = Array.isArray(result.responseJSON) ? result.responseJSON : [];
-                    resolve(items);
-                })).then(items => {
+                        const items = Array.isArray(result.responseJSON) ? result.responseJSON : [];
+                        resolve(items);
+                    })).then(items => {
                     updatePaging.call(this, items);
                     updateCounter.call(this, items);
                     return items;
@@ -79,7 +79,7 @@ if (String.prototype.trim.toString().indexOf('[native code]') === -1) {
             },
             matchesFilter(item, term) {
                 const keys = this.filterOn.length ? this.filterOn : this.fields.map(field => field.key);
-                const accessPaths = {};
+                const accessPaths = { };
                 keys.forEach(key => {
                     const parts = key.split('.');
                     if (accessPaths[parts[0]] === undefined) {
@@ -91,7 +91,11 @@ if (String.prototype.trim.toString().indexOf('[native code]') === -1) {
                 const searchValues = [];
                 Object.entries(accessPaths).forEach(p1 => {
                     p1[1].forEach(p2 => {
-                        searchValues.push(item[p1[0]][p2].toString());
+                        if (p1[0] === 'vulnerability' && p2 === 'severityRank') {
+                            searchValues.push(item.vulnerability.severity);
+                        } else {
+                            searchValues.push(item[p1[0]][p2].toString());
+                        }
                     });
                 });
                 return searchValues.some(value => value.includes(term.trim()));

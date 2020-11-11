@@ -54,6 +54,7 @@
                                     <b-form-checkbox value="component.version">Version</b-form-checkbox>
                                     <b-form-checkbox value="component.group">Group</b-form-checkbox>
                                     <b-form-checkbox value="vulnerability.vulnId">Vulnerability</b-form-checkbox>
+                                    <b-form-checkbox value="vulnerability.severityRank">Severity</b-form-checkbox>
                                     <b-form-checkbox value="vulnerability.cweId">CWE</b-form-checkbox>
                                 </b-form-checkbox-group>
                                 </b-form-group>
