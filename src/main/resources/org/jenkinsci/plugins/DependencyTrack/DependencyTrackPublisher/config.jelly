@@ -42,7 +42,7 @@ limitations under the License.
         <f:textbox id="dependencytrack.url" />
     </f:entry>
     <f:entry title="${%dependencytrack.apikey}" field="dependencyTrackApiKey" help="/plugin/dependency-track/help-dt-apikey.html">
-        <c:select id="dependencytrack.apikey" includeUser="true" />
+        <c:select id="dependencytrack.apikey" />
     </f:entry>
     <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnection" with="dependencyTrackUrl,dependencyTrackApiKey" />
     <f:entry title="${%dependencytrack.autocreate}" field="autoCreateProjects" help="/plugin/dependency-track/help-dt-autocreate.html">

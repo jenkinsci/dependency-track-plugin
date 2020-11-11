@@ -21,7 +21,7 @@ limitations under the License.
             <f:textbox id="dependencytrack.url"/>
         </f:entry>
         <f:entry title="${%dependencytrack.apikey}" field="dependencyTrackApiKey" help="/plugin/dependency-track/help-dt-apikey.html">
-            <c:select id="dependencytrack.apikey" includeUser="true"/>
+            <c:select id="dependencytrack.apikey" />
         </f:entry>
         <f:entry title="${%dependencytrack.autocreate}" field="dependencyTrackAutoCreateProjects" help="/plugin/dependency-track/help-dt-autocreate.html">
             <f:checkbox id="dependencytrack.autocreate" default="false"/>
