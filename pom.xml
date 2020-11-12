@@ -48,7 +48,7 @@
     <properties>
         <jenkins.version>2.249.2</jenkins.version>
         <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
-        <configuration-as-code.version>1.44</configuration-as-code.version>
+        <configuration-as-code.version>1.46</configuration-as-code.version>
         <java.level>8</java.level>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <junit-jupiter.version>[5.7.0,5.7.99)</junit-jupiter.version>
