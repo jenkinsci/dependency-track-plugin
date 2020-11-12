@@ -15,7 +15,9 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -23,34 +25,23 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
-public class ResultLinkActionTest {
+class ResultLinkActionTest {
 
-    @Test
-    public void testWithMissingUrlAndProjectId() {
-        ResultLinkAction uut = new ResultLinkAction(null, null);
+    @ParameterizedTest
+    @CsvSource({
+        ",",
+        "'',''",
+        ",'an-id'",
+        "'http://foo.bar',",})
+    void testDisableSituations(String url, String projectId) {
+        ResultLinkAction uut = new ResultLinkAction(url, projectId);
         assertThat(uut.getUrlName()).isNull();
         assertThat(uut.getDisplayName()).isNull();
         assertThat(uut.getIconFileName()).isNull();
     }
 
     @Test
-    public void testWithMissingUrl() {
-        ResultLinkAction uut = new ResultLinkAction(null, "an-id");
-        assertThat(uut.getUrlName()).isNull();
-        assertThat(uut.getDisplayName()).isNull();
-        assertThat(uut.getIconFileName()).isNull();
-    }
-
-    @Test
-    public void testWithMissingProjectId() {
-        ResultLinkAction uut = new ResultLinkAction("http://foo.bar", null);
-        assertThat(uut.getUrlName()).isNull();
-        assertThat(uut.getDisplayName()).isNull();
-        assertThat(uut.getIconFileName()).isNull();
-    }
-
-    @Test
-    public void testWithUrlAndProjectId() {
+    void testWithUrlAndProjectId() {
         ResultLinkAction uut = new ResultLinkAction("http://foo.bar", "an-id");
         assertThat(uut.getUrlName()).isEqualTo("http://foo.bar/projects/an-id");
         assertThat(uut.getDisplayName()).isNotEmpty();
