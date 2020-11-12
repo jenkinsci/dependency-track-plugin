@@ -17,6 +17,7 @@ package org.jenkinsci.plugins.DependencyTrack;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
+import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import hudson.model.AbstractProject;
@@ -71,7 +72,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
      * Specifies an API Key used for authentication (if authentication is
      * required).
      */
-    @Getter
+    @Getter(onMethod_ = {@CheckForNull})
     @Setter(onMethod_ = {@DataBoundSetter})
     private String dependencyTrackApiKey;
 
@@ -193,7 +194,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
      * response code.
      *
      * @param dependencyTrackUrl the base URL to Dependency-Track
-     * @param dependencyTrackApiKey the API key to use for authentication
+     * @param dependencyTrackApiKey the credential-id of the API key to use for authentication
      * @param item used to lookup credentials in job config. ignored in global
      * config
      * @return FormValidation
@@ -207,7 +208,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
             try {
                 final ApiClient apiClient = getClient(url, apiKey);
                 final String result = apiClient.testConnection();
-                return StringUtils.startsWith(result, "Dependency-Track v") ? FormValidation.ok("Connection successful - " + result) : FormValidation.error("Connection failed - " + result);
+                return result.startsWith("Dependency-Track v") ? FormValidation.ok("Connection successful - " + result) : FormValidation.error("Connection failed - " + result);
             } catch (ApiClientException e) {
                 return FormValidation.error(e, "Connection failed");
             }
@@ -243,6 +244,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
     /**
      * @return global configuration for dependencyTrackUrl
      */
+    @CheckForNull
     public String getDependencyTrackUrl() {
         return PluginUtil.parseBaseUrl(dependencyTrackUrl);
     }

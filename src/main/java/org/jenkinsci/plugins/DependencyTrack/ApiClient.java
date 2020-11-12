@@ -15,6 +15,7 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.FilePath;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -86,6 +87,7 @@ public class ApiClient {
      */
     private final int readTimeout;
 
+    @NonNull
     public String testConnection() throws ApiClientException {
         try {
             final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + PROJECT_URL).openConnection();
@@ -95,7 +97,7 @@ public class ApiClient {
             conn.setReadTimeout(readTimeout * MS_TO_S_FACTOR);
             conn.connect();
             if (conn.getResponseCode() == HTTP_OK) {
-                return conn.getHeaderField("X-Powered-By");
+                return StringUtils.trimToEmpty(conn.getHeaderField("X-Powered-By"));
             } else {
                 logHttpError(conn);
                 throw new ApiClientException(Messages.ApiClient_Error_Connection(conn.getResponseCode(), conn.getResponseMessage()));
@@ -107,6 +109,7 @@ public class ApiClient {
         }
     }
 
+    @NonNull
     public List<Project> getProjects() throws ApiClientException {
         List<Project> projects = new ArrayList<>();
         int page = 1;
@@ -119,6 +122,7 @@ public class ApiClient {
         return projects;
     }
 
+    @NonNull
     private List<Project> getProjectsPaged(int page) throws ApiClientException {
         try {
             final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + PROJECT_URL + "?limit=500&page=" + page).openConnection();
@@ -142,6 +146,7 @@ public class ApiClient {
         return Collections.emptyList();
     }
 
+    @NonNull
     public Project lookupProject(String projectName, String projectVersion) throws ApiClientException {
         try {
             final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + PROJECT_LOOKUP_URL + "?"
@@ -178,6 +183,7 @@ public class ApiClient {
         }
     }
 
+    @NonNull
     public List<Finding> getFindings(String projectUuid) throws ApiClientException {
         try {
             final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + PROJECT_FINDINGS_URL + "/" + URLEncoder.encode(projectUuid, StandardCharsets.UTF_8.name()))
@@ -204,6 +210,7 @@ public class ApiClient {
         }
     }
 
+    @NonNull
     public UploadResult upload(String projectId, String projectName, String projectVersion, FilePath artifact,
             boolean autoCreateProject) throws IOException {
         final String encodedScan;
@@ -275,6 +282,7 @@ public class ApiClient {
         return new UploadResult(false);
     }
 
+    @NonNull
     public boolean isTokenBeingProcessed(String token) throws ApiClientException {
         try {
             final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + BOM_TOKEN_URL + "/" + URLEncoder.encode(token, StandardCharsets.UTF_8.name()))

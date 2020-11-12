@@ -15,12 +15,17 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+import com.cloudbees.plugins.credentials.CredentialsScope;
+import com.cloudbees.plugins.credentials.domains.Domain;
 import hudson.AbortException;
 import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
+import hudson.model.Job;
 import hudson.model.Run;
 import hudson.model.TaskListener;
+import hudson.util.Secret;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredRule;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -31,6 +36,8 @@ import java.io.ObjectOutputStream;
 import java.util.Collections;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
+import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -57,7 +64,7 @@ import static org.mockito.Mockito.when;
 public class DependencyTrackPublisherTest {
 
     @Rule
-    public MockitoRule rule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
+    public MockitoRule rule = MockitoJUnit.rule().strictness(Strictness.LENIENT);
 
     @Rule
     public TemporaryFolder tmpDir = new TemporaryFolder();
@@ -78,14 +85,36 @@ public class DependencyTrackPublisherTest {
     private EnvVars env;
 
     @Mock
+    private Job job;
+
+    @Mock
     private ApiClient client;
 
     private final ApiClientFactory clientFactory = (url, apiKey, logger, connTimeout, readTimeout) -> client;
+    private final String apikeyId = "api-key-id";
+    private final String apikey = "api-key";
+
+    @Before
+    public void setup() throws ApiClientException, IOException {
+        when(listener.getLogger()).thenReturn(System.err);
+
+        DescriptorImpl descriptor = r.jenkins.getDescriptorByType(DescriptorImpl.class);
+        descriptor.setDependencyTrackPollingInterval(1);
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, apikeyId, "DependencyTrackPublisherTest", Secret.fromString(apikey)));
+
+        // needed for credential tracking
+        when(job.getParent()).thenReturn(r.jenkins);
+        when(job.getName()).thenReturn("u-drive-me-crazy");
+        when(build.getParent()).thenReturn(job);
+        when(build.getNumber()).thenReturn(1);
+    }
 
     @Test
     public void testPerformPrechecks() throws IOException {
         when(listener.getLogger()).thenReturn(System.err);
         FilePath workDir = new FilePath(tmpDir.getRoot());
+
+        // artifact missing
         final DependencyTrackPublisher uut1 = new DependencyTrackPublisher("", false, clientFactory);
         assertThatCode(() -> uut1.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Artifact_Unspecified());
 
@@ -111,13 +140,24 @@ public class DependencyTrackPublisherTest {
     }
 
     @Test
-    public void testPerformAsync() throws IOException {
-        when(listener.getLogger()).thenReturn(System.err);
+    public void doNotThrowNPEinGetEffectiveApiKey() throws IOException {
         File tmp = tmpDir.newFile();
         FilePath workDir = new FilePath(tmpDir.getRoot());
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, clientFactory);
         uut.setProjectId("uuid-1");
-        uut.setDependencyTrackApiKey("key");
+
+        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false))).thenThrow(new ApiClientException(Messages.ApiClient_Error_Connection("", "")));
+
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).isInstanceOf(ApiClientException.class).hasMessage(Messages.ApiClient_Error_Connection("", ""));
+    }
+
+    @Test
+    public void testPerformAsync() throws IOException {
+        File tmp = tmpDir.newFile();
+        FilePath workDir = new FilePath(tmpDir.getRoot());
+        final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, clientFactory);
+        uut.setProjectId("uuid-1");
+        uut.setDependencyTrackApiKey(apikeyId);
 
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false)))
                 .thenReturn(new UploadResult(true))
@@ -132,13 +172,12 @@ public class DependencyTrackPublisherTest {
 
     @Test
     public void testPerformAsyncWithoutProjectId() throws IOException {
-        when(listener.getLogger()).thenReturn(System.err);
         File tmp = tmpDir.newFile();
         FilePath workDir = new FilePath(tmpDir.getRoot());
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, clientFactory);
         uut.setProjectName("name-1");
         uut.setProjectVersion("version-1");
-        uut.setDependencyTrackApiKey("key");
+        uut.setDependencyTrackApiKey(apikeyId);
 
         when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
 
@@ -149,13 +188,11 @@ public class DependencyTrackPublisherTest {
 
     @Test
     public void testPerformSync() throws IOException {
-        r.jenkins.getDescriptorByType(DescriptorImpl.class).setDependencyTrackPollingInterval(1);
-        when(listener.getLogger()).thenReturn(System.err);
         File tmp = tmpDir.newFile();
         FilePath workDir = new FilePath(tmpDir.getRoot());
         DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
         uut.setProjectId("uuid-1");
-        uut.setDependencyTrackApiKey("key");
+        uut.setDependencyTrackApiKey(apikeyId);
 
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed(eq("token-1"))).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
@@ -168,14 +205,12 @@ public class DependencyTrackPublisherTest {
 
     @Test
     public void testPerformSyncWithoutProjectId() throws IOException {
-        r.jenkins.getDescriptorByType(DescriptorImpl.class).setDependencyTrackPollingInterval(1);
-        when(listener.getLogger()).thenReturn(System.err);
         File tmp = tmpDir.newFile();
         FilePath workDir = new FilePath(tmpDir.getRoot());
         DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
         uut.setProjectName("name-1");
         uut.setProjectVersion("version-1");
-        uut.setDependencyTrackApiKey("key");
+        uut.setDependencyTrackApiKey(apikeyId);
 
         when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed(eq("token-1"))).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
@@ -189,20 +224,19 @@ public class DependencyTrackPublisherTest {
 
     @Test
     public void testUseOfOverridenProperties() throws IOException {
-        when(listener.getLogger()).thenReturn(System.err);
         File tmp = tmpDir.newFile();
         FilePath workDir = new FilePath(tmpDir.getRoot());
         ApiClientFactory factory = (url, apiKey, logger, connTimeout, readTimeout) -> {
-            assertThat(url).isEqualTo("foo");
-            assertThat(apiKey).isEqualTo("bar");
+            assertThat(url).isEqualTo("http://test.tld");
+            assertThat(apiKey).isEqualTo(apikey);
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
         };
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, factory);
         uut.setProjectId("uuid-1");
         uut.setAutoCreateProjects(Boolean.TRUE);
-        uut.setDependencyTrackUrl("foo");
-        uut.setDependencyTrackApiKey("bar");
+        uut.setDependencyTrackUrl("http://test.tld");
+        uut.setDependencyTrackApiKey(apikeyId);
 
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(true)))
                 .thenReturn(new UploadResult(false));

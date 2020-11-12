@@ -85,7 +85,7 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
     private String dependencyTrackUrl;
 
     /**
-     * Specifies an API Key used for authentication.
+     * Specifies the credential-id for an API Key used for authentication.
      */
     private String dependencyTrackApiKey;
 
@@ -94,7 +94,7 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
      * permission.
      */
     private Boolean autoCreateProjects;
-    
+
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
     private transient ApiClientFactory clientFactory;
@@ -104,13 +104,13 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
     private transient DescriptorImpl descriptor;
 
     private transient boolean overrideGlobals;
-    
+
     // Fields in config.jelly must match the parameter names
     @DataBoundConstructor
     public DependencyTrackPublisher(final String artifact, final boolean synchronous) {
         this(artifact, synchronous, ApiClient::new);
     }
-    
+
     DependencyTrackPublisher(String artifact, boolean synchronous, @lombok.NonNull ApiClientFactory clientFactory) {
         this.artifact = artifact;
         this.synchronous = synchronous;
@@ -148,22 +148,24 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
             throw new AbortException(Messages.Builder_Artifact_NonExist(artifact));
         }
 
-        logger.log(Messages.Builder_Publishing() + " - " + getEffectiveUrl());
-        final ApiClient apiClient = clientFactory.create(getEffectiveUrl(), getEffectiveApiKey(run), logger, descriptor.getDependencyTrackConnectionTimeout(), descriptor.getDependencyTrackReadTimeout());
+        final String effectiveUrl = getEffectiveUrl();
+        final String effectiveApiKey = getEffectiveApiKey(run);
+        logger.log(Messages.Builder_Publishing(effectiveUrl));
+        final ApiClient apiClient = clientFactory.create(effectiveUrl, effectiveApiKey, logger, descriptor.getDependencyTrackConnectionTimeout(), descriptor.getDependencyTrackReadTimeout());
         final UploadResult uploadResult = apiClient.upload(projectId, projectName, projectVersion,
                 artifactFilePath, isEffectiveAutoCreateProjects());
 
         if (!uploadResult.isSuccess()) {
             throw new AbortException(Messages.Builder_Upload_Failed());
         }
-        
-        // add ResultLinkAction event it may not contain a projectId. but we want to store name version for the future.
-        final ResultLinkAction linkAction = new ResultLinkAction(getEffectiveUrl(), projectId);
+
+        // add ResultLinkAction even if it may not contain a projectId. but we want to store name version for the future.
+        final ResultLinkAction linkAction = new ResultLinkAction(effectiveUrl, projectId);
         linkAction.setProjectName(projectName);
         linkAction.setProjectVersion(projectVersion);
         run.addOrReplaceAction(linkAction);
-        
-        logger.log(Messages.Builder_Success(String.format("%s/projects/%s", getEffectiveUrl(), projectId != null ? projectId : StringUtils.EMPTY)));
+
+        logger.log(Messages.Builder_Success(String.format("%s/projects/%s", effectiveUrl, projectId != null ? projectId : StringUtils.EMPTY)));
 
         if (synchronous && StringUtils.isNotBlank(uploadResult.getToken())) {
             publishAnalysisResult(logger, apiClient, uploadResult.getToken(), run);
@@ -196,7 +198,7 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
         projectAction.setDependencyTrackUrl(getEffectiveUrl());
         projectAction.setProjectId(projectId);
         build.addOrReplaceAction(projectAction);
-        
+
         // update ResultLinkAction with one that surely contains a projectId
         final ResultLinkAction linkAction = new ResultLinkAction(getEffectiveUrl(), projectId);
         linkAction.setProjectName(projectName);
@@ -208,7 +210,7 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
                 .map(previousBuild -> previousBuild.getAction(ResultAction.class))
                 .map(ResultAction::getSeverityDistribution)
                 .orElse(new SeverityDistribution(0));
-        
+
         evaluateRiskGates(build, logger, severityDistribution, previousSeverityDistribution);
     }
 
@@ -242,7 +244,7 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
 
     /**
      * restore transient fields after deserialization
-     * 
+     *
      * @return this
      * @throws java.io.ObjectStreamException never
      */
@@ -256,10 +258,11 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
         overrideGlobals = StringUtils.isNotBlank(dependencyTrackUrl) || StringUtils.isNotBlank(dependencyTrackApiKey) || autoCreateProjects != null;
         return this;
     }
-    
+
     /**
-     * deletes values of optional fields if they are not needed/active before serialization
-     * 
+     * deletes values of optional fields if they are not needed/active before
+     * serialization
+     *
      * @return this
      * @throws java.io.ObjectStreamException never
      */
@@ -275,23 +278,32 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
         }
         return this;
     }
-    
+
     /**
      * @return effective dependencyTrackUrl
      */
+    @NonNull
     private String getEffectiveUrl() {
-        return Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElse(descriptor.getDependencyTrackUrl());
+        String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElse(descriptor.getDependencyTrackUrl());
+        return Optional.ofNullable(url).orElse(StringUtils.EMPTY);
     }
 
     /**
+     * resolves credential-id to actual api-key
+     *
      * @param run needed for credential retrieval
-     * @return effective dependencyTrackApiKey
+     * @return effective api-key
      */
+    @NonNull
     private String getEffectiveApiKey(@NonNull Run<?, ?> run) {
         final String credId = Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElse(descriptor.getDependencyTrackApiKey());
-        StringCredentials cred = CredentialsProvider.findCredentialById(credId, StringCredentials.class, run);
-        // for compatibility reasons when updating from v2.x to 3.0: return original value as is because it may be the api-key itself.
-        return Optional.ofNullable(CredentialsProvider.track(run, cred)).map(StringCredentials::getSecret).map(Secret::getPlainText).orElse(credId);
+        if (credId != null) {
+            StringCredentials cred = CredentialsProvider.findCredentialById(credId, StringCredentials.class, run);
+            // for compatibility reasons when updating from v2.x to 3.0: return original value as is because it may be the api-key itself.
+            return Optional.ofNullable(CredentialsProvider.track(run, cred)).map(StringCredentials::getSecret).map(Secret::getPlainText).orElse(credId);
+        } else {
+            return StringUtils.EMPTY;
+        }
     }
 
     /**

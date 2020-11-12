@@ -15,6 +15,7 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.util.FormValidation;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -45,6 +46,7 @@ class PluginUtil {
         return FormValidation.ok();
     }
 
+    @Nullable
     static String parseBaseUrl(final String baseUrl) {
         return StringUtils.removeEnd(StringUtils.trimToNull(baseUrl), "/");
     }
