@@ -15,7 +15,7 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
-import hudson.model.Action;
+import hudson.model.InvisibleAction;
 import hudson.model.Job;
 import java.util.Comparator;
 import java.util.List;
@@ -29,21 +29,11 @@ import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 @RequiredArgsConstructor
-public class JobAction implements Action {
+public class JobAction extends InvisibleAction {
 
     @Getter
     @NonNull
     private final Job<?, ?> project;
-
-    @Override
-    public String getIconFileName() {
-        return null;
-    }
-
-    @Override
-    public String getDisplayName() {
-        return null;
-    }
 
     @Override
     public String getUrlName() {
