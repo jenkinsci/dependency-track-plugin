@@ -15,12 +15,17 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
+import hudson.Plugin;
+import hudson.PluginWrapper;
 import hudson.model.Action;
 import hudson.model.Run;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import jenkins.model.Jenkins;
 import jenkins.model.RunAction2;
 import jenkins.tasks.SimpleBuildStep;
 import lombok.EqualsAndHashCode;
@@ -28,6 +33,8 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import net.sf.json.JSONArray;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
@@ -84,6 +91,16 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
     @Override
     public Collection<? extends Action> getProjectActions() {
         return Collections.singleton(new JobAction(run.getParent()));
+    }
+
+    @NonNull
+    public String getVersionHash() {
+        return DigestUtils.sha256Hex(
+                Optional.ofNullable(Jenkins.get().getPlugin("dependency-track"))
+                        .map(Plugin::getWrapper)
+                        .map(PluginWrapper::getVersion)
+                        .orElse(StringUtils.EMPTY)
+        );
     }
 
     /**
