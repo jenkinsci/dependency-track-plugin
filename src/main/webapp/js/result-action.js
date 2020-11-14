@@ -92,13 +92,13 @@ if (String.prototype.trim.toString().indexOf('[native code]') === -1) {
                 Object.entries(accessPaths).forEach(p1 => {
                     p1[1].forEach(p2 => {
                         if (p1[0] === 'vulnerability' && p2 === 'severityRank') {
-                            searchValues.push(item.vulnerability.severity);
+                            searchValues.push(item.vulnerability.severity.toLowerCase());
                         } else {
-                            searchValues.push(item[p1[0]][p2].toString());
+                            searchValues.push(item[p1[0]][p2].toString().toLowerCase());
                         }
                     });
                 });
-                return searchValues.some(value => value.includes(term.trim()));
+                return searchValues.some(value => value.includes(term.trim().toLowerCase()));
             }
         },
     });
