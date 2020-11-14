@@ -100,15 +100,15 @@
                     <a v-else-if="data.item.vulnerability.source === 'OSSINDEX'" :href="'https://ossindex.sonatype.org/vuln/'+data.value" title="View Details on Sonatype OSS INDEX" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
                     <template v-else="v-else">{{data.value}}</template>
                 </j:whitespace></template>
-                <template slot="cell(vulnerability.severityRank)" slot-scope="data">
+                <template slot="cell(vulnerability.severityRank)" slot-scope="data"><j:whitespace>
                     <b-badge variant="danger" v-if="data.value === 0"><b-icon icon="bug-fill" font-scale="1.5"></b-icon></b-badge>
                     <b-badge variant="warning" v-if="data.value === 1"><b-icon icon="bug-fill" font-scale="1.5"></b-icon></b-badge>
                     <b-badge variant="primary" v-if="data.value === 2"><b-icon icon="bug-fill" font-scale="1.5"></b-icon></b-badge>
                     <b-badge variant="success" v-if="data.value === 3"><b-icon icon="bug-fill" font-scale="1.5"></b-icon></b-badge>
                     <b-badge variant="info" v-if="data.value === 4"><b-icon icon="bug-fill" font-scale="1.5"></b-icon></b-badge>
                     <b-badge variant="secondary" v-if="data.value === 5"><b-icon icon="bug-fill" font-scale="1.5"></b-icon></b-badge>
-                    {{data.item.vulnerability.severity}}
-                </template>
+                    <span class="text-capitalize">{{data.item.vulnerability.severity.toLowerCase()}}</span>
+                </j:whitespace></template>
                 <template slot="cell(vulnerability.cweId)" slot-scope="data" v-if="data.value">
                     <a :href="'https://cwe.mitre.org/data/definitions/'+data.value+'.html'" title="View Details on MITRE" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">CWE-{{data.value}} {{data.item.vulnerability.cweName}}</a>
                 </template>
