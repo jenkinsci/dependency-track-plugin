@@ -194,9 +194,13 @@
     </scm>
 
     <issueManagement>
-        <system>JIRA</system>
-        <url>http://issues.jenkins-ci.org/</url>
+        <system>GitHub Issues</system>
+        <url>https://github.com/jenkinsci/dependency-track-plugin/issues</url>
     </issueManagement>
+    <ciManagement>
+        <system>ci.jenkins.io</system>
+        <url>https://ci.jenkins.io/job/Plugins/job/dependency-track-plugin</url>
+    </ciManagement>
 
     <repositories>
         <repository>
