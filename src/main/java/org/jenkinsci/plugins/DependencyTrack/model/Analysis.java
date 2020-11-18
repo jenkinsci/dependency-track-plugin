@@ -16,7 +16,9 @@
 package org.jenkinsci.plugins.DependencyTrack.model;
 
 import java.io.Serializable;
+import lombok.Value;
 
+@Value
 public class Analysis implements Serializable {
 
     private static final long serialVersionUID = 9143258740219702420L;
@@ -24,16 +26,4 @@ public class Analysis implements Serializable {
     private final String state;
     private final boolean isSuppressed;
 
-    public Analysis(String state, boolean isSuppressed) {
-        this.state = state;
-        this.isSuppressed = isSuppressed;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public boolean isSuppressed() {
-        return isSuppressed;
-    }
 }

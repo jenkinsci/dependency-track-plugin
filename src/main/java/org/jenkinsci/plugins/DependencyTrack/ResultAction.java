@@ -15,32 +15,53 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
+import hudson.Plugin;
+import hudson.PluginWrapper;
 import hudson.model.Action;
 import hudson.model.Run;
-import jenkins.model.RunAction2;
-import jenkins.tasks.SimpleBuildStep;
-import net.sf.json.JSONObject;
-import net.sf.json.JsonConfig;
-import org.jenkinsci.plugins.DependencyTrack.model.Finding;
-import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
-import org.jenkinsci.plugins.DependencyTrack.transformer.FindingsTransformer;
-import org.kohsuke.stapler.bind.JavaScriptMethod;
-import java.util.ArrayList;
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import jenkins.model.Jenkins;
+import jenkins.model.RunAction2;
+import jenkins.tasks.SimpleBuildStep;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
+import net.sf.json.JSONArray;
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.DependencyTrack.model.Finding;
+import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
+import org.kohsuke.stapler.bind.JavaScriptMethod;
 
-public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction {
+@Getter
+@EqualsAndHashCode
+@RequiredArgsConstructor
+public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction, Serializable {
+
+    private static final long serialVersionUID = 9144544646132489130L;
 
     private transient Run<?, ?> run; // transient: see RunAction2, and JENKINS-45892
-    private ArrayList<Finding> findings;
-    private SeverityDistribution severityDistribution;
-    private List<JobAction> projectActions;
+    private final List<Finding> findings;
+    private final SeverityDistribution severityDistribution;
 
-    public ResultAction(Run<?, ?> build, ArrayList<Finding> findings, SeverityDistribution severityDistribution) {
-        this.findings = findings;
-        this.severityDistribution = severityDistribution;
-    }
+    /**
+     * the URL of the Dependency-Track Server to which these results are
+     * belonging to
+     */
+    @Setter
+    private String dependencyTrackUrl;
+
+    /**
+     * the ID of the project to which these results are belonging to
+     */
+    @Setter
+    private String projectId;
 
     @Override
     public String getIconFileName() {
@@ -49,7 +70,7 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
 
     @Override
     public String getDisplayName() {
-        return "Dependency-Track";
+        return Messages.Result_DT_Report();
     }
 
     @Override
@@ -72,16 +93,14 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
         return Collections.singleton(new JobAction(run.getParent()));
     }
 
-    public Run getRun() {
-        return run;
-    }
-
-    public SeverityDistribution getSeverityDistribution() {
-        return severityDistribution;
-    }
-
-    public List<Finding> getFindings() {
-        return findings;
+    @NonNull
+    public String getVersionHash() {
+        return DigestUtils.sha256Hex(
+                Optional.ofNullable(Jenkins.get().getPlugin("dependency-track"))
+                        .map(Plugin::getWrapper)
+                        .map(PluginWrapper::getVersion)
+                        .orElse(StringUtils.EMPTY)
+        );
     }
 
     /**
@@ -90,23 +109,8 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
      * @return the UI model as JSON
      */
     @JavaScriptMethod
-    @SuppressWarnings("unused") // Called by jelly view
-    public JSONObject getFindingsJson() {
-        final FindingsTransformer transformer = new FindingsTransformer();
-        return transformer.transform(findings);
-    }
-
-    /**
-     * Returns a JSON response with the statistics for severity.
-     *
-     * @return the UI model as JSON
-     */
-    @JavaScriptMethod
-    @SuppressWarnings("unused") // Called by jelly view
-    public JSONObject getSeverityDistributionJson() {
-        JsonConfig jsonConfig = new JsonConfig();
-        jsonConfig.setExcludes( new String[]{ "buildNumber"} );
-        return JSONObject.fromObject(severityDistribution, jsonConfig);
+    public JSONArray getFindingsJson() {
+        return JSONArray.fromObject(findings);
     }
 
 }

@@ -13,516 +13,228 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.jenkinsci.plugins.DependencyTrack;
 
+import com.cloudbees.plugins.credentials.CredentialsProvider;
 import hudson.AbortException;
-import hudson.Extension;
 import hudson.FilePath;
 import hudson.Launcher;
-import hudson.model.AbstractProject;
-import hudson.model.Action;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
-import hudson.tasks.BuildStepDescriptor;
 import hudson.tasks.BuildStepMonitor;
-import hudson.tasks.Publisher;
-import hudson.util.FormValidation;
-import hudson.util.ListBoxModel;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.List;
+import edu.umd.cs.findbugs.annotations.NonNull;
+import hudson.EnvVars;
+import hudson.util.Secret;
+import java.util.Optional;
 import jenkins.tasks.SimpleBuildStep;
-import net.sf.json.JSONObject;
-import org.apache.commons.lang3.StringUtils;
-import org.jenkinsci.Symbol;
+import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
+import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.RiskGate;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
+import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
+import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
+import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
-import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
 
-import javax.annotation.Nonnull;
-import javax.json.Json;
-import javax.json.JsonArray;
-import javax.json.JsonObject;
-import javax.json.JsonReader;
-import java.io.BufferedInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Serializable;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.util.ArrayList;
-
-@SuppressWarnings("unused")
-public class DependencyTrackPublisher extends ThresholdCapablePublisher implements SimpleBuildStep, Serializable {
+@Getter
+@Setter(onMethod_ = {@DataBoundSetter})
+@EqualsAndHashCode(callSuper = true)
+public final class DependencyTrackPublisher extends ThresholdCapablePublisher implements SimpleBuildStep, Serializable {
 
     private static final long serialVersionUID = 480115440498217963L;
 
+    /**
+     * the project ID to upload to. This is a per-build config item.
+     */
     private String projectId;
+
+    /**
+     * the project name to upload to. This is a per-build config item.
+     */
     private String projectName;
+
+    /**
+     * the project version to upload to. This is a per-build config item.
+     */
     private String projectVersion;
+
+    /**
+     * Retrieves the path and filename of the artifact. This is a per-build
+     * config item.
+     */
     private final String artifact;
-    private final String artifactType; // keep for backward compatibility
+
+    /**
+     * Retrieves whether synchronous mode is enabled or not. This is a per-build
+     * config item.
+     */
     private final boolean synchronous;
+
+    /**
+     * Specifies the base URL to Dependency-Track v3 or higher.
+     */
+    private String dependencyTrackUrl;
+
+    /**
+     * Specifies the credential-id for an API Key used for authentication.
+     */
+    private String dependencyTrackApiKey;
+
+    /**
+     * Specifies whether the API key provided has the PROJECT_CREATION_UPLOAD
+     * permission.
+     */
+    private Boolean autoCreateProjects;
+
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private transient ApiClientFactory clientFactory;
+
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private transient DescriptorImpl descriptor;
+
+    private transient boolean overrideGlobals;
 
     // Fields in config.jelly must match the parameter names
     @DataBoundConstructor
     public DependencyTrackPublisher(final String artifact, final boolean synchronous) {
+        this(artifact, synchronous, ApiClient::new);
+    }
+
+    DependencyTrackPublisher(String artifact, boolean synchronous, @lombok.NonNull ApiClientFactory clientFactory) {
         this.artifact = artifact;
         this.synchronous = synchronous;
-        this.artifactType = null;
-
-        this.projectId = null;
-        this.projectName = null;
-        this.projectVersion = null;
-    }
-
-    // Fields in config.jelly must match the parameter names
-    // keep for backward compatibility
-    @DataBoundConstructor
-    public DependencyTrackPublisher(final String artifact, final String artifactType, final boolean synchronous) {
-        this.artifact = artifact;
-        this.synchronous = synchronous;
-        this.artifactType = artifactType;
-
-        this.projectId = null;
-        this.projectName = null;
-        this.projectVersion = null;
-    }
-
-    /**
-     * Sets the project ID to upload to. This is a per-build config item. This
-     * method must match the value in <code>config.jelly</code>.
-     *
-     * @param projectId a build's projectId
-     **/
-    @DataBoundSetter
-    public void setProjectId(String projectId) {
-        this.projectId = projectId;
-    }
-
-    /**
-     * Sets the project name to upload to. This is a per-build config item.
-     *
-     * @param projectName a build's project name to upload to
-     **/
-    @DataBoundSetter
-    public void setProjectName(String projectName) {
-        this.projectName = projectName;
-    }
-
-    /**
-     * Sets the project name to upload to. This is a per-build config item.
-     *
-     * @param projectVersion a build's project version to upload to
-     **/
-    @DataBoundSetter
-    public void setProjectVersion(String projectVersion) {
-        this.projectVersion = projectVersion;
-    }
-
-    /**
-     * Retrieves the project ID to upload to. This is a per-build config item.
-     * This method must match the value in <code>config.jelly</code>.
-     *
-     * @return a build's projectId
-     */
-    public String getProjectId() {
-        return projectId;
-    }
-
-    /**
-     * Retrieves the path and filename of the artifact. This is a per-build config item.
-     * This method must match the value in <code>config.jelly</code>.
-     *
-     * @return a build's path and filename of the artifact
-     */
-    public String getArtifact() {
-        return artifact;
-    }
-
-    /**
-     * Retrieves the project name to upload to. This is a per-build config item.
-     * This method must match the value in <code>config.jelly</code>.
-     *
-     * @return a build's project name to upload to
-     */
-    public String getProjectName() {
-        return projectName;
-    }
-
-    /**
-     * Retrieves the project version to upload to. This is a per-build config item.
-     * This method must match the value in <code>config.jelly</code>.
-     *
-     * @return a build's project version to upload to
-     */
-    public String getProjectVersion() {
-        return projectVersion;
-    }
-
-    /**
-     * Retrieves whether synchronous mode is enabled or not. This is a per-build config item.
-     * This method must match the value in <code>config.jelly</code>.
-     *
-     * @return {@code true} if synchronous mode is enabled for this build
-     */
-    public boolean isSynchronous() {
-        return synchronous;
+        this.clientFactory = clientFactory;
+        descriptor = getDescriptor();
     }
 
     /**
      * This method is called whenever the build step is executed.
      *
-     * @param build    A Run object
-     * @param filePath A FilePath object
-     * @param launcher A Launcher object
-     * @param listener A BuildListener object
+     * @param run a build this is running as a part of
+     * @param workspace a workspace to use for any file operations
+     * @param env environment variables applicable to this step
+     * @param launcher a way to start processes
+     * @param listener a place to send output
+     * @throws InterruptedException if the step is interrupted
+     * @throws IOException if something goes wrong
      */
     @Override
-    public void perform(@Nonnull final Run<?, ?> build,
-                        @Nonnull final FilePath filePath,
-                        @Nonnull final Launcher launcher,
-                        @Nonnull final TaskListener listener) throws InterruptedException, IOException {
-
-        ConsoleLogger logger = new ConsoleLogger(listener);
-        if (artifactType != null) {
-            logger.log("Artifact type was specified. This option is no longer supported and will be ignored.");
-        }
-
-        final ApiClient apiClient = new ApiClient(
-                getDescriptor().getDependencyTrackUrl(), getDescriptor().getDependencyTrackApiKey(), logger);
-
-        logger.log(Messages.Builder_Publishing() + " - " + getDescriptor().getDependencyTrackUrl());
-
-        final String projectId = build.getEnvironment(listener).expand(this.projectId);
-        final String artifact = build.getEnvironment(listener).expand(this.artifact);
-        final boolean autoCreateProject = getDescriptor().isDependencyTrackAutoCreateProjects();
+    public void perform(@NonNull Run<?, ?> run, @NonNull FilePath workspace, @NonNull EnvVars env, @NonNull Launcher launcher, @NonNull TaskListener listener) throws InterruptedException, IOException {
+        final ConsoleLogger logger = new ConsoleLogger(listener.getLogger());
 
         if (StringUtils.isBlank(artifact)) {
             logger.log(Messages.Builder_Artifact_Unspecified());
-            throw new AbortException("Artifact not specified");
+            throw new AbortException(Messages.Builder_Artifact_Unspecified());
         }
-        final FilePath artifactFilePath = new FilePath(filePath, artifact);
-        if (projectId == null && (projectName == null || projectVersion == null)) {
+        if (StringUtils.isBlank(projectId) && (StringUtils.isBlank(projectName) || StringUtils.isBlank(projectVersion))) {
             logger.log(Messages.Builder_Result_InvalidArguments());
-            throw new AbortException("Invalid arguments");
+            throw new AbortException(Messages.Builder_Result_InvalidArguments());
         }
 
-        if (!filePath.exists()) {
-            logger.log(Messages.Builder_Artifact_NonExist());
-            throw new AbortException("Nonexistent artifact");
+        final FilePath artifactFilePath = new FilePath(workspace, artifact);
+        if (!artifactFilePath.exists()) {
+            logger.log(Messages.Builder_Artifact_NonExist(artifact));
+            throw new AbortException(Messages.Builder_Artifact_NonExist(artifact));
         }
-        final ApiClient.UploadResult uploadResult = apiClient.upload(projectId, projectName, projectVersion,
-                artifactFilePath, autoCreateProject);
+
+        final String effectiveUrl = getEffectiveUrl();
+        final String effectiveApiKey = getEffectiveApiKey(run);
+        logger.log(Messages.Builder_Publishing(effectiveUrl));
+        final ApiClient apiClient = clientFactory.create(effectiveUrl, effectiveApiKey, logger, descriptor.getDependencyTrackConnectionTimeout(), descriptor.getDependencyTrackReadTimeout());
+        final UploadResult uploadResult = apiClient.upload(projectId, projectName, projectVersion,
+                artifactFilePath, isEffectiveAutoCreateProjects());
 
         if (!uploadResult.isSuccess()) {
-            throw new AbortException("Dependency Track server upload failed");
+            throw new AbortException(Messages.Builder_Upload_Failed());
         }
 
-        if (uploadResult.getToken() != null && synchronous) {
-            final long timeout = System.currentTimeMillis() + (60000L * getDescriptor().getDependencyTrackPollingTimeout());
-            Thread.sleep(10000);
-            logger.log(Messages.Builder_Polling());
-            while (apiClient.isTokenBeingProcessed(uploadResult.getToken())) {
-                Thread.sleep(10000);
-                if (timeout < System.currentTimeMillis()) {
-                    logger.log(Messages.Builder_Polling_Timeout_Exceeded());
-                    // XXX this seems like a fatal error
-                    throw new AbortException("Dependency Track server response timeout");
-                }
-                logger.log(Messages.Builder_Polling());
-            }
-            if (this.projectId == null) {
-                // project was auto-created. Fetch it's new uuid so that we can look up the results
-                logger.log(Messages.Builder_Project_Lookup());
-                final String jsonResponseBody = apiClient.lookupProject(this.projectName, this.projectVersion);
-                this.projectId = new ProjectLookupParser(jsonResponseBody).parse().getProject().getUuid();
-            }
-            logger.log(Messages.Builder_Findings_Processing());
-            final String jsonResponseBody = apiClient.getFindings(this.projectId);
-            final FindingParser parser = new FindingParser(build.getNumber(), jsonResponseBody).parse();
-            final ArrayList<Finding> findings = parser.getFindings();
-            final SeverityDistribution severityDistribution = parser.getSeverityDistribution();
-            final ResultAction projectAction = new ResultAction(build, findings, severityDistribution);
-            build.addAction(projectAction);
+        // add ResultLinkAction even if it may not contain a projectId. but we want to store name version for the future.
+        final ResultLinkAction linkAction = new ResultLinkAction(effectiveUrl, projectId);
+        linkAction.setProjectName(projectName);
+        linkAction.setProjectVersion(projectVersion);
+        run.addOrReplaceAction(linkAction);
 
-            // Get previous results and evaluate to thresholds
-            final Run previousBuild = build.getPreviousBuild();
-            final RiskGate riskGate = new RiskGate(getThresholds());
-            if (previousBuild != null) {
-                final ResultAction previousResults = previousBuild.getAction(ResultAction.class);
-                if (previousResults != null) {
-                    final Result result = riskGate.evaluate(
-                            previousResults.getSeverityDistribution(),
-                            previousResults.getFindings(),
-                            severityDistribution,
-                            findings);
-                    evaluateRiskGates(build, logger, result);
-                } else { // Resolves https://issues.jenkins-ci.org/browse/JENKINS-58387
-                    final Result result = riskGate.evaluate(severityDistribution, new ArrayList<>(), severityDistribution, findings);
-                    evaluateRiskGates(build, logger, result);
-                }
-            } else { // Resolves https://issues.jenkins-ci.org/browse/JENKINS-58387
-                final Result result = riskGate.evaluate(severityDistribution, new ArrayList<>(), severityDistribution, findings);
-                evaluateRiskGates(build, logger, result);
-            }
+        logger.log(Messages.Builder_Success(String.format("%s/projects/%s", effectiveUrl, projectId != null ? projectId : StringUtils.EMPTY)));
+
+        if (synchronous && StringUtils.isNotBlank(uploadResult.getToken())) {
+            publishAnalysisResult(logger, apiClient, uploadResult.getToken(), run);
         }
     }
 
-    private void evaluateRiskGates(final Run<?, ?> build, final ConsoleLogger logger, final Result result) throws AbortException {
-        if (Result.SUCCESS != result) {
+    private void publishAnalysisResult(ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build) throws InterruptedException, ApiClientException, AbortException {
+        final long timeout = System.currentTimeMillis() + (60000L * descriptor.getDependencyTrackPollingTimeout());
+        final long interval = 1000L * descriptor.getDependencyTrackPollingInterval();
+        logger.log(Messages.Builder_Polling());
+        Thread.sleep(interval);
+        while (apiClient.isTokenBeingProcessed(token)) {
+            Thread.sleep(interval);
+            if (timeout < System.currentTimeMillis()) {
+                logger.log(Messages.Builder_Polling_Timeout_Exceeded());
+                // XXX this seems like a fatal error
+                throw new AbortException(Messages.Builder_Polling_Timeout_Exceeded());
+            }
+        }
+        if (StringUtils.isBlank(projectId)) {
+            // project was auto-created. Fetch it's new uuid so that we can look up the results
+            logger.log(Messages.Builder_Project_Lookup(projectName, projectVersion));
+            projectId = apiClient.lookupProject(projectName, projectVersion).getUuid();
+        }
+        logger.log(Messages.Builder_Findings_Processing());
+        final List<Finding> findings = apiClient.getFindings(projectId);
+        final SeverityDistribution severityDistribution = new SeverityDistribution(build.getNumber());
+        findings.stream().map(Finding::getVulnerability).map(Vulnerability::getSeverity).forEach(severityDistribution::add);
+        final ResultAction projectAction = new ResultAction(findings, severityDistribution);
+        projectAction.setDependencyTrackUrl(getEffectiveUrl());
+        projectAction.setProjectId(projectId);
+        build.addOrReplaceAction(projectAction);
+
+        // update ResultLinkAction with one that surely contains a projectId
+        final ResultLinkAction linkAction = new ResultLinkAction(getEffectiveUrl(), projectId);
+        linkAction.setProjectName(projectName);
+        linkAction.setProjectVersion(projectVersion);
+        build.addOrReplaceAction(linkAction);
+
+        // Get previous results and evaluate to thresholds
+        final SeverityDistribution previousSeverityDistribution = Optional.ofNullable(build.getPreviousBuild())
+                .map(previousBuild -> previousBuild.getAction(ResultAction.class))
+                .map(ResultAction::getSeverityDistribution)
+                .orElse(new SeverityDistribution(0));
+
+        evaluateRiskGates(build, logger, severityDistribution, previousSeverityDistribution);
+    }
+
+    private void evaluateRiskGates(final Run<?, ?> build, final ConsoleLogger logger, final SeverityDistribution currentDistribution, final SeverityDistribution previousDistribution) throws AbortException {
+        final RiskGate riskGate = new RiskGate(getThresholds());
+        final Result result = riskGate.evaluate(currentDistribution, previousDistribution);
+        if (result.isWorseOrEqualTo(Result.UNSTABLE) && result.isCompleteBuild()) {
             logger.log(Messages.Builder_Threshold_Exceed());
-            if (Result.FAILURE == result) {
-                // attempt to halt the build
-                throw new AbortException("Severity distribution failure thresholds exceeded");
-            } else {
-                // allow build to proceed, but mark overall build unstable
-                build.setResult(result);
-            }
+            // allow build to proceed, but mark overall build unstable
+            build.setResult(result);
         }
-    }
-
-    @Override
-    public Action getProjectAction(AbstractProject<?, ?> project) {
-        return new JobAction(project);
+        if (result.isWorseThan(Result.UNSTABLE) && result.isCompleteBuild()) {
+            // attempt to halt the build
+            throw new AbortException(Messages.Builder_Threshold_Exceed());
+        }
     }
 
     /**
-     * A Descriptor Implementation.
+     *
+     * @return A Descriptor Implementation
      */
     @Override
     public DescriptorImpl getDescriptor() {
         return (DescriptorImpl) super.getDescriptor();
-    }
-
-    /**
-     * <p>Descriptor for {@link DependencyTrackPublisher}. Used as a singleton.
-     * The class is marked as public so that it can be accessed from views.
-     * <p>See <code>src/main/resources/org/jenkinsci/plugins/DependencyCheck/DependencyTrackBuilder/*.jelly</code> for the actual HTML
-     * fragment for the configuration screen.
-     */
-    @Extension
-    @Symbol("dependencyTrackPublisher") // This indicates to Jenkins that this is an implementation of an extension point.
-    public static final class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Serializable {
-
-        private static final long serialVersionUID = -2018722914973282748L;
-
-        /**
-         * Specifies the base URL to Dependency-Track v3 or higher.
-         */
-        private String dependencyTrackUrl;
-
-        /**
-         * Specifies an API Key used for authentication (if authentication is required).
-         */
-        private String dependencyTrackApiKey;
-
-
-        /**
-         * Specifies whether the API key provided has the PROJECT_CREATION_UPLOAD permission.
-         */
-        private boolean dependencyTrackAutoCreateProjects;
-
-        /**
-         * Specifies the maximum number of minutes to wait for synchronous jobs to complete.
-         */
-        private int dependencyTrackPollingTimeout;
-
-        /**
-         * Default constructor. Obtains the Descriptor used in DependencyCheckBuilder as this contains
-         * the global Dependency-Check Jenkins plugin configuration.
-         */
-        public DescriptorImpl() {
-            super(DependencyTrackPublisher.class);
-            load();
-        }
-
-        public boolean isApplicable(Class<? extends AbstractProject> aClass) {
-            // Indicates that this builder can be used with all kinds of project types
-            return true;
-        }
-
-        /**
-         * Retrieve the projects to populate the dropdown.
-         *
-         * @return ListBoxModel
-         */
-        public ListBoxModel doFillProjectIdItems() {
-            final ListBoxModel projects = new ListBoxModel();
-            try {
-                // Creates the request and connects
-                boolean isPaginated = true;
-                int page = 1;
-                while(isPaginated) {
-                    final HttpURLConnection conn = (HttpURLConnection) new URL(getDependencyTrackUrl() + "/api/v1/project?limit=500&page="+page)
-                            .openConnection();
-                    conn.setDoOutput(true);
-                    conn.setDoInput(true);
-                    conn.setRequestMethod("GET");
-                    conn.setRequestProperty("Content-Type", "application/json");
-                    conn.setRequestProperty("X-Api-Key", getDependencyTrackApiKey());
-                    conn.connect();
-
-                    // Checks the server response
-                    if (conn.getResponseCode() == 200) {
-                        try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
-                            JsonReader jsonReader = Json.createReader(in);
-                            JsonArray array = jsonReader.readArray();
-                            // Add an empty option at the beginning of the list
-                            if (projects.size() == 0) {
-                                projects.add("-- Select Project --", null);
-                            }
-                            if (!array.isEmpty()) {
-                                for (int i = 0; i < array.size(); i++) {
-                                    final JsonObject jsonObject = array.getJsonObject(i);
-                                    final StringBuilder nameBuilder = new StringBuilder();
-                                    final String name = jsonObject.getString("name");
-                                    final String version = jsonObject.getString("version", "null");
-                                    final String uuid = jsonObject.getString("uuid");
-                                    nameBuilder.append(name);
-                                    if (!"null".equals(version)) {
-                                        nameBuilder.append(' ').append(version);
-                                    }
-                                    projects.add(nameBuilder.toString(), uuid);
-                                }
-                            } else {
-                                isPaginated = false;
-                            }
-                        }
-                    } else {
-                        projects.add(Messages.Builder_Error_Projects() + ": " + conn.getResponseCode());
-                        isPaginated = false;
-                    }
-                    page++;
-                }
-            } catch (IOException e) {
-                projects.add(e.getMessage());
-            }
-            return projects;
-        }
-
-        /**
-         * Performs input validation when submitting the global config
-         *
-         * @param value The value of the URL as specified in the global config
-         * @return a FormValidation object
-         */
-        public FormValidation doCheckDependencyTrackUrl(@QueryParameter String value) {
-            return PluginUtil.doCheckUrl(value);
-        }
-
-        /**
-         * Performs an on-the-fly check of the Dependency-Track URL and api key
-         * parameters by making a simple call to the server and validating
-         * the response code.
-         *
-         * @param dependencyTrackUrl    the base URL to Dependency-Track
-         * @param dependencyTrackApiKey the API key to use for authentication
-         * @return FormValidation
-         */
-        public FormValidation doTestConnection(@QueryParameter final String dependencyTrackUrl,
-            @QueryParameter final String dependencyTrackApiKey) {
-            try {
-                final String baseUrl = PluginUtil.parseBaseUrl(dependencyTrackUrl);
-                final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + "/api/v1/project").openConnection();
-                conn.setDoOutput(true);
-                conn.setDoInput(true);
-                conn.setRequestMethod("GET");
-                conn.setRequestProperty("Content-Type", "application/json");
-                conn.setRequestProperty("X-Api-Key", dependencyTrackApiKey);
-                conn.connect();
-                if (conn.getResponseCode() == 200) {
-                    final String serverId = conn.getHeaderField("X-Powered-By");
-                    return FormValidation.ok("Connection successful - " + serverId);
-                } else if (conn.getResponseCode() == 401) {
-                    return FormValidation.warning("Authentication or authorization failure");
-                }
-            } catch (Exception e) {
-                return FormValidation.error(e, "An error occurred connecting to Dependency-Track");
-            }
-            return FormValidation.error("An error occurred connecting to Dependency-Track");
-        }
-
-        /**
-         * Takes the /apply/save step in the global config and saves the JSON data.
-         *
-         * @param req      the request
-         * @param formData the form data
-         * @return a boolean
-         * @throws FormException an exception validating form input
-         */
-        @Override
-        public boolean configure(StaplerRequest req, JSONObject formData) throws FormException {
-            req.bindJSON(this, formData);
-            dependencyTrackUrl = formData.getString("dependencyTrackUrl");
-            dependencyTrackApiKey = formData.getString("dependencyTrackApiKey");
-            dependencyTrackAutoCreateProjects = formData.getBoolean("dependencyTrackAutoCreateProjects");
-            dependencyTrackPollingTimeout = formData.getInt("dependencyTrackPollingTimeout");
-            save();
-            return super.configure(req, formData);
-        }
-
-        @DataBoundSetter
-        public void setDependencyTrackUrl(String dependencyTrackUrl) {
-            this.dependencyTrackUrl = dependencyTrackUrl;
-        }
-
-        @DataBoundSetter
-        public void setDependencyTrackApiKey(String dependencyTrackApiKey) {
-            this.dependencyTrackApiKey = dependencyTrackApiKey;
-        }
-
-        @DataBoundSetter
-        public void setDependencyTrackAutoCreateProjects(boolean dependencyTrackAutoCreateProjects) {
-            this.dependencyTrackAutoCreateProjects = dependencyTrackAutoCreateProjects;
-        }
-
-        @DataBoundSetter
-        public void setDependencyTrackPollingTimeout(int dependencyTrackPollingTimeout) {
-            this.dependencyTrackPollingTimeout = dependencyTrackPollingTimeout;
-        }
-
-        /**
-         * This name is used on the build configuration screen.
-         */
-        @Override
-        public String getDisplayName() {
-            return Messages.Publisher_DependencyTrack_Name();
-        }
-
-        /**
-         * @return global configuration for dependencyTrackUrl
-         */
-        public String getDependencyTrackUrl() {
-            return PluginUtil.parseBaseUrl(dependencyTrackUrl);
-        }
-
-        /**
-         * @return global configuration for dependencyTrackApiKey.
-         */
-        public String getDependencyTrackApiKey() {
-            return dependencyTrackApiKey;
-        }
-
-        /**
-         * @return the global configuration for dependencyTrackAutoCreateProjects.
-         */
-        public boolean isDependencyTrackAutoCreateProjects() {
-            return dependencyTrackAutoCreateProjects;
-        }
-
-        /**
-         * @return global configuration for dependencyTrackPollingTimeout.
-         */
-        public int getDependencyTrackPollingTimeout() {
-            if (dependencyTrackPollingTimeout <= 0) {
-                return 5;
-            }
-            return dependencyTrackPollingTimeout;
-        }
     }
 
     @Override
@@ -530,4 +242,74 @@ public class DependencyTrackPublisher extends ThresholdCapablePublisher implemen
         return BuildStepMonitor.NONE;
     }
 
+    /**
+     * restore transient fields after deserialization
+     *
+     * @return this
+     * @throws java.io.ObjectStreamException never
+     */
+    private Object readResolve() throws java.io.ObjectStreamException {
+        if (clientFactory == null) {
+            clientFactory = ApiClient::new;
+        }
+        if (descriptor == null) {
+            descriptor = getDescriptor();
+        }
+        overrideGlobals = StringUtils.isNotBlank(dependencyTrackUrl) || StringUtils.isNotBlank(dependencyTrackApiKey) || autoCreateProjects != null;
+        return this;
+    }
+
+    /**
+     * deletes values of optional fields if they are not needed/active before
+     * serialization
+     *
+     * @return this
+     * @throws java.io.ObjectStreamException never
+     */
+    private Object writeReplace() throws java.io.ObjectStreamException {
+        if (!overrideGlobals) {
+            dependencyTrackUrl = null;
+            dependencyTrackApiKey = null;
+            autoCreateProjects = null;
+        }
+        if (!isEffectiveAutoCreateProjects()) {
+            projectName = null;
+            projectVersion = null;
+        }
+        return this;
+    }
+
+    /**
+     * @return effective dependencyTrackUrl
+     */
+    @NonNull
+    private String getEffectiveUrl() {
+        String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElse(descriptor.getDependencyTrackUrl());
+        return Optional.ofNullable(url).orElse(StringUtils.EMPTY);
+    }
+
+    /**
+     * resolves credential-id to actual api-key
+     *
+     * @param run needed for credential retrieval
+     * @return effective api-key
+     */
+    @NonNull
+    private String getEffectiveApiKey(@NonNull Run<?, ?> run) {
+        final String credId = Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElse(descriptor.getDependencyTrackApiKey());
+        if (credId != null) {
+            StringCredentials cred = CredentialsProvider.findCredentialById(credId, StringCredentials.class, run);
+            // for compatibility reasons when updating from v2.x to 3.0: return original value as is because it may be the api-key itself.
+            return Optional.ofNullable(CredentialsProvider.track(run, cred)).map(StringCredentials::getSecret).map(Secret::getPlainText).orElse(credId);
+        } else {
+            return StringUtils.EMPTY;
+        }
+    }
+
+    /**
+     * @return effective autoCreateProjects
+     */
+    public boolean isEffectiveAutoCreateProjects() {
+        return Optional.ofNullable(autoCreateProjects).orElse(descriptor.isDependencyTrackAutoCreateProjects());
+    }
 }

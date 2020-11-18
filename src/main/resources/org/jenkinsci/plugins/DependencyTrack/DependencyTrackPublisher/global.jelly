@@ -14,21 +14,32 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form">
+<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
 
     <f:section title="Dependency-Track">
         <f:entry title="${%dependencytrack.url}" field="dependencyTrackUrl" help="/plugin/dependency-track/help-dt-url.html">
             <f:textbox id="dependencytrack.url"/>
         </f:entry>
         <f:entry title="${%dependencytrack.apikey}" field="dependencyTrackApiKey" help="/plugin/dependency-track/help-dt-apikey.html">
-            <f:textbox id="dependencytrack.apikey"/>
-        </f:entry>
-        <f:entry title="${%dependencytrack.polling.timeout}" field="dependencyTrackPollingTimeout" help="/plugin/dependency-track/help-dt-polling-timeout.html">
-            <f:number id="dependencytrack.polling.timeout"/>
+            <c:select id="dependencytrack.apikey" />
         </f:entry>
         <f:entry title="${%dependencytrack.autocreate}" field="dependencyTrackAutoCreateProjects" help="/plugin/dependency-track/help-dt-autocreate.html">
             <f:checkbox id="dependencytrack.autocreate" default="false"/>
-        </f:entry>        
+        </f:entry>
+        <f:advanced>
+            <f:entry title="${%dependencytrack.polling.timeout}" field="dependencyTrackPollingTimeout" help="/plugin/dependency-track/help-dt-polling-timeout.html">
+                <f:number id="dependencytrack.polling.timeout" default="5" clazz="positive-number" />
+            </f:entry>
+            <f:entry title="${%dependencytrack.polling.interval}" field="dependencyTrackPollingInterval" help="/plugin/dependency-track/help-dt-polling-interval.html">
+                <f:number id="dependencytrack.polling.interval" default="10" clazz="positive-number" />
+            </f:entry>
+            <f:entry title="${%dependencytrack.connection.timeout}" field="dependencyTrackConnectionTimeout" help="/plugin/dependency-track/help-dt-connection-timeout.html">
+                <f:number id="dependencytrack.connection.timeout" default="5" clazz="non-negative-number-required" />
+            </f:entry>
+            <f:entry title="${%dependencytrack.read.timeout}" field="dependencyTrackReadTimeout" help="/plugin/dependency-track/help-dt-read-timeout.html">
+                <f:number id="dependencytrack.read.timeout" default="5" clazz="non-negative-number-required" />
+            </f:entry>
+        </f:advanced>
         <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnection" with="dependencyTrackUrl,dependencyTrackApiKey" />
     </f:section>
 

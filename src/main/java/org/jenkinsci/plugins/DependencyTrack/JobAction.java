@@ -15,40 +15,29 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
-import hudson.model.Action;
+import hudson.model.InvisibleAction;
 import hudson.model.Job;
-import hudson.model.Run;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import net.sf.json.JSONArray;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
-import java.util.ArrayList;
-import java.util.List;
 
-public class JobAction implements Action {
+@RequiredArgsConstructor
+public class JobAction extends InvisibleAction {
 
-    private Job<?, ?> project;
-
-    public JobAction(final Job<?, ?> project) {
-        this.project = project;
-    }
-
-    @Override
-    public String getIconFileName() {
-        return null;
-    }
-
-    @Override
-    public String getDisplayName() {
-        return null;
-    }
+    @Getter
+    @NonNull
+    private final Job<?, ?> project;
 
     @Override
     public String getUrlName() {
         return "dtrackTrend";
-    }
-
-    public Job<?, ?> getProject() {
-        return this.project;
     }
 
     /**
@@ -56,21 +45,10 @@ public class JobAction implements Action {
      *
      * @return {@code true} if the trend is visible, false otherwise
      */
-    @SuppressWarnings("unused") // Called by jelly view
     public boolean isTrendVisible() {
-        final List<? extends Run<?, ?>> builds = project.getBuilds();
-        int count = 0;
-        for (Run<?, ?> currentBuild : builds) {
-            final ResultAction action = currentBuild.getAction(ResultAction.class);
-            if (action != null) {
-                return true;
-            }
-            count++;
-            if (count == 10) { // Only chart the last 10 builds (max)
-                break;
-            }
-        }
-        return false;
+        return project.getBuilds().stream()
+                .map(run -> run.getAction(ResultAction.class))
+                .anyMatch(Objects::nonNull);
     }
 
     /**
@@ -79,23 +57,12 @@ public class JobAction implements Action {
      * @return the UI model as JSON
      */
     @JavaScriptMethod
-    @SuppressWarnings("unused") // Called by jelly view
     public JSONArray getSeverityDistributionTrend() {
-        final List<SeverityDistribution> severityDistributions = new ArrayList<>();
-        final List<? extends Run<?, ?>> builds = project.getBuilds();
-        int count = 0;
-        for (Run<?, ?> currentBuild : builds) {
-            final ResultAction action = currentBuild.getAction(ResultAction.class);
-            if (action != null) {
-                if (action.getSeverityDistribution() != null) {
-                    severityDistributions.add(action.getSeverityDistribution());
-                }
-            }
-            count++;
-            if (count == 10) { // Only chart the last 10 builds (max)
-                break;
-            }
-        }
+        final List<SeverityDistribution> severityDistributions = project.getBuilds().stream()
+                .sorted(Comparator.naturalOrder())
+                .map(run -> run.getAction(ResultAction.class)).filter(Objects::nonNull)
+                .map(ResultAction::getSeverityDistribution)
+                .collect(Collectors.toList());
         return JSONArray.fromObject(severityDistributions);
     }
 }

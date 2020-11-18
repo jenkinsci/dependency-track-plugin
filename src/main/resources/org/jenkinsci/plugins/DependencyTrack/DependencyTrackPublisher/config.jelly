@@ -14,11 +14,20 @@ See the License for the specific language governing permissions and
 limitations under the License.
 -->
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form">
+<j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
 
     <f:entry title="${%projectId}" field="projectId" help="/plugin/dependency-track/help-dt-projectid.html">
         <f:select id="projectId"/>
     </f:entry>
+
+    <j:if test="${instance.isEffectiveAutoCreateProjects()}">
+    <f:entry title="${%projectName}" field="projectName" help="/plugin/dependency-track/help-dt-projectname.html">
+        <f:textbox id="projectName"/>
+    </f:entry>
+    <f:entry title="${%projectVersion}" field="projectVersion" help="/plugin/dependency-track/help-dt-projectversion.html">
+        <f:textbox id="projectVersion"/>
+    </f:entry>
+    </j:if>
 
     <f:entry title="${%artifact}" field="artifact" help="/plugin/dependency-track/help-dt-artifact.html">
         <f:textbox id="artifact"/>
@@ -27,6 +36,19 @@ limitations under the License.
     <f:entry title="${%enable.synchronous}" field="synchronous" description="" help="/plugin/dependency-track/help-dt-synchronous-mode.html">
         <f:checkbox name="synchronous" checked="${instance.isSynchronous()}"/>
     </f:entry>
+
+    <f:optionalBlock inline="true" field="overrideGlobals" title="${%overrideGlobals}">
+    <f:entry title="${%dependencytrack.url}" field="dependencyTrackUrl" help="/plugin/dependency-track/help-dt-url.html">
+        <f:textbox id="dependencytrack.url" />
+    </f:entry>
+    <f:entry title="${%dependencytrack.apikey}" field="dependencyTrackApiKey" help="/plugin/dependency-track/help-dt-apikey.html">
+        <c:select id="dependencytrack.apikey" />
+    </f:entry>
+    <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnection" with="dependencyTrackUrl,dependencyTrackApiKey" />
+    <f:entry title="${%dependencytrack.autocreate}" field="autoCreateProjects" help="/plugin/dependency-track/help-dt-autocreate.html">
+        <f:checkbox id="dependencytrack.autocreate" />
+    </f:entry>
+    </f:optionalBlock>
 
     <f:advanced title="Risk Gate Thresholds" align="left">
         <f:section title="Risk Gate Thresholds - Synchronous Mode Only">
@@ -44,19 +66,19 @@ limitations under the License.
                     <tbody>
                         <tr>
                             <td style="vertical-align: middle;">
-                                <img src="${resURL}/plugin/dependency-track/icons/yellow.svg" width="24" height="24"/>
+                                <img src="${resURL}/plugin/dependency-track/icons/yellow.svg" width="24" height="24" clazz="positive-number"/>
                             </td>
                             <td>
-                                <f:number field="unstableTotalCritical" value="${instance.unstableTotalCritical}"/>
+                                <f:number field="unstableTotalCritical" value="${instance.unstableTotalCritical}" clazz="positive-number"/>
                             </td>
                             <td>
-                                <f:number field="unstableTotalHigh" value="${instance.unstableTotalHigh}"/>
+                                <f:number field="unstableTotalHigh" value="${instance.unstableTotalHigh}" clazz="positive-number"/>
                             </td>
                             <td>
-                                <f:number field="unstableTotalMedium" value="${instance.unstableTotalMedium}"/>
+                                <f:number field="unstableTotalMedium" value="${instance.unstableTotalMedium}" clazz="positive-number"/>
                             </td>
                             <td>
-                                <f:number field="unstableTotalLow" value="${instance.unstableTotalLow}"/>
+                                <f:number field="unstableTotalLow" value="${instance.unstableTotalLow}" clazz="positive-number"/>
                             </td>
                         </tr>
                         <tr>
@@ -64,16 +86,16 @@ limitations under the License.
                                 <img src="${resURL}/plugin/dependency-track/icons/red.svg" width="24" height="24"/>
                             </td>
                             <td>
-                                <f:number field="failedTotalCritical" value="${instance.failedTotalCritical}"/>
+                                <f:number field="failedTotalCritical" value="${instance.failedTotalCritical}" clazz="positive-number"/>
                             </td>
                             <td>
-                                <f:number field="failedTotalHigh" value="${instance.failedTotalHigh}"/>
+                                <f:number field="failedTotalHigh" value="${instance.failedTotalHigh}" clazz="positive-number"/>
                             </td>
                             <td>
-                                <f:number field="failedTotalMedium" value="${instance.failedTotalMedium}"/>
+                                <f:number field="failedTotalMedium" value="${instance.failedTotalMedium}" clazz="positive-number"/>
                             </td>
                             <td>
-                                <f:number field="failedTotalLow" value="${instance.failedTotalLow}"/>
+                                <f:number field="failedTotalLow" value="${instance.failedTotalLow}" clazz="positive-number"/>
                             </td>
                         </tr>
                     </tbody>
@@ -97,16 +119,16 @@ limitations under the License.
                                 <img src="${resURL}/plugin/dependency-track/icons/yellow.svg" width="24" height="24"/>
                             </td>
                             <td>
-                                <f:number field="unstableNewCritical" value="${instance.unstableNewCritical}"/>
+                                <f:number field="unstableNewCritical" value="${instance.unstableNewCritical}" clazz="positive-number"/>
                             </td>
                             <td>
-                                <f:number field="unstableNewHigh" value="${instance.unstableNewHigh}"/>
+                                <f:number field="unstableNewHigh" value="${instance.unstableNewHigh}" clazz="positive-number"/>
                             </td>
                             <td>
-                                <f:number field="unstableNewMedium" value="${instance.unstableNewMedium}"/>
+                                <f:number field="unstableNewMedium" value="${instance.unstableNewMedium}" clazz="positive-number"/>
                             </td>
                             <td>
-                                <f:number field="unstableNewLow" value="${instance.unstableNewLow}"/>
+                                <f:number field="unstableNewLow" value="${instance.unstableNewLow}" clazz="positive-number"/>
                             </td>
                         </tr>
                         <tr>
@@ -114,16 +136,16 @@ limitations under the License.
                                 <img src="${resURL}/plugin/dependency-track/icons/red.svg" width="24" height="24"/>
                             </td>
                             <td>
-                                <f:number field="failedNewCritical" value="${instance.failedNewCritical}"/>
+                                <f:number field="failedNewCritical" value="${instance.failedNewCritical}" clazz="positive-number"/>
                             </td>
                             <td>
-                                <f:number field="failedNewHigh" value="${instance.failedNewHigh}"/>
+                                <f:number field="failedNewHigh" value="${instance.failedNewHigh}" clazz="positive-number"/>
                             </td>
                             <td>
-                                <f:number field="failedNewMedium" value="${instance.failedNewMedium}"/>
+                                <f:number field="failedNewMedium" value="${instance.failedNewMedium}" clazz="positive-number"/>
                             </td>
                             <td>
-                                <f:number field="failedNewLow" value="${instance.failedNewLow}"/>
+                                <f:number field="failedNewLow" value="${instance.failedNewLow}" clazz="positive-number"/>
                             </td>
                         </tr>
                     </tbody>

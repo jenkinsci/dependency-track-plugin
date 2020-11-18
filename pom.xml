@@ -6,13 +6,13 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>4.1</version>
+        <version>4.13</version>
     </parent>
 
     <artifactId>dependency-track</artifactId>
 
     <name>OWASP Dependency-Track Plugin</name>
-    <version>2.3.1-SNAPSHOT</version>
+    <version>3.0.0-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <inceptionYear>2018</inceptionYear>
     <organization>
@@ -21,7 +21,7 @@
     </organization>
 
     <developers>
-        <developer>
+        <!--developer>
             <name>Steve Springett</name>
             <email>steve.springett@owasp.org</email>
             <organization>OWASP</organization>
@@ -30,7 +30,12 @@
                 <role>architect</role>
                 <role>developer</role>
             </roles>
-        </developer>
+        </developer-->
+		<developer>
+			<name>Ronny Perinke</name>
+			<id>sephiroth-j</id>
+			<timezone>1</timezone>
+		</developer>
     </developers>
 
     <licenses>
@@ -41,11 +46,69 @@
     </licenses>
 
     <properties>
-        <jenkins.version>2.222.3</jenkins.version>
-        <configuration-as-code.version>1.40</configuration-as-code.version>
+        <jenkins.version>2.249.2</jenkins.version>
+        <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
+        <configuration-as-code.version>1.46</configuration-as-code.version>
         <java.level>8</java.level>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <junit-jupiter.version>[5.7.0,5.7.99)</junit-jupiter.version>
     </properties>
+    
+    <profiles>
+		<profile>
+			<id>jdk-gte-9</id>
+			<activation>
+				<jdk>[9,)</jdk>
+			</activation>
+			<properties>
+				<maven.compiler.release>${java.level}</maven.compiler.release>
+			</properties>
+		</profile>
+    </profiles>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <showDeprecation>true</showDeprecation>
+                    <showWarnings>true</showWarnings>
+                    <compilerArgs>
+                        <arg>-Xlint:unchecked</arg>
+                    </compilerArgs>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>default-prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>default-report</id>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-release-plugin</artifactId>
+                <configuration>
+                    <pushChanges>false</pushChanges>
+                    <localCheckout>true</localCheckout>
+                    <tagNameFormat>v@{project.version}</tagNameFormat>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 
     <distributionManagement>
         <repository>
@@ -60,16 +123,21 @@
 
     <dependencies>
         <dependency>
-            <groupId>org.glassfish</groupId>
-            <artifactId>javax.json</artifactId>
-            <version>1.1.4</version>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.12</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>commons-lang3</artifactId>
-            <version>3.10</version>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>credentials</artifactId>
+            <version>2.3.13</version>
         </dependency>
-
+        <dependency>
+            <groupId>org.jenkins-ci.plugins</groupId>
+            <artifactId>plain-credentials</artifactId>
+            <version>1.7</version>
+        </dependency>
         <dependency>
             <groupId>io.jenkins</groupId>
             <artifactId>configuration-as-code</artifactId>
@@ -82,6 +150,41 @@
             <version>${configuration-as-code.version}</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>org.assertj</groupId>
+            <artifactId>assertj-core</artifactId>
+            <version>[3.17.0,)</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.projectreactor.netty</groupId>
+            <artifactId>reactor-netty</artifactId>
+            <version>[1.0.0,1.0.99)</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-engine</artifactId>
+            <version>${junit-jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.jupiter</groupId>
+            <artifactId>junit-jupiter-params</artifactId>
+            <version>${junit-jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.junit.vintage</groupId>
+            <artifactId>junit-vintage-engine</artifactId>
+            <version>${junit-jupiter.version}</version>
+            <scope>test</scope>
+        </dependency>
     </dependencies>
 
     <scm>
@@ -92,9 +195,13 @@
     </scm>
 
     <issueManagement>
-        <system>JIRA</system>
-        <url>http://issues.jenkins-ci.org/</url>
+        <system>GitHub Issues</system>
+        <url>https://github.com/jenkinsci/dependency-track-plugin/issues</url>
     </issueManagement>
+    <ciManagement>
+        <system>ci.jenkins.io</system>
+        <url>https://ci.jenkins.io/job/Plugins/job/dependency-track-plugin</url>
+    </ciManagement>
 
     <repositories>
         <repository>

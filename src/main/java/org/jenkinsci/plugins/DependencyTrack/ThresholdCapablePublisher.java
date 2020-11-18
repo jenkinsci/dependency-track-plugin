@@ -18,12 +18,14 @@ package org.jenkinsci.plugins.DependencyTrack;
 import hudson.tasks.Recorder;
 import org.jenkinsci.plugins.DependencyTrack.model.Thresholds;
 import org.kohsuke.stapler.DataBoundSetter;
-import java.io.Serializable;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
-@SuppressWarnings("unused")
-public abstract class ThresholdCapablePublisher extends Recorder implements Serializable {
-
-    private static final long serialVersionUID = 8844465732219790336L;
+@Getter
+@Setter(onMethod_ = {@DataBoundSetter})
+@EqualsAndHashCode(callSuper = false)
+abstract class ThresholdCapablePublisher extends Recorder {
 
     private Integer unstableTotalCritical;
     private Integer unstableTotalHigh;
@@ -69,166 +71,4 @@ public abstract class ThresholdCapablePublisher extends Recorder implements Seri
         return thresholds;
     }
 
-
-    public Integer getUnstableTotalCritical() {
-        return unstableTotalCritical;
-    }
-
-    @DataBoundSetter
-    public void setUnstableTotalCritical(final Integer unstableTotalCritical) {
-        this.unstableTotalCritical = unstableTotalCritical;
-    }
-
-    public Integer getUnstableTotalHigh() {
-        return unstableTotalHigh;
-    }
-
-    @DataBoundSetter
-    public void setUnstableTotalHigh(final Integer unstableTotalHigh) {
-        this.unstableTotalHigh = unstableTotalHigh;
-    }
-
-    public Integer getUnstableTotalMedium() {
-        return unstableTotalMedium;
-    }
-
-    @DataBoundSetter
-    public void setUnstableTotalMedium(final Integer unstableTotalMedium) {
-        this.unstableTotalMedium = unstableTotalMedium;
-    }
-
-    public Integer getUnstableTotalLow() {
-        return unstableTotalLow;
-    }
-
-    @DataBoundSetter
-    public void setUnstableTotalLow(final Integer unstableTotalLow) {
-        this.unstableTotalLow = unstableTotalLow;
-    }
-
-    public Integer getFailedTotalCritical() {
-        return failedTotalCritical;
-    }
-
-    @DataBoundSetter
-    public void setFailedTotalCritical(final Integer failedTotalCritical) {
-        this.failedTotalCritical = failedTotalCritical;
-    }
-
-    public Integer getFailedTotalHigh() {
-        return failedTotalHigh;
-    }
-
-    @DataBoundSetter
-    public void setFailedTotalHigh(final Integer failedTotalHigh) {
-        this.failedTotalHigh = failedTotalHigh;
-    }
-
-    public Integer getFailedTotalMedium() {
-        return failedTotalMedium;
-    }
-
-    @DataBoundSetter
-    public void setFailedTotalMedium(final Integer failedTotalMedium) {
-        this.failedTotalMedium = failedTotalMedium;
-    }
-
-    public Integer getFailedTotalLow() {
-        return failedTotalLow;
-    }
-
-    @DataBoundSetter
-    public void setFailedTotalLow(final Integer failedTotalLow) {
-        this.failedTotalLow = failedTotalLow;
-    }
-
-    public boolean getTotalThresholdAnalysisExploitable() {
-        return totalThresholdAnalysisExploitable;
-    }
-
-    @DataBoundSetter
-    public void setTotalThresholdAnalysisExploitable(final boolean totalThresholdAnalysisExploitable) {
-        this.totalThresholdAnalysisExploitable = totalThresholdAnalysisExploitable;
-    }
-
-    public Integer getUnstableNewCritical() {
-        return unstableNewCritical;
-    }
-
-    @DataBoundSetter
-    public void setUnstableNewCritical(final Integer unstableNewCritical) {
-        this.unstableNewCritical = unstableNewCritical;
-    }
-
-    public Integer getUnstableNewHigh() {
-        return unstableNewHigh;
-    }
-
-    @DataBoundSetter
-    public void setUnstableNewHigh(final Integer unstableNewHigh) {
-        this.unstableNewHigh = unstableNewHigh;
-    }
-
-    public Integer getUnstableNewMedium() {
-        return unstableNewMedium;
-    }
-
-    @DataBoundSetter
-    public void setUnstableNewMedium(final Integer unstableNewMedium) {
-        this.unstableNewMedium = unstableNewMedium;
-    }
-
-    public Integer getUnstableNewLow() {
-        return unstableNewLow;
-    }
-
-    @DataBoundSetter
-    public void setUnstableNewLow(final Integer unstableNewLow) {
-        this.unstableNewLow = unstableNewLow;
-    }
-
-    public Integer getFailedNewCritical() {
-        return failedNewCritical;
-    }
-
-    @DataBoundSetter
-    public void setFailedNewCritical(final Integer failedNewCritical) {
-        this.failedNewCritical = failedNewCritical;
-    }
-
-    public Integer getFailedNewHigh() {
-        return failedNewHigh;
-    }
-
-    @DataBoundSetter
-    public void setFailedNewHigh(final Integer failedNewHigh) {
-        this.failedNewHigh = failedNewHigh;
-    }
-
-    public Integer getFailedNewMedium() {
-        return failedNewMedium;
-    }
-
-    @DataBoundSetter
-    public void setFailedNewMedium(final Integer failedNewMedium) {
-        this.failedNewMedium = failedNewMedium;
-    }
-
-    public Integer getFailedNewLow() {
-        return failedNewLow;
-    }
-
-    @DataBoundSetter
-    public void setFailedNewLow(final Integer failedNewLow) {
-        this.failedNewLow = failedNewLow;
-    }
-
-    public boolean getNewThresholdAnalysisExploitable() {
-        return newThresholdAnalysisExploitable;
-    }
-
-    @DataBoundSetter
-    public void setNewThresholdAnalysisExploitable(final boolean newThresholdAnalysisExploitable) {
-        this.newThresholdAnalysisExploitable = newThresholdAnalysisExploitable;
-    }
 }

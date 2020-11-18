@@ -16,12 +16,18 @@
 package org.jenkinsci.plugins.DependencyTrack.model;
 
 import java.io.Serializable;
+import lombok.EqualsAndHashCode;
+import lombok.ToString;
 
+@EqualsAndHashCode
+@ToString
 public class Thresholds implements Serializable {
 
     public final TotalFindings totalFindings = new TotalFindings();
     public final NewFindings newFindings = new NewFindings();
 
+    @EqualsAndHashCode
+    @ToString
     public static class TotalFindings implements Serializable {
         public Integer unstableCritical;
         public Integer unstableHigh;
@@ -34,6 +40,8 @@ public class Thresholds implements Serializable {
         public boolean limitToAnalysisExploitable;
     }
 
+    @EqualsAndHashCode
+    @ToString
     public static class NewFindings implements Serializable {
         public Integer unstableCritical;
         public Integer unstableHigh;
