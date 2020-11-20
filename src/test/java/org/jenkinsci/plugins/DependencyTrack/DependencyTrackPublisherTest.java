@@ -81,8 +81,7 @@ public class DependencyTrackPublisherTest {
     @Mock
     private Launcher launcher;
 
-    @Mock
-    private EnvVars env;
+    private final EnvVars env = new EnvVars("my.var", "my.value");
 
     @Mock
     private Job job;
@@ -176,10 +175,10 @@ public class DependencyTrackPublisherTest {
         FilePath workDir = new FilePath(tmpDir.getRoot());
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, clientFactory);
         uut.setProjectName("name-1");
-        uut.setProjectVersion("version-1");
+        uut.setProjectVersion("${my.var}");
         uut.setDependencyTrackApiKey(apikeyId);
 
-        when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
+        when(client.upload(isNull(), eq("name-1"), eq("my.value"), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
         verify(client, never()).lookupProject(anyString(), anyString());

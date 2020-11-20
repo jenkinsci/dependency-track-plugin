@@ -132,27 +132,30 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
     @Override
     public void perform(@NonNull Run<?, ?> run, @NonNull FilePath workspace, @NonNull EnvVars env, @NonNull Launcher launcher, @NonNull TaskListener listener) throws InterruptedException, IOException {
         final ConsoleLogger logger = new ConsoleLogger(listener.getLogger());
+        final String effectiveProjectName = env.expand(projectName);
+        final String effectiveProjectVersion = env.expand(projectVersion);
+        final String effectiveArtifact = env.expand(artifact);
 
-        if (StringUtils.isBlank(artifact)) {
+        if (StringUtils.isBlank(effectiveArtifact)) {
             logger.log(Messages.Builder_Artifact_Unspecified());
             throw new AbortException(Messages.Builder_Artifact_Unspecified());
         }
-        if (StringUtils.isBlank(projectId) && (StringUtils.isBlank(projectName) || StringUtils.isBlank(projectVersion))) {
+        if (StringUtils.isBlank(projectId) && (StringUtils.isBlank(effectiveProjectName) || StringUtils.isBlank(effectiveProjectVersion))) {
             logger.log(Messages.Builder_Result_InvalidArguments());
             throw new AbortException(Messages.Builder_Result_InvalidArguments());
         }
 
-        final FilePath artifactFilePath = new FilePath(workspace, artifact);
+        final FilePath artifactFilePath = new FilePath(workspace, effectiveArtifact);
         if (!artifactFilePath.exists()) {
-            logger.log(Messages.Builder_Artifact_NonExist(artifact));
-            throw new AbortException(Messages.Builder_Artifact_NonExist(artifact));
+            logger.log(Messages.Builder_Artifact_NonExist(effectiveArtifact));
+            throw new AbortException(Messages.Builder_Artifact_NonExist(effectiveArtifact));
         }
 
         final String effectiveUrl = getEffectiveUrl();
         final String effectiveApiKey = getEffectiveApiKey(run);
         logger.log(Messages.Builder_Publishing(effectiveUrl));
         final ApiClient apiClient = clientFactory.create(effectiveUrl, effectiveApiKey, logger, descriptor.getDependencyTrackConnectionTimeout(), descriptor.getDependencyTrackReadTimeout());
-        final UploadResult uploadResult = apiClient.upload(projectId, projectName, projectVersion,
+        final UploadResult uploadResult = apiClient.upload(projectId, effectiveProjectName, effectiveProjectVersion,
                 artifactFilePath, isEffectiveAutoCreateProjects());
 
         if (!uploadResult.isSuccess()) {
@@ -161,18 +164,18 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
 
         // add ResultLinkAction even if it may not contain a projectId. but we want to store name version for the future.
         final ResultLinkAction linkAction = new ResultLinkAction(effectiveUrl, projectId);
-        linkAction.setProjectName(projectName);
-        linkAction.setProjectVersion(projectVersion);
+        linkAction.setProjectName(effectiveProjectName);
+        linkAction.setProjectVersion(effectiveProjectVersion);
         run.addOrReplaceAction(linkAction);
 
         logger.log(Messages.Builder_Success(String.format("%s/projects/%s", effectiveUrl, projectId != null ? projectId : StringUtils.EMPTY)));
 
         if (synchronous && StringUtils.isNotBlank(uploadResult.getToken())) {
-            publishAnalysisResult(logger, apiClient, uploadResult.getToken(), run);
+            publishAnalysisResult(logger, apiClient, uploadResult.getToken(), run, effectiveProjectName, effectiveProjectVersion);
         }
     }
 
-    private void publishAnalysisResult(ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build) throws InterruptedException, ApiClientException, AbortException {
+    private void publishAnalysisResult(ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build, final String effectiveProjectName, final String effectiveProjectVersion) throws InterruptedException, ApiClientException, AbortException {
         final long timeout = System.currentTimeMillis() + (60000L * descriptor.getDependencyTrackPollingTimeout());
         final long interval = 1000L * descriptor.getDependencyTrackPollingInterval();
         logger.log(Messages.Builder_Polling());
@@ -187,8 +190,8 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
         }
         if (StringUtils.isBlank(projectId)) {
             // project was auto-created. Fetch it's new uuid so that we can look up the results
-            logger.log(Messages.Builder_Project_Lookup(projectName, projectVersion));
-            projectId = apiClient.lookupProject(projectName, projectVersion).getUuid();
+            logger.log(Messages.Builder_Project_Lookup(effectiveProjectName, effectiveProjectVersion));
+            projectId = apiClient.lookupProject(effectiveProjectName, effectiveProjectVersion).getUuid();
         }
         logger.log(Messages.Builder_Findings_Processing());
         final List<Finding> findings = apiClient.getFindings(projectId);
@@ -201,8 +204,8 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
 
         // update ResultLinkAction with one that surely contains a projectId
         final ResultLinkAction linkAction = new ResultLinkAction(getEffectiveUrl(), projectId);
-        linkAction.setProjectName(projectName);
-        linkAction.setProjectVersion(projectVersion);
+        linkAction.setProjectName(effectiveProjectName);
+        linkAction.setProjectVersion(effectiveProjectVersion);
         build.addOrReplaceAction(linkAction);
 
         // Get previous results and evaluate to thresholds
