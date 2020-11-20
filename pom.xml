@@ -21,21 +21,11 @@
     </organization>
 
     <developers>
-        <!--developer>
-            <name>Steve Springett</name>
-            <email>steve.springett@owasp.org</email>
-            <organization>OWASP</organization>
-            <organizationUrl>https://www.owasp.org/index.php/OWASP_Dependency_Track_Project</organizationUrl>
-            <roles>
-                <role>architect</role>
-                <role>developer</role>
-            </roles>
-        </developer-->
-		<developer>
-			<name>Ronny Perinke</name>
-			<id>sephiroth-j</id>
-			<timezone>1</timezone>
-		</developer>
+        <developer>
+            <name>Ronny Perinke</name>
+            <id>sephirothj</id>
+            <timezone>1</timezone>
+        </developer>
     </developers>
 
     <licenses>
