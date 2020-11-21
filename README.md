@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/jenkinsci/dependency-track-plugin/workflows/CI%20build/badge.svg)](https://github.com/jenkinsci/dependency-track-plugin/actions?query=workflow%3ACI%20build)
+[![Build Status](https://github.com/jenkinsci/dependency-track-plugin/workflows/CI%20build/badge.svg)](https://github.com/jenkinsci/dependency-track-plugin/actions?query=workflow%3A%22CI+build%22)
 [![License](https://img.shields.io/badge/license-apache%20v2-brightgreen.svg)](LICENSE.txt)
 [![Plugin Version](https://img.shields.io/jenkins/plugin/v/dependency-track.svg)](https://plugins.jenkins.io/dependency-track)
 [![Jenkins Plugin Installs](https://img.shields.io/jenkins/plugin/i/dependency-track.svg?color=blue)](https://plugins.jenkins.io/dependency-track)
