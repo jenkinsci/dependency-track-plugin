@@ -69,8 +69,8 @@ public class DescriptorImplTest {
     @Test
     public void doFillProjectIdItemsTest() throws ApiClientException {
         List<Project> projects = new ArrayList<>();
-        projects.add(Project.builder().name("Project 1").uuid("uuid-1").build());
         projects.add(Project.builder().name("Project 2").uuid("uuid-2").version("1.2.3").build());
+        projects.add(Project.builder().name("Project 1").uuid("uuid-1").build());
         doReturn(projects).doThrow(new ApiClientException("test failure"))
                 .when(client).getProjects();
 

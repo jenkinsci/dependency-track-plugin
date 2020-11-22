@@ -31,7 +31,9 @@ import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import jenkins.model.Jenkins;
 import lombok.Getter;
 import lombok.NonNull;
@@ -143,19 +145,19 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
      */
     public ListBoxModel doFillProjectIdItems(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable Item item) {
         final ListBoxModel projects = new ListBoxModel();
-        projects.add("-- Select Project --", null);
         try {
             // url may come from instance-config. if empty, then take it from global config (this)
             final String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElse(getDependencyTrackUrl());
             // api-key may come from instance-config. if empty, then take it from global config (this)
             final String apiKey = lookupApiKey(Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElse(getDependencyTrackApiKey()), item);
             final ApiClient apiClient = getClient(url, apiKey);
-            apiClient.getProjects().forEach(p -> {
-                String displayName = StringUtils.isNotBlank(p.getVersion()) ? p.getName() + " " + p.getVersion() : p.getName();
-                projects.add(displayName, p.getUuid());
-            });
+            projects.addAll(apiClient.getProjects().stream()
+                    .map(p -> new ListBoxModel.Option(p.getName().concat(" ").concat(Optional.ofNullable(p.getVersion()).orElse(StringUtils.EMPTY)).trim(), p.getUuid()))
+                    .sorted(Comparator.comparing(o -> o.name))
+                    .collect(Collectors.toList())
+            );
+            projects.add(0, new ListBoxModel.Option("-- Select Project --", null));
         } catch (ApiClientException e) {
-            projects.clear();
             projects.add(Messages.Builder_Error_Projects(e.getLocalizedMessage()), null);
         }
         return projects;
