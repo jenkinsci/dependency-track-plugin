@@ -125,7 +125,7 @@ public class ApiClient {
     @NonNull
     private List<Project> getProjectsPaged(int page) throws ApiClientException {
         try {
-            final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + PROJECT_URL + "?limit=500&page=" + page).openConnection();
+            final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + PROJECT_URL + "?limit=500&excludeInactive=true&page=" + page).openConnection();
             conn.setRequestProperty(HEADER_ACCEPT, MEDIATYPE_JSON);
             conn.setRequestProperty(API_KEY_HEADER, apiKey);
             conn.setConnectTimeout(connectionTimeout * MS_TO_S_FACTOR);

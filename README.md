@@ -47,7 +47,7 @@ Once configured with a valid URL and API key, simply configure a job to publish 
 
 ![job configuration](docs/images/jenkins-job-publish.png)
 
-**Dependency-Track project**: Specifies the unique project ID to upload SBOM to. This dropdown will be automatically populated with a list of projects.
+**Dependency-Track project**: Specifies the unique project ID to upload SBOM to. This dropdown will be automatically populated with a list of active projects.
 
 **Dependency-Track project name**: Specifies the name of the project for automatic creation of project during the upload process. This is an alternative to specifying the unique ID. It must be used together with a project version. Only avaible if "Auto Create projects" is enabled. The use of environment variables in the form `${VARIABLE}` is supported here.
 

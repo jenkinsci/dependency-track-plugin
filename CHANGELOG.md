@@ -22,7 +22,7 @@
 - support dark theme of Jenkins 2.249
 - [JENKINS-57697](https://issues.jenkins.io/browse/JENKINS-57697): more detailed error logging
 - API key is now a "Secret Text" credential
-- list of projects in job configuration page is now sorted
+- list of projects in job configuration page is now sorted and includes only active projects
 
 ### 🐞 Bugs Fixed
 - unable to use `projectName` and `projectVersion` instead of `projectId` in classic job types

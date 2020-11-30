@@ -144,7 +144,7 @@ public class ApiClientTest {
                     assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
                     QueryStringDecoder query = new QueryStringDecoder(request.uri());
                     assertThat(query.parameters())
-                            .contains(entry("limit", Collections.singletonList("500")))
+                            .contains(entry("limit", Collections.singletonList("500")), entry("excludeInactive", Collections.singletonList("true")))
                             .containsKey("page").extractingByKey("page", as(InstanceOfAssertFactories.list(String.class)))
                             .hasSize(1).first().satisfies(p -> {
                         assertThat(Integer.valueOf(p)).isBetween(1, 3);
