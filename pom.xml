@@ -43,6 +43,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <junit-jupiter.version>[5.7.0,5.7.99)</junit-jupiter.version>
+        <maven.javadoc.skip>true</maven.javadoc.skip>
     </properties>
     
     <profiles>
