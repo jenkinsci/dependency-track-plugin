@@ -10,9 +10,9 @@
         </l:side-panel>
 
         <l:main-panel>
-            <link rel="preload" as="style" type="text/css" href="${resURL}/plugin/dependency-track/css/bootstrap.min.css?v=${it.versionHash}" onload="this.rel='stylesheet'" />
-            <link rel="preload" as="style" type="text/css" href="${resURL}/plugin/dependency-track/css/bootstrap-vue.min.css?v=${it.versionHash}" onload="this.rel='stylesheet'" />
-            <link rel="preload" as="style" type="text/css" href="${resURL}/plugin/dependency-track/css/result-action.css?v=${it.versionHash}" onload="this.rel='stylesheet'" />
+            <link rel="stylesheet" type="text/css" href="${resURL}/plugin/dependency-track/css/bootstrap.min.css?v=${it.versionHash}" />
+            <link rel="stylesheet" type="text/css" href="${resURL}/plugin/dependency-track/css/bootstrap-vue.min.css?v=${it.versionHash}" />
+            <link rel="stylesheet" type="text/css" href="${resURL}/plugin/dependency-track/css/result-action.css?v=${it.versionHash}" />
 
             <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/libs/vue.min.js?v=${it.versionHash}" defer="defer"></script>
             <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/libs/bootstrap-vue.min.js?v=${it.versionHash}" defer="defer"></script>
