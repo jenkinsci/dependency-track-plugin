@@ -64,13 +64,14 @@
                 </b-input-group>
             </b-form-group>
 
+            <span class="sr-only">#Findings:</span>
             <b-progress :max="rows" class="mb-1">
-                <b-progress-bar variant="danger" :value="countBySeverity.CRITICAL" show-value="show-value"></b-progress-bar>
-                <b-progress-bar variant="warning" :value="countBySeverity.HIGH" show-value="show-value"></b-progress-bar>
-                <b-progress-bar variant="primary" :value="countBySeverity.MEDIUM" show-value="show-value"></b-progress-bar>
-                <b-progress-bar variant="success" :value="countBySeverity.LOW" show-value="show-value"></b-progress-bar>
-                <b-progress-bar variant="info" :value="countBySeverity.INFO" show-value="show-value"></b-progress-bar>
-                <b-progress-bar variant="secondary" :value="countBySeverity.UNASSIGNED" show-value="show-value"></b-progress-bar>
+                <b-progress-bar variant="danger" :value="countBySeverity.CRITICAL" show-value="show-value" title="#critical findings"></b-progress-bar>
+                <b-progress-bar variant="warning" :value="countBySeverity.HIGH" show-value="show-value" title="#high findings"></b-progress-bar>
+                <b-progress-bar variant="primary" :value="countBySeverity.MEDIUM" show-value="show-value" title="#medium findings"></b-progress-bar>
+                <b-progress-bar variant="success" :value="countBySeverity.LOW" show-value="show-value" title="#low findings"></b-progress-bar>
+                <b-progress-bar variant="info" :value="countBySeverity.INFO" show-value="show-value" title="#info findings"></b-progress-bar>
+                <b-progress-bar variant="secondary" :value="countBySeverity.UNASSIGNED" show-value="show-value" title="#unassigned findings"></b-progress-bar>
             </b-progress>
 
             <b-table striped="striped" hover="hover" responsive="responsive" show-empty="show-empty"
