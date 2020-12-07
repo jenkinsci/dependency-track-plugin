@@ -2,6 +2,7 @@
 
 ## Unreleased
 ### 🐞 Bugs Fixed
+- link to project page not working for Dependency-Track older than v3.8 (fixes [#17](https://github.com/jenkinsci/dependency-track-plugin/issues/17))
 - Report does not render correctly in Firefox (fixes [#18](https://github.com/jenkinsci/dependency-track-plugin/issues/18))
 
 ## v3.0.0 - 2020-11-30

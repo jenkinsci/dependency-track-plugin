@@ -17,6 +17,9 @@ package org.jenkinsci.plugins.DependencyTrack;
 
 import hudson.model.Action;
 import java.io.Serializable;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -65,12 +68,16 @@ public class ResultLinkAction implements Action, Serializable {
 
     @Override
     public String getDisplayName() {
-        return isEnabled() ? Messages.Result_DT_Project(): null;
+        return isEnabled() ? Messages.Result_DT_Project() : null;
     }
 
     @Override
     public String getUrlName() {
-        return isEnabled() ? String.format("%s/projects/%s", dependencyTrackUrl, projectId) : null;
+        try {
+            return isEnabled() ? String.format("%s/project/?uuid=%s", dependencyTrackUrl, URLEncoder.encode(projectId, StandardCharsets.UTF_8.name())) : null;
+        } catch (UnsupportedEncodingException ex) {
+            return null;
+        }
     }
 
     private boolean isEnabled() {
