@@ -1,6 +1,8 @@
 # Dependency-Track Jenkins Plugin - Changelog
 
 ## Unreleased
+
+## v3.0.1 - 2020-12-08
 ### 🐞 Bugs Fixed
 - link to project page not working for Dependency-Track older than v3.8 (fixes [#17](https://github.com/jenkinsci/dependency-track-plugin/issues/17))
 - Report does not render correctly in Firefox (fixes [#18](https://github.com/jenkinsci/dependency-track-plugin/issues/18))
