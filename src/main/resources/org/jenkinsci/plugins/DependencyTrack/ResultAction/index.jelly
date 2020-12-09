@@ -25,7 +25,7 @@
 
             <h1>${it.displayName} for ${it.run.parent.displayName}${it.run.displayName}</h1>
             <div class="alert alert-warning" role="alert">
-                These results may not be up to date.<j:if test="${it.dependencyTrackUrl != null and !it.dependencyTrackUrl.isEmpty()}"> Please visit <a class="alert-link" href="${it.dependencyTrackUrl}/projects/${it.projectId}">the Dependency Track project page</a> for the most recent results.</j:if>
+                These results may not be up to date.<j:if test="${it.dependencyTrackUrl != null and !it.dependencyTrackUrl.isEmpty()}"> Please visit <a class="alert-link" href="${it.dependencyTrackUrl}/project/?uuid=${it.projectId}">the Dependency Track project page</a> for the most recent results.</j:if>
             </div>
 
             <div id="app">
