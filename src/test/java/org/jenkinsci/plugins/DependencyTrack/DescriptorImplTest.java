@@ -63,7 +63,7 @@ public class DescriptorImplTest {
 
     @Before
     public void setup() {
-        uut = new DescriptorImpl((url, apiKey, logger, connTimeout, readTimeout) -> client);
+        uut = new DescriptorImpl((apiUrl, apiKey, logger, connTimeout, readTimeout) -> client);
     }
 
     @Test
@@ -105,8 +105,8 @@ public class DescriptorImplTest {
         final String apikey = "api-key";
         final String credentialsid = "credentials-id";
         // custom factory here so we can check that doTestConnection strips trailing slashes from the url
-        ApiClientFactory factory = (url, apiKey, logger, connTimeout, readTimeout) -> {
-            assertThat(url).isEqualTo("http:///url.tld");
+        ApiClientFactory factory = (apiUrl, apiKey, logger, connTimeout, readTimeout) -> {
+            assertThat(apiUrl).isEqualTo("http:///api.url.tld");
             assertThat(apiKey).isEqualTo(apikey);
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
@@ -115,17 +115,17 @@ public class DescriptorImplTest {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
         uut = new DescriptorImpl(factory);
 
-        assertThat(uut.doTestConnection("http:///url.tld", credentialsid, null))
+        assertThat(uut.doTestConnection("http:///api.url.tld", credentialsid, null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
                 .hasMessage("Connection successful - Dependency-Track v3.8.0")
                 .hasNoCause();
 
-        assertThat(uut.doTestConnection("http:///url.tld/", credentialsid, null))
+        assertThat(uut.doTestConnection("http:///api.url.tld/", credentialsid, null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                 .hasMessageStartingWith("Connection failed - test")
                 .hasNoCause();
 
-        assertThat(uut.doTestConnection("http:///url.tld/", credentialsid, null))
+        assertThat(uut.doTestConnection("http:///api.url.tld/", credentialsid, null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                 .hasMessageStartingWith("Connection failed")
                 .hasMessageContaining(ApiClientException.class.getCanonicalName())
@@ -133,7 +133,7 @@ public class DescriptorImplTest {
 
         assertThat(uut.doTestConnection("url", "", null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.WARNING)
-                .hasMessage("URL must be valid and Api-Key must not be empty")
+                .hasMessage("API URL must be valid and Api-Key must not be empty")
                 .hasNoCause();
     }
 
@@ -142,8 +142,8 @@ public class DescriptorImplTest {
         final String apikey = "api-key";
         final String credentialsid = "credentials-id";
         // custom factory here so we can check that doTestConnection strips trailing slashes from the url
-        ApiClientFactory factory = (url, apiKey, logger, connTimeout, readTimeout) -> {
-            assertThat(url).isEqualTo("http:///url.tld");
+        ApiClientFactory factory = (apiUrl, apiKey, logger, connTimeout, readTimeout) -> {
+            assertThat(apiUrl).isEqualTo("http:///api.url.tld");
             assertThat(apiKey).isEqualTo(apikey);
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
@@ -152,7 +152,7 @@ public class DescriptorImplTest {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
         uut = new DescriptorImpl(factory);
         uut.setDependencyTrackApiKey(credentialsid);
-        uut.setDependencyTrackUrl("http:///url.tld/");
+        uut.setDependencyTrackApiUrl("http:///api.url.tld/");
 
         assertThat(uut.doTestConnection("", "", null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
@@ -171,12 +171,22 @@ public class DescriptorImplTest {
     }
 
     @Test
+    public void doCheckDependencyTrackApiUrlTest() {
+        assertThat(uut.doCheckDependencyTrackApiUrl("http://api.foo.bar/")).isEqualTo(FormValidation.ok());
+        assertThat(uut.doCheckDependencyTrackApiUrl("http://api.foo.bar")).isEqualTo(FormValidation.ok());
+        assertThat(uut.doCheckDependencyTrackApiUrl("")).isEqualTo(FormValidation.ok());
+        assertThat(uut.doCheckDependencyTrackApiUrl("foo"))
+                .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
+                .hasMessage("The specified value is not a valid URL");
+    }
+
+    @Test
     public void getDependencyTrackUrlTest() {
         uut.setDependencyTrackUrl("http://foo.bar/");
         assertThat(uut.getDependencyTrackUrl()).isEqualTo("http://foo.bar");
 
-        uut.setDependencyTrackUrl("http://foo.bar");
-        assertThat(uut.getDependencyTrackUrl()).isEqualTo("http://foo.bar");
+        uut.setDependencyTrackApiUrl("http://api.foo.bar");
+        assertThat(uut.getDependencyTrackApiUrl()).isEqualTo("http://api.foo.bar");
     }
 
     @Test
@@ -195,6 +205,7 @@ public class DescriptorImplTest {
         StaplerRequest req = mock(StaplerRequest.class);
         JSONObject formData = new JSONObject()
                 .element("dependencyTrackUrl", "https://foo.bar/")
+                .element("dependencyTrackApiUrl", "https://api.foo.bar/")
                 .element("dependencyTrackApiKey", "api-key")
                 .element("dependencyTrackAutoCreateProjects", true)
                 .element("dependencyTrackPollingTimeout", 7);

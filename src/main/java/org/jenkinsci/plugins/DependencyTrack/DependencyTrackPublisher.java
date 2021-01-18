@@ -16,34 +16,31 @@
 package org.jenkinsci.plugins.DependencyTrack;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
+import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.AbortException;
+import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepMonitor;
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.List;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import hudson.EnvVars;
 import hudson.util.Secret;
-import java.util.Optional;
 import jenkins.tasks.SimpleBuildStep;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
-import org.jenkinsci.plugins.DependencyTrack.model.Finding;
-import org.jenkinsci.plugins.DependencyTrack.model.RiskGate;
-import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
-import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
-import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
+import org.jenkinsci.plugins.DependencyTrack.model.*;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
+
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.List;
+import java.util.Optional;
 
 @Getter
 @Setter(onMethod_ = {@DataBoundSetter})
@@ -85,6 +82,11 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
     private String dependencyTrackUrl;
 
     /**
+     * Specifies the base URL to Dependency-Track API-Server v4 or higher.
+     */
+    private String dependencyTrackApiUrl;
+
+    /**
      * Specifies the credential-id for an API Key used for authentication.
      */
     private String dependencyTrackApiKey;
@@ -121,13 +123,13 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
     /**
      * This method is called whenever the build step is executed.
      *
-     * @param run a build this is running as a part of
+     * @param run       a build this is running as a part of
      * @param workspace a workspace to use for any file operations
-     * @param env environment variables applicable to this step
-     * @param launcher a way to start processes
-     * @param listener a place to send output
+     * @param env       environment variables applicable to this step
+     * @param launcher  a way to start processes
+     * @param listener  a place to send output
      * @throws InterruptedException if the step is interrupted
-     * @throws IOException if something goes wrong
+     * @throws IOException          if something goes wrong
      */
     @Override
     public void perform(@NonNull Run<?, ?> run, @NonNull FilePath workspace, @NonNull EnvVars env, @NonNull Launcher launcher, @NonNull TaskListener listener) throws InterruptedException, IOException {
@@ -151,10 +153,10 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
             throw new AbortException(Messages.Builder_Artifact_NonExist(effectiveArtifact));
         }
 
-        final String effectiveUrl = getEffectiveUrl();
+        final String effectiveApiUrl = getEffectiveApiUrl();
         final String effectiveApiKey = getEffectiveApiKey(run);
-        logger.log(Messages.Builder_Publishing(effectiveUrl));
-        final ApiClient apiClient = clientFactory.create(effectiveUrl, effectiveApiKey, logger, descriptor.getDependencyTrackConnectionTimeout(), descriptor.getDependencyTrackReadTimeout());
+        logger.log(Messages.Builder_Publishing(effectiveApiUrl));
+        final ApiClient apiClient = clientFactory.create(effectiveApiUrl, effectiveApiKey, logger, descriptor.getDependencyTrackConnectionTimeout(), descriptor.getDependencyTrackReadTimeout());
         final UploadResult uploadResult = apiClient.upload(projectId, effectiveProjectName, effectiveProjectVersion,
                 artifactFilePath, isEffectiveAutoCreateProjects());
 
@@ -163,12 +165,12 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
         }
 
         // add ResultLinkAction even if it may not contain a projectId. but we want to store name version for the future.
-        final ResultLinkAction linkAction = new ResultLinkAction(effectiveUrl, projectId);
+        final ResultLinkAction linkAction = new ResultLinkAction(effectiveApiUrl, projectId);
         linkAction.setProjectName(effectiveProjectName);
         linkAction.setProjectVersion(effectiveProjectVersion);
         run.addOrReplaceAction(linkAction);
 
-        logger.log(Messages.Builder_Success(String.format("%s/projects/%s", effectiveUrl, projectId != null ? projectId : StringUtils.EMPTY)));
+        logger.log(Messages.Builder_Success(String.format("%s/projects/%s", effectiveApiUrl, projectId != null ? projectId : StringUtils.EMPTY)));
 
         if (synchronous && StringUtils.isNotBlank(uploadResult.getToken())) {
             publishAnalysisResult(logger, apiClient, uploadResult.getToken(), run, effectiveProjectName, effectiveProjectVersion);
@@ -232,7 +234,6 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
     }
 
     /**
-     *
      * @return A Descriptor Implementation
      */
     @Override
@@ -272,6 +273,7 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
     private Object writeReplace() throws java.io.ObjectStreamException {
         if (!overrideGlobals) {
             dependencyTrackUrl = null;
+            dependencyTrackApiUrl = null;
             dependencyTrackApiKey = null;
             autoCreateProjects = null;
         }
@@ -288,6 +290,15 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
     @NonNull
     private String getEffectiveUrl() {
         String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElse(descriptor.getDependencyTrackUrl());
+        return Optional.ofNullable(url).orElse(StringUtils.EMPTY);
+    }
+
+    /**
+     * @return effective dependencyTrackApiUrl
+     */
+    @NonNull
+    private String getEffectiveApiUrl() {
+        String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackApiUrl)).orElse(descriptor.getDependencyTrackApiUrl());
         return Optional.ofNullable(url).orElse(StringUtils.EMPTY);
     }
 

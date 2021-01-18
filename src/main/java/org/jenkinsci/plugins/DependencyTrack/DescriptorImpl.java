@@ -71,6 +71,12 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
     private String dependencyTrackUrl;
 
     /**
+     * Specifies the base URL to Dependency-Track API-Server v4 or higher
+     */
+    @Setter(onMethod_ = {@DataBoundSetter})
+    private String dependencyTrackApiUrl;
+
+    /**
      * Specifies an API Key used for authentication (if authentication is
      * required).
      */
@@ -138,16 +144,16 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
     /**
      * Retrieve the projects to populate the dropdown.
      *
-     * @param dependencyTrackUrl the base URL to Dependency-Track
+     * @param dependencyTrackApiUrl the base URL to Dependency-Track API-Server
      * @param dependencyTrackApiKey the API key to use for authentication
      * @param item used to lookup credentials in job config. ignored in global
      * @return ListBoxModel
      */
-    public ListBoxModel doFillProjectIdItems(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable Item item) {
+    public ListBoxModel doFillProjectIdItems(@QueryParameter final String dependencyTrackApiUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable Item item) {
         final ListBoxModel projects = new ListBoxModel();
         try {
             // url may come from instance-config. if empty, then take it from global config (this)
-            final String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElse(getDependencyTrackUrl());
+            final String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackApiUrl)).orElse(getDependencyTrackApiUrl());
             // api-key may come from instance-config. if empty, then take it from global config (this)
             final String apiKey = lookupApiKey(Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElse(getDependencyTrackApiKey()), item);
             final ApiClient apiClient = getClient(url, apiKey);
@@ -191,22 +197,32 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
     }
 
     /**
-     * Performs an on-the-fly check of the Dependency-Track URL and api key
+     * Performs input validation when submitting the global config
+     *
+     * @param value The value of the URL as specified in the global config
+     * @return a FormValidation object
+     */
+    public FormValidation doCheckDependencyTrackApiUrl(@QueryParameter String value) {
+        return PluginUtil.doCheckUrl(value);
+    }
+
+    /**
+     * Performs an on-the-fly check of the Dependency-Track API URL and api key
      * parameters by making a simple call to the server and validating the
      * response code.
      *
-     * @param dependencyTrackUrl the base URL to Dependency-Track
+     * @param dependencyTrackApiUrl the base URL to Dependency-Track API-Server
      * @param dependencyTrackApiKey the credential-id of the API key to use for authentication
      * @param item used to lookup credentials in job config. ignored in global
      * config
      * @return FormValidation
      */
-    public FormValidation doTestConnection(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable Item item) {
+    public FormValidation doTestConnection(@QueryParameter final String dependencyTrackApiUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable Item item) {
         // url may come from instance-config. if empty, then take it from global config (this)
-        final String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElse(getDependencyTrackUrl());
+        final String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackApiUrl)).orElse(getDependencyTrackApiUrl());
         // api-key may come from instance-config. if empty, then take it from global config (this)
         final String apiKey = lookupApiKey(Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElse(getDependencyTrackApiKey()), item);
-        if (doCheckDependencyTrackUrl(url).kind == FormValidation.Kind.OK && StringUtils.isNotBlank(apiKey)) {
+        if (doCheckDependencyTrackApiUrl(url).kind == FormValidation.Kind.OK && StringUtils.isNotBlank(apiKey)) {
             try {
                 final ApiClient apiClient = getClient(url, apiKey);
                 final String result = apiClient.testConnection();
@@ -215,7 +231,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
                 return FormValidation.error(e, "Connection failed");
             }
         }
-        return FormValidation.warning("URL must be valid and Api-Key must not be empty");
+        return FormValidation.warning("API URL must be valid and Api-Key must not be empty");
     }
 
     /**
@@ -249,6 +265,14 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
     @CheckForNull
     public String getDependencyTrackUrl() {
         return PluginUtil.parseBaseUrl(dependencyTrackUrl);
+    }
+
+    /**
+     * @return global configuration for dependencyTrackApiUrl
+     */
+    @CheckForNull
+    public String getDependencyTrackApiUrl() {
+        return PluginUtil.parseBaseUrl(dependencyTrackApiUrl);
     }
 
     /**

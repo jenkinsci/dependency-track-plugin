@@ -225,8 +225,8 @@ public class DependencyTrackPublisherTest {
     public void testUseOfOverridenProperties() throws IOException {
         File tmp = tmpDir.newFile();
         FilePath workDir = new FilePath(tmpDir.getRoot());
-        ApiClientFactory factory = (url, apiKey, logger, connTimeout, readTimeout) -> {
-            assertThat(url).isEqualTo("http://test.tld");
+        ApiClientFactory factory = (apiUrl, apiKey, logger, connTimeout, readTimeout) -> {
+            assertThat(apiUrl).isEqualTo("http://api.test.tld");
             assertThat(apiKey).isEqualTo(apikey);
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
@@ -234,7 +234,7 @@ public class DependencyTrackPublisherTest {
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, factory);
         uut.setProjectId("uuid-1");
         uut.setAutoCreateProjects(Boolean.TRUE);
-        uut.setDependencyTrackUrl("http://test.tld");
+        uut.setDependencyTrackApiUrl("http://api.test.tld");
         uut.setDependencyTrackApiKey(apikeyId);
 
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(true)))
