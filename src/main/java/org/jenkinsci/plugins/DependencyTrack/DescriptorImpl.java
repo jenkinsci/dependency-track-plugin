@@ -218,7 +218,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
      * @return FormValidation
      */
     public FormValidation doTestConnection(@QueryParameter final String dependencyTrackApiUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable Item item) {
-        // url may come from instance-config. if empty, then take it from global config (this)
+        // api-url may come from instance-config. if empty, then take it from global config (this)
         final String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackApiUrl)).orElse(getDependencyTrackApiUrl());
         // api-key may come from instance-config. if empty, then take it from global config (this)
         final String apiKey = lookupApiKey(Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElse(getDependencyTrackApiKey()), item);
