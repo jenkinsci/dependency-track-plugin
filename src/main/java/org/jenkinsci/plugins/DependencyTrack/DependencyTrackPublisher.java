@@ -153,9 +153,10 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
             throw new AbortException(Messages.Builder_Artifact_NonExist(effectiveArtifact));
         }
 
+        final String effectiveUrl = getEffectiveUrl();
         final String effectiveApiUrl = getEffectiveApiUrl();
         final String effectiveApiKey = getEffectiveApiKey(run);
-        logger.log(Messages.Builder_Publishing(effectiveApiUrl));
+        logger.log(Messages.Builder_Publishing(effectiveUrl));
         final ApiClient apiClient = clientFactory.create(effectiveApiUrl, effectiveApiKey, logger, descriptor.getDependencyTrackConnectionTimeout(), descriptor.getDependencyTrackReadTimeout());
         final UploadResult uploadResult = apiClient.upload(projectId, effectiveProjectName, effectiveProjectVersion,
                 artifactFilePath, isEffectiveAutoCreateProjects());

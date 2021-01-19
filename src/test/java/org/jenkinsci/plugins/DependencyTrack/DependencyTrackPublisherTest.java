@@ -234,6 +234,7 @@ public class DependencyTrackPublisherTest {
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, factory);
         uut.setProjectId("uuid-1");
         uut.setAutoCreateProjects(Boolean.TRUE);
+        uut.setDependencyTrackUrl("http://test.tld");
         uut.setDependencyTrackApiUrl("http://api.test.tld");
         uut.setDependencyTrackApiKey(apikeyId);
 

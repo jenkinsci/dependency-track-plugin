@@ -68,7 +68,7 @@ public class ApiClient {
      * the base url to DT instance without trailing slashes, e.g.
      * "http://host.tld:port"
      */
-    private final String baseUrl;
+    private final String baseApiUrl;
 
     /**
      * the api key to authorize with against DT
@@ -90,7 +90,7 @@ public class ApiClient {
     @NonNull
     public String testConnection() throws ApiClientException {
         try {
-            final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + PROJECT_URL).openConnection();
+            final HttpURLConnection conn = (HttpURLConnection) new URL(baseApiUrl + PROJECT_URL).openConnection();
             conn.setRequestProperty(HEADER_ACCEPT, MEDIATYPE_JSON);
             conn.setRequestProperty(API_KEY_HEADER, apiKey);
             conn.setConnectTimeout(connectionTimeout * MS_TO_S_FACTOR);
@@ -125,7 +125,7 @@ public class ApiClient {
     @NonNull
     private List<Project> getProjectsPaged(int page) throws ApiClientException {
         try {
-            final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + PROJECT_URL + "?limit=500&excludeInactive=true&page=" + page).openConnection();
+            final HttpURLConnection conn = (HttpURLConnection) new URL(baseApiUrl + PROJECT_URL + "?limit=500&excludeInactive=true&page=" + page).openConnection();
             conn.setRequestProperty(HEADER_ACCEPT, MEDIATYPE_JSON);
             conn.setRequestProperty(API_KEY_HEADER, apiKey);
             conn.setConnectTimeout(connectionTimeout * MS_TO_S_FACTOR);
@@ -149,7 +149,7 @@ public class ApiClient {
     @NonNull
     public Project lookupProject(String projectName, String projectVersion) throws ApiClientException {
         try {
-            final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + PROJECT_LOOKUP_URL + "?"
+            final HttpURLConnection conn = (HttpURLConnection) new URL(baseApiUrl + PROJECT_LOOKUP_URL + "?"
                     + PROJECT_LOOKUP_NAME_PARAM + "=" + URLEncoder.encode(projectName, StandardCharsets.UTF_8.name()) + "&"
                     + PROJECT_LOOKUP_VERSION_PARAM + "=" + URLEncoder.encode(projectVersion, StandardCharsets.UTF_8.name()))
                     .openConnection();
@@ -186,7 +186,7 @@ public class ApiClient {
     @NonNull
     public List<Finding> getFindings(String projectUuid) throws ApiClientException {
         try {
-            final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + PROJECT_FINDINGS_URL + "/" + URLEncoder.encode(projectUuid, StandardCharsets.UTF_8.name()))
+            final HttpURLConnection conn = (HttpURLConnection) new URL(baseApiUrl + PROJECT_FINDINGS_URL + "/" + URLEncoder.encode(projectUuid, StandardCharsets.UTF_8.name()))
                     .openConnection();
             conn.setDoOutput(true);
             conn.setRequestProperty(API_KEY_HEADER, apiKey);
@@ -232,7 +232,7 @@ public class ApiClient {
         }
         byte[] payloadBytes = jsonObject.toString().getBytes(StandardCharsets.UTF_8);
         // Creates the request and connects
-        final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + BOM_URL).openConnection();
+        final HttpURLConnection conn = (HttpURLConnection) new URL(baseApiUrl + BOM_URL).openConnection();
         conn.setDoOutput(true);
         conn.setRequestMethod("PUT");
         conn.setRequestProperty(HEADER_CONTENT_TYPE, MEDIATYPE_JSON);
@@ -285,7 +285,7 @@ public class ApiClient {
     @NonNull
     public boolean isTokenBeingProcessed(String token) throws ApiClientException {
         try {
-            final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + BOM_TOKEN_URL + "/" + URLEncoder.encode(token, StandardCharsets.UTF_8.name()))
+            final HttpURLConnection conn = (HttpURLConnection) new URL(baseApiUrl + BOM_TOKEN_URL + "/" + URLEncoder.encode(token, StandardCharsets.UTF_8.name()))
                     .openConnection();
             conn.setDoOutput(true);
             conn.setRequestProperty(API_KEY_HEADER, apiKey);

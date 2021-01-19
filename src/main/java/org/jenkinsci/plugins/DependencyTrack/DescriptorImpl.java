@@ -219,12 +219,12 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
      */
     public FormValidation doTestConnection(@QueryParameter final String dependencyTrackApiUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable Item item) {
         // api-url may come from instance-config. if empty, then take it from global config (this)
-        final String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackApiUrl)).orElse(getDependencyTrackApiUrl());
+        final String apiUrl = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackApiUrl)).orElse(getDependencyTrackApiUrl());
         // api-key may come from instance-config. if empty, then take it from global config (this)
         final String apiKey = lookupApiKey(Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElse(getDependencyTrackApiKey()), item);
-        if (doCheckDependencyTrackApiUrl(url).kind == FormValidation.Kind.OK && StringUtils.isNotBlank(apiKey)) {
+        if (doCheckDependencyTrackApiUrl(apiUrl).kind == FormValidation.Kind.OK && StringUtils.isNotBlank(apiKey)) {
             try {
-                final ApiClient apiClient = getClient(url, apiKey);
+                final ApiClient apiClient = getClient(apiUrl, apiKey);
                 final String result = apiClient.testConnection();
                 return result.startsWith("Dependency-Track v") ? FormValidation.ok("Connection successful - " + result) : FormValidation.error("Connection failed - " + result);
             } catch (ApiClientException e) {
