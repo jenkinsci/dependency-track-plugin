@@ -171,7 +171,7 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
         linkAction.setProjectVersion(effectiveProjectVersion);
         run.addOrReplaceAction(linkAction);
 
-        logger.log(Messages.Builder_Success(String.format("%s/projects/%s", effectiveApiUrl, projectId != null ? projectId : StringUtils.EMPTY)));
+        logger.log(Messages.Builder_Success(String.format("%s/projects/%s", effectiveUrl, projectId != null ? projectId : StringUtils.EMPTY)));
 
         if (synchronous && StringUtils.isNotBlank(uploadResult.getToken())) {
             publishAnalysisResult(logger, apiClient, uploadResult.getToken(), run, effectiveProjectName, effectiveProjectVersion);
