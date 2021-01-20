@@ -3,6 +3,7 @@
 ## Unreleased
 ### ⭐ New Features
 - allow to specify an alternative URL for the Dependency-Track Frontend (fixes [#22](https://github.com/jenkinsci/dependency-track-plugin/issues/22))
+- added links to npm security advisories
 
 ### 🐞 Bugs Fixed
 - verify that `projectId` is set when auto create projects is not enabled
