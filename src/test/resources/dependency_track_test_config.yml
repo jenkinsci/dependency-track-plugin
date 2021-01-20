@@ -1,6 +1,7 @@
 unclassified:
   dependencyTrackPublisher:
     dependencyTrackUrl: https://example.org/deptrack
+    dependencyTrackFrontendUrl: https://ui.example.org
     dependencyTrackApiKey: R4nD0m
     dependencyTrackAutoCreateProjects: false
     dependencyTrackPollingTimeout: 5

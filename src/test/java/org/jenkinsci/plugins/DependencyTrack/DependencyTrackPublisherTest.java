@@ -257,6 +257,7 @@ public class DependencyTrackPublisherTest {
         DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
         uut.setAutoCreateProjects(Boolean.TRUE);
         uut.setDependencyTrackUrl("foo");
+        uut.setDependencyTrackFrontendUrl("foo-ui");
         uut.setDependencyTrackApiKey("bar");
         uut.setOverrideGlobals(false);
 
@@ -268,6 +269,7 @@ public class DependencyTrackPublisherTest {
         try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()))) {
             assertThat(ois.readObject()).isInstanceOfSatisfying(DependencyTrackPublisher.class, actual -> {
                 assertThat(actual.getDependencyTrackUrl()).isNull();
+                assertThat(actual.getDependencyTrackFrontendUrl()).isNull();
                 assertThat(actual.getDependencyTrackApiKey()).isNull();
                 assertThat(actual.getAutoCreateProjects()).isNull();
                 assertThat(actual.isOverrideGlobals()).isFalse();
@@ -281,6 +283,7 @@ public class DependencyTrackPublisherTest {
         DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
         uut.setAutoCreateProjects(Boolean.TRUE);
         uut.setDependencyTrackUrl("foo");
+        uut.setDependencyTrackFrontendUrl("foo-ui");
         uut.setDependencyTrackApiKey("bar");
         uut.setOverrideGlobals(true);
 
@@ -292,6 +295,7 @@ public class DependencyTrackPublisherTest {
         try (ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()))) {
             assertThat(ois.readObject()).isInstanceOfSatisfying(DependencyTrackPublisher.class, actual -> {
                 assertThat(actual.getDependencyTrackUrl()).isEqualTo("foo");
+                assertThat(actual.getDependencyTrackFrontendUrl()).isEqualTo("foo-ui");
                 assertThat(actual.getDependencyTrackApiKey()).isEqualTo("bar");
                 assertThat(actual.getAutoCreateProjects()).isTrue();
                 assertThat(actual.isOverrideGlobals()).isTrue();

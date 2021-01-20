@@ -23,6 +23,7 @@ public class ConfigurationAsCodeTest {
 
         assertThat(descriptor)
                 .returns("https://example.org/deptrack", DescriptorImpl::getDependencyTrackUrl)
+                .returns("https://ui.example.org", DescriptorImpl::getDependencyTrackFrontendUrl)
                 .returns("R4nD0m", DescriptorImpl::getDependencyTrackApiKey)
                 .returns(false, DescriptorImpl::isDependencyTrackAutoCreateProjects)
                 .returns(5, DescriptorImpl::getDependencyTrackPollingTimeout)

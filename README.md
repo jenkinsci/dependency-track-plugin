@@ -34,6 +34,8 @@ To setup, navigate to Jenkins > System Configuration and complete the Dependency
 
 **Auto Create Projects**: auto creation of projects by giving a project name and version. The API key provided requires the `PROJECT_CREATION_UPLOAD` permission to use this feature.
 
+**Dependency-Track Frontend URL**: alternative URL to the Frontend of your Dependency-Track instance. Use this if you run backend and frontend on different servers. If omitted, "Dependency-Track URL" will be used instead.
+
 **Polling Timeout**: Defines the maximum number of minutes to wait for Dependency-Track to process a job when using synchronous publishing.
 
 **Polling Interval**: Defines the number of seconds to wait between two checks for Dependency-Track to process a job when using synchronous publishing.
@@ -57,7 +59,7 @@ Once configured with a valid URL and API key, simply configure a job to publish 
 
 **Enable synchronous publishing mode**: Uploads a SBOM to Dependency-Track and waits for Dependency-Track to process and return results. The results returned are identical to the auditable findings but exclude findings that have previously been suppressed. Analysis decisions and vulnerability details are included in the response. Synchronous mode is possible with Dependency-Track v3.3.1 and higher.
 
-**Override global settings**: Allows to override global settings for "Auto Create Projects", "Dependency-Track URL" and "API key".
+**Override global settings**: Allows to override global settings for "Auto Create Projects", "Dependency-Track URL", "Dependency-Track Frontend URL" and "API key".
 
 ### Thresholds
 

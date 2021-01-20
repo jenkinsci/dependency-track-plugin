@@ -41,6 +41,9 @@ limitations under the License.
     <f:entry title="${%dependencytrack.url}" field="dependencyTrackUrl" help="/plugin/dependency-track/help-dt-url.html">
         <f:textbox id="dependencytrack.url" />
     </f:entry>
+    <f:entry title="${%dependencytrack.url.frontend}" field="dependencyTrackFrontendUrl" help="/plugin/dependency-track/help-dt-url-frontend.html">
+        <f:textbox id="dependencytrack.url.frontend"/>
+    </f:entry>
     <f:entry title="${%dependencytrack.apikey}" field="dependencyTrackApiKey" help="/plugin/dependency-track/help-dt-apikey.html">
         <c:select id="dependencytrack.apikey" />
     </f:entry>

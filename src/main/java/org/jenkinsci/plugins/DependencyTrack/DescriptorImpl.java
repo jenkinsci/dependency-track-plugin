@@ -71,6 +71,12 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
     private String dependencyTrackUrl;
 
     /**
+     * Specifies the alternative base URL to the frontend of Dependency-Track v3 or higher.
+     */
+    @Setter(onMethod_ = {@DataBoundSetter})
+    private String dependencyTrackFrontendUrl;
+
+    /**
      * Specifies an API Key used for authentication (if authentication is
      * required).
      */
@@ -191,6 +197,16 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
     }
 
     /**
+     * Performs input validation when submitting the global config
+     *
+     * @param value The value of the URL as specified in the global config
+     * @return a FormValidation object
+     */
+    public FormValidation doCheckDependencyTrackFrontendUrl(@QueryParameter String value) {
+        return PluginUtil.doCheckUrl(value);
+    }
+
+    /**
      * Performs an on-the-fly check of the Dependency-Track URL and api key
      * parameters by making a simple call to the server and validating the
      * response code.
@@ -249,6 +265,14 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
     @CheckForNull
     public String getDependencyTrackUrl() {
         return PluginUtil.parseBaseUrl(dependencyTrackUrl);
+    }
+
+    /**
+     * @return global configuration for dependencyTrackFrontendUrl
+     */
+    @CheckForNull
+    public String getDependencyTrackFrontendUrl() {
+        return PluginUtil.parseBaseUrl(dependencyTrackFrontendUrl);
     }
 
     /**

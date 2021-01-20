@@ -85,6 +85,11 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
     private String dependencyTrackUrl;
 
     /**
+     * Specifies the alternative base URL to the frontend of Dependency-Track v3 or higher.
+     */
+    private String dependencyTrackFrontendUrl;
+
+    /**
      * Specifies the credential-id for an API Key used for authentication.
      */
     private String dependencyTrackApiKey;
@@ -168,12 +173,12 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
         }
 
         // add ResultLinkAction even if it may not contain a projectId. but we want to store name version for the future.
-        final ResultLinkAction linkAction = new ResultLinkAction(effectiveUrl, projectId);
+        final ResultLinkAction linkAction = new ResultLinkAction(getEffectiveFrontendUrl(), projectId);
         linkAction.setProjectName(effectiveProjectName);
         linkAction.setProjectVersion(effectiveProjectVersion);
         run.addOrReplaceAction(linkAction);
 
-        logger.log(Messages.Builder_Success(String.format("%s/projects/%s", effectiveUrl, projectId != null ? projectId : StringUtils.EMPTY)));
+        logger.log(Messages.Builder_Success(String.format("%s/projects/%s", getEffectiveFrontendUrl(), projectId != null ? projectId : StringUtils.EMPTY)));
 
         if (synchronous && StringUtils.isNotBlank(uploadResult.getToken())) {
             publishAnalysisResult(logger, apiClient, uploadResult.getToken(), run, effectiveProjectName, effectiveProjectVersion);
@@ -203,12 +208,12 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
         final SeverityDistribution severityDistribution = new SeverityDistribution(build.getNumber());
         findings.stream().map(Finding::getVulnerability).map(Vulnerability::getSeverity).forEach(severityDistribution::add);
         final ResultAction projectAction = new ResultAction(findings, severityDistribution);
-        projectAction.setDependencyTrackUrl(getEffectiveUrl());
+        projectAction.setDependencyTrackUrl(getEffectiveFrontendUrl());
         projectAction.setProjectId(projectId);
         build.addOrReplaceAction(projectAction);
 
         // update ResultLinkAction with one that surely contains a projectId
-        final ResultLinkAction linkAction = new ResultLinkAction(getEffectiveUrl(), projectId);
+        final ResultLinkAction linkAction = new ResultLinkAction(getEffectiveFrontendUrl(), projectId);
         linkAction.setProjectName(effectiveProjectName);
         linkAction.setProjectVersion(effectiveProjectVersion);
         build.addOrReplaceAction(linkAction);
@@ -263,7 +268,7 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
         if (descriptor == null) {
             descriptor = getDescriptor();
         }
-        overrideGlobals = StringUtils.isNotBlank(dependencyTrackUrl) || StringUtils.isNotBlank(dependencyTrackApiKey) || autoCreateProjects != null;
+        overrideGlobals = StringUtils.isNotBlank(dependencyTrackUrl) ||StringUtils.isNotBlank(dependencyTrackFrontendUrl) || StringUtils.isNotBlank(dependencyTrackApiKey) || autoCreateProjects != null;
         return this;
     }
 
@@ -277,6 +282,7 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
     private Object writeReplace() throws java.io.ObjectStreamException {
         if (!overrideGlobals) {
             dependencyTrackUrl = null;
+            dependencyTrackFrontendUrl = null;
             dependencyTrackApiKey = null;
             autoCreateProjects = null;
         }
@@ -294,6 +300,15 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
     private String getEffectiveUrl() {
         String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElse(descriptor.getDependencyTrackUrl());
         return Optional.ofNullable(url).orElse(StringUtils.EMPTY);
+    }
+
+    /**
+     * @return effective dependencyTrackFrontendUrl
+     */
+    @NonNull
+    private String getEffectiveFrontendUrl() {
+        String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackFrontendUrl)).orElse(descriptor.getDependencyTrackFrontendUrl());
+        return Optional.ofNullable(url).orElse(getEffectiveUrl());
     }
 
     /**

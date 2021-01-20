@@ -27,6 +27,9 @@ limitations under the License.
             <f:checkbox id="dependencytrack.autocreate" default="false"/>
         </f:entry>
         <f:advanced>
+            <f:entry title="${%dependencytrack.url.frontend}" field="dependencyTrackFrontendUrl" help="/plugin/dependency-track/help-dt-url-frontend.html">
+                <f:textbox id="dependencytrack.url.frontend"/>
+            </f:entry>
             <f:entry title="${%dependencytrack.polling.timeout}" field="dependencyTrackPollingTimeout" help="/plugin/dependency-track/help-dt-polling-timeout.html">
                 <f:number id="dependencytrack.polling.timeout" default="5" clazz="positive-number" />
             </f:entry>
