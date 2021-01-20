@@ -136,6 +136,12 @@ public class DependencyTrackPublisherTest {
         final DependencyTrackPublisher uut5 = new DependencyTrackPublisher("foo", false, clientFactory);
         uut5.setProjectId("uuid-1");
         assertThatCode(() -> uut5.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Artifact_NonExist("foo"));
+
+        // uuid missing
+        final DependencyTrackPublisher uut6 = new DependencyTrackPublisher(artifact.getName(), false, clientFactory);
+        uut6.setProjectName("name");
+        uut6.setProjectVersion("version");
+        assertThatCode(() -> uut6.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Result_ProjectIdMissing());
     }
 
     @Test
@@ -177,8 +183,9 @@ public class DependencyTrackPublisherTest {
         uut.setProjectName("name-1");
         uut.setProjectVersion("${my.var}");
         uut.setDependencyTrackApiKey(apikeyId);
+        uut.setAutoCreateProjects(Boolean.TRUE);
 
-        when(client.upload(isNull(), eq("name-1"), eq("my.value"), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
+        when(client.upload(isNull(), eq("name-1"), eq("my.value"), any(FilePath.class), eq(true))).thenReturn(new UploadResult(true, "token-1"));
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
         verify(client, never()).lookupProject(anyString(), anyString());
@@ -210,8 +217,9 @@ public class DependencyTrackPublisherTest {
         uut.setProjectName("name-1");
         uut.setProjectVersion("version-1");
         uut.setDependencyTrackApiKey(apikeyId);
+        uut.setAutoCreateProjects(Boolean.TRUE);
 
-        when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
+        when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(true))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed(eq("token-1"))).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
         when(client.getFindings(eq("uuid-1"))).thenReturn(Collections.emptyList());
         when(client.lookupProject(eq("name-1"), eq("version-1"))).thenReturn(Project.builder().uuid("uuid-1").build());

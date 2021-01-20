@@ -1,6 +1,8 @@
 # Dependency-Track Jenkins Plugin - Changelog
 
 ## Unreleased
+### 🐞 Bugs Fixed
+- verify that `projectId` is set when auto create projects is not enabled
 
 ## v3.0.2 - 2020-12-09
 ### 🐞 Bugs Fixed

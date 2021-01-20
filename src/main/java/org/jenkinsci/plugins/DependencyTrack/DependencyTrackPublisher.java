@@ -135,6 +135,7 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
         final String effectiveProjectName = env.expand(projectName);
         final String effectiveProjectVersion = env.expand(projectVersion);
         final String effectiveArtifact = env.expand(artifact);
+        final boolean effectiveAutocreate = isEffectiveAutoCreateProjects();
 
         if (StringUtils.isBlank(effectiveArtifact)) {
             logger.log(Messages.Builder_Artifact_Unspecified());
@@ -143,6 +144,10 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
         if (StringUtils.isBlank(projectId) && (StringUtils.isBlank(effectiveProjectName) || StringUtils.isBlank(effectiveProjectVersion))) {
             logger.log(Messages.Builder_Result_InvalidArguments());
             throw new AbortException(Messages.Builder_Result_InvalidArguments());
+        }
+        if (StringUtils.isBlank(projectId) && !effectiveAutocreate) {
+            logger.log(Messages.Builder_Result_ProjectIdMissing());
+            throw new AbortException(Messages.Builder_Result_ProjectIdMissing());
         }
 
         final FilePath artifactFilePath = new FilePath(workspace, effectiveArtifact);
@@ -156,7 +161,7 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
         logger.log(Messages.Builder_Publishing(effectiveUrl));
         final ApiClient apiClient = clientFactory.create(effectiveUrl, effectiveApiKey, logger, descriptor.getDependencyTrackConnectionTimeout(), descriptor.getDependencyTrackReadTimeout());
         final UploadResult uploadResult = apiClient.upload(projectId, effectiveProjectName, effectiveProjectVersion,
-                artifactFilePath, isEffectiveAutoCreateProjects());
+                artifactFilePath, effectiveAutocreate);
 
         if (!uploadResult.isSuccess()) {
             throw new AbortException(Messages.Builder_Upload_Failed());
