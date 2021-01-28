@@ -12,7 +12,7 @@
     <artifactId>dependency-track</artifactId>
 
     <name>OWASP Dependency-Track Plugin</name>
-    <version>3.0.3-SNAPSHOT</version>
+    <version>3.1.0-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <inceptionYear>2018</inceptionYear>
     <organization>
@@ -44,18 +44,66 @@
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <junit-jupiter.version>[5.7.0,5.7.99)</junit-jupiter.version>
         <maven.javadoc.skip>true</maven.javadoc.skip>
+        <npm.path>npm</npm.path>
+        <npm.suffix></npm.suffix>
     </properties>
     
     <profiles>
-		<profile>
-			<id>jdk-gte-9</id>
-			<activation>
-				<jdk>[9,)</jdk>
-			</activation>
-			<properties>
-				<maven.compiler.release>${java.level}</maven.compiler.release>
-			</properties>
-		</profile>
+        <profile>
+            <id>jdk-gte-9</id>
+            <activation>
+                <jdk>[9,)</jdk>
+            </activation>
+            <properties>
+                <maven.compiler.release>${java.level}</maven.compiler.release>
+            </properties>
+        </profile>
+        <profile>
+            <id>windows</id>
+            <activation>
+                <os>
+                    <family>windows</family>
+                </os>
+            </activation>
+            <properties>
+                <npm.suffix>.cmd</npm.suffix>
+            </properties>
+        </profile>
+        <profile>
+            <id>install-node</id>
+            <properties>
+                <npm.path>target/node/npm</npm.path>
+            </properties>
+            <activation>
+                <property>
+                    <name>env.JENKINS_URL</name>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>com.github.eirslett</groupId>
+                        <artifactId>frontend-maven-plugin</artifactId>
+                        <version>1.11.0</version>
+                        <executions>
+                            <execution>
+                                <id>install node and npm</id>
+                                <goals>
+                                    <goal>install-node-and-npm</goal>
+                                </goals>
+                                <phase>initialize</phase>
+                                <configuration>
+                                    <nodeVersion>v14.15.4</nodeVersion>
+                                    <nodeDownloadRoot>https://repo.jenkins-ci.org/nodejs-dist/</nodeDownloadRoot>
+                                    <npmRegistryURL>https://repo.jenkins-ci.org/api/npm/npm/</npmRegistryURL>
+                                    <installDirectory>target</installDirectory>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <build>
@@ -97,6 +145,100 @@
                     <localCheckout>true</localCheckout>
                     <tagNameFormat>v@{project.version}</tagNameFormat>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-clean-plugin</artifactId>
+                <configuration>
+                    <filesets>
+                        <fileset>
+                            <directory>node_modules</directory>
+                        </fileset>
+                    </filesets>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <id>npm install</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <executable>${npm.path}${npm.suffix}</executable>
+                            <arguments>install</arguments>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-js-libs</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/src/main/webapp/js/libs</outputDirectory>
+                            <overwrite>true</overwrite>
+                            <nonFilteredFileExtensions>js</nonFilteredFileExtensions>
+                            <resources>
+                                <resource>
+                                    <directory>node_modules/bootstrap-vue/dist</directory>
+                                    <includes>
+                                        <include>bootstrap-vue.min.js</include>
+                                        <include>bootstrap-vue-icons.min.js</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <directory>node_modules/vue/dist</directory>
+                                    <includes>
+                                        <include>vue.min.js</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <directory>node_modules/echarts/dist</directory>
+                                    <includes>
+                                        <include>echarts.common.min.js</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-css-libs</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/src/main/webapp/css</outputDirectory>
+                            <overwrite>true</overwrite>
+                            <nonFilteredFileExtensions>css</nonFilteredFileExtensions>
+                            <resources>
+                                <resource>
+                                    <directory>node_modules/bootstrap/dist/css</directory>
+                                    <includes>
+                                        <include>bootstrap.min.css</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <directory>node_modules/bootstrap-vue/dist</directory>
+                                    <includes>
+                                        <include>bootstrap-vue.min.css</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
@@ -144,7 +286,7 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>[3.17.0,)</version>
+            <version>[3.19.0,)</version>
             <scope>test</scope>
         </dependency>
         <dependency>

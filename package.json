@@ -1,0 +1,11 @@
+{
+  "name": "@org.jenkins-ci.plugins/dependency-track",
+  "version": "3.1.0-SNAPSHOT",
+  "license": "Apache-2.0",
+  "description": "Dependency-Track is an intelligent Software Supply Chain Component Analysis platform that allows organizations to identify and reduce risk from the use of third-party and open source components. This plug-in can publish supported Software Bill-of-Materials (SBOM) formats to Dependency-Track.",
+  "dependencies": {
+    "bootstrap-vue": "^2.21.1",
+    "echarts": "^5.0.0",
+    "vue": "^2.6.12"
+  }
+}
