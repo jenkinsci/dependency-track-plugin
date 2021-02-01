@@ -72,7 +72,7 @@
         <profile>
             <id>install-node</id>
             <properties>
-                <npm.path>target/node/npm</npm.path>
+                <npm.path>${project.build.directory}/node/npm</npm.path>
             </properties>
             <activation>
                 <property>
@@ -96,7 +96,7 @@
                                     <nodeVersion>v14.15.4</nodeVersion>
                                     <nodeDownloadRoot>https://repo.jenkins-ci.org/nodejs-dist/</nodeDownloadRoot>
                                     <npmRegistryURL>https://repo.jenkins-ci.org/api/npm/npm/</npmRegistryURL>
-                                    <installDirectory>target</installDirectory>
+                                    <installDirectory>${project.build.directory}</installDirectory>
                                 </configuration>
                             </execution>
                         </executions>
@@ -153,6 +153,28 @@
                     <filesets>
                         <fileset>
                             <directory>node_modules</directory>
+                        </fileset>
+                        <fileset>
+                            <directory>${basedir}</directory>
+                            <includes>
+                                <include>package-lock.json</include>
+                            </includes>
+                        </fileset>
+                        <fileset>
+                            <directory>src/main/webapp/js/libs</directory>
+                            <includes>
+                                <include>bootstrap-vue.min.js</include>
+                                <include>bootstrap-vue-icons.min.js</include>
+                                <include>vue.min.js</include>
+                                <include>echarts.common.min.js</include>
+                            </includes>
+                        </fileset>
+                        <fileset>
+                            <directory>src/main/webapp/css</directory>
+                            <includes>
+                                <include>bootstrap.min.css</include>
+                                <include>bootstrap-vue.min.css</include>
+                            </includes>
                         </fileset>
                     </filesets>
                 </configuration>
@@ -236,6 +258,34 @@
                                     </includes>
                                 </resource>
                             </resources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-enforcer-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>enforce npm-managed files exists</id>
+                        <goals>
+                            <goal>enforce</goal>
+                        </goals>
+                        <phase>verify</phase>
+                        <configuration>
+                            <rules>
+                                <requireFilesExist>
+                                    <files>
+                                        <file>${project.build.directory}/${project.build.finalName}/js/libs/bootstrap-vue.min.js</file>
+                                        <file>${project.build.directory}/${project.build.finalName}/js/libs/bootstrap-vue-icons.min.js</file>
+                                        <file>${project.build.directory}/${project.build.finalName}/js/libs/vue.min.js</file>
+                                        <file>${project.build.directory}/${project.build.finalName}/js/libs/echarts.common.min.js</file>
+                                        <file>${project.build.directory}/${project.build.finalName}/css/bootstrap.min.css</file>
+                                        <file>${project.build.directory}/${project.build.finalName}/css/bootstrap-vue.min.css</file>
+                                    </files>
+                                </requireFilesExist>
+                            </rules>
+                            <fail>true</fail>
                         </configuration>
                     </execution>
                 </executions>
