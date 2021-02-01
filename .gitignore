@@ -2,3 +2,13 @@
 /target/
 /work/
 /nbproject/
+/node_modules/
+/nbactions.xml
+/nb-configuration.xml
+/package-lock.json
+/src/main/webapp/css/bootstrap-vue.min.css
+/src/main/webapp/css/bootstrap.min.css
+/src/main/webapp/js/libs/bootstrap-vue-icons.min.js
+/src/main/webapp/js/libs/bootstrap-vue.min.js
+/src/main/webapp/js/libs/echarts.common.min.js
+/src/main/webapp/js/libs/vue.min.js

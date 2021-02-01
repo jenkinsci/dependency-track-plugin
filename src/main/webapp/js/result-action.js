@@ -1,12 +1,24 @@
 /* global view */
 'use strict';
 
+function getNativeFunction(clazz, func) {
+    const frame = document.createElement('iframe');
+    frame.style.display = 'none';
+    document.body.appendChild(frame);
+    const nativeClazz = frame.contentWindow[clazz];
+    frame.parentNode.removeChild(frame);
+    return nativeClazz.prototype[func];
+}
+
 // make String.trim() work again like it should
 // otherwise sorting the vue.js-table will not work
 if (String.prototype.trim.toString().indexOf('[native code]') === -1) {
-    String.prototype.trim = function () {
-        return this.replace(/^[\s\uFEFF\xA0]+|[\s\uFEFF\xA0]+$/g, '');
-    };
+    String.prototype.trim = getNativeFunction('String', 'trim');
+}
+// restore Array.filter ... damn ancient prototype.js!
+// otherwise "updateAriaDescribedby" in boostrape-vue (2.21+) will not work because 3rd arg in filter callback is undefined
+if (Array.prototype.filter.toString().indexOf('[native code]') === -1) {
+    Array.prototype.filter = getNativeFunction('Array', 'filter');
 }
 
 // create vue.js based table
