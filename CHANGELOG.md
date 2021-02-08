@@ -1,6 +1,8 @@
 # Dependency-Track Jenkins Plugin - Changelog
 
 ## Unreleased
+
+## v3.1.0 - 2021-02-08
 ### ⭐ New Features
 - allow to specify an alternative URL for the Dependency-Track Frontend (fixes [#22](https://github.com/jenkinsci/dependency-track-plugin/issues/22))
 - added links to npm security advisories
