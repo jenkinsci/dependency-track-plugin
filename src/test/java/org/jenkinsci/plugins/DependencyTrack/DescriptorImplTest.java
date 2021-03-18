@@ -162,10 +162,10 @@ public class DescriptorImplTest {
 
     @Test
     public void doCheckDependencyTrackUrlTest() {
-        assertThat(uut.doCheckDependencyTrackUrl("http://foo.bar/")).isEqualTo(FormValidation.ok());
-        assertThat(uut.doCheckDependencyTrackUrl("http://foo.bar")).isEqualTo(FormValidation.ok());
-        assertThat(uut.doCheckDependencyTrackUrl("")).isEqualTo(FormValidation.ok());
-        assertThat(uut.doCheckDependencyTrackUrl("foo"))
+        assertThat(uut.doCheckDependencyTrackUrl("http://foo.bar/", null)).isEqualTo(FormValidation.ok());
+        assertThat(uut.doCheckDependencyTrackUrl("http://foo.bar", null)).isEqualTo(FormValidation.ok());
+        assertThat(uut.doCheckDependencyTrackUrl("", null)).isEqualTo(FormValidation.ok());
+        assertThat(uut.doCheckDependencyTrackUrl("foo", null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                 .hasMessage("The specified value is not a valid URL");
     }

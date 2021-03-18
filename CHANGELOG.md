@@ -1,6 +1,9 @@
 # Dependency-Track Jenkins Plugin - Changelog
 
 ## Unreleased
+## v3.1.1 - 2021-03-30
+### 🐞 Bugs Fixed
+- [SECURITY-2250](https://issues.jenkins.io/browse/SECURITY-2250). Thanks to Justin Philip for reporting this issue.
 
 ## v3.1.0 - 2021-02-08
 ### ⭐ New Features

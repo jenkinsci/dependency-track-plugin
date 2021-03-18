@@ -46,6 +46,7 @@ import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.verb.POST;
 
 /**
  * <p>
@@ -149,6 +150,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
      * @param item used to lookup credentials in job config. ignored in global
      * @return ListBoxModel
      */
+    @POST
     public ListBoxModel doFillProjectIdItems(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable Item item) {
         final ListBoxModel projects = new ListBoxModel();
         try {
@@ -169,6 +171,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
         return projects;
     }
 
+    @POST
     public ListBoxModel doFillDependencyTrackApiKeyItems(@QueryParameter String credentialsId, @AncestorInPath Item item) {
         StandardListBoxModel result = new StandardListBoxModel();
         if (item == null) {
@@ -190,9 +193,16 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
      * Performs input validation when submitting the global config
      *
      * @param value The value of the URL as specified in the global config
+     * @param item used to check permissions in job config. ignored in global
      * @return a FormValidation object
      */
-    public FormValidation doCheckDependencyTrackUrl(@QueryParameter String value) {
+    @POST
+    public FormValidation doCheckDependencyTrackUrl(@QueryParameter String value, @AncestorInPath @Nullable Item item) {
+        if (item == null) {
+            Jenkins.get().checkPermission(Jenkins.ADMINISTER);
+        } else {
+            item.checkPermission(Item.CONFIGURE);
+        }
         return PluginUtil.doCheckUrl(value);
     }
 
@@ -200,9 +210,16 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
      * Performs input validation when submitting the global config
      *
      * @param value The value of the URL as specified in the global config
+     * @param item used to check permissions in job config. ignored in global
      * @return a FormValidation object
      */
-    public FormValidation doCheckDependencyTrackFrontendUrl(@QueryParameter String value) {
+    @POST
+    public FormValidation doCheckDependencyTrackFrontendUrl(@QueryParameter String value, @AncestorInPath @Nullable Item item) {
+        if (item == null) {
+            Jenkins.get().checkPermission(Jenkins.ADMINISTER);
+        } else {
+            item.checkPermission(Item.CONFIGURE);
+        }
         return PluginUtil.doCheckUrl(value);
     }
 
@@ -217,12 +234,18 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
      * config
      * @return FormValidation
      */
+    @POST
     public FormValidation doTestConnection(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable Item item) {
+        if (item == null) {
+            Jenkins.get().checkPermission(Jenkins.ADMINISTER);
+        } else {
+            item.checkPermission(Item.CONFIGURE);
+        }
         // url may come from instance-config. if empty, then take it from global config (this)
         final String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElse(getDependencyTrackUrl());
         // api-key may come from instance-config. if empty, then take it from global config (this)
         final String apiKey = lookupApiKey(Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElse(getDependencyTrackApiKey()), item);
-        if (doCheckDependencyTrackUrl(url).kind == FormValidation.Kind.OK && StringUtils.isNotBlank(apiKey)) {
+        if (doCheckDependencyTrackUrl(url, item).kind == FormValidation.Kind.OK && StringUtils.isNotBlank(apiKey)) {
             try {
                 final ApiClient apiClient = getClient(url, apiKey);
                 final String result = apiClient.testConnection();
