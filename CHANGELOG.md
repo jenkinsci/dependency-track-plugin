@@ -1,6 +1,9 @@
 # Dependency-Track Jenkins Plugin - Changelog
 
 ## Unreleased
+### 🐞 Bugs Fixed
+- enforce Job/read permission in order to read the analysis results for a build run and the trend data on the project page
+
 ## v3.1.1 - 2021-03-30
 ### 🐞 Bugs Fixed
 - [SECURITY-2250](https://issues.jenkins.io/browse/SECURITY-2250). Thanks to Justin Philip for reporting this issue.
