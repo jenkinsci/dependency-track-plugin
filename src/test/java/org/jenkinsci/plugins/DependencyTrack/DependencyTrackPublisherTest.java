@@ -41,10 +41,9 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
-import org.mockito.quality.Strictness;
+import org.mockito.junit.MockitoJUnitRunner.StrictStubs;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -61,10 +60,8 @@ import static org.mockito.Mockito.when;
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
+@RunWith(StrictStubs.class)
 public class DependencyTrackPublisherTest {
-
-    @Rule
-    public MockitoRule rule = MockitoJUnit.rule().strictness(Strictness.LENIENT);
 
     @Rule
     public TemporaryFolder tmpDir = new TemporaryFolder();

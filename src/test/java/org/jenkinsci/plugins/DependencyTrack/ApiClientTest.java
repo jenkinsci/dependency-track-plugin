@@ -36,10 +36,9 @@ import org.junit.After;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnit;
-import org.mockito.junit.MockitoRule;
-import org.mockito.quality.Strictness;
+import org.mockito.junit.MockitoJUnitRunner.StrictStubs;
 import reactor.core.publisher.Mono;
 import reactor.netty.DisposableServer;
 import reactor.netty.http.server.HttpServer;
@@ -58,10 +57,8 @@ import static org.mockito.Mockito.when;
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
+@RunWith(StrictStubs.class)
 public class ApiClientTest {
-
-    @Rule
-    public MockitoRule rule = MockitoJUnit.rule().strictness(Strictness.STRICT_STUBS);
     
     @Rule
     public TemporaryFolder tmpDir = new TemporaryFolder();
