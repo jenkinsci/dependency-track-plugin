@@ -190,7 +190,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
     }
 
     /**
-     * Performs input validation when submitting the global config
+     * Performs input validation when submitting the global or job config
      *
      * @param value The value of the URL as specified in the global config
      * @param item used to check permissions in job config. ignored in global
@@ -207,7 +207,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
     }
 
     /**
-     * Performs input validation when submitting the global config
+     * Performs input validation when submitting the global or job config
      *
      * @param value The value of the URL as specified in the global config
      * @param item used to check permissions in job config. ignored in global
@@ -215,12 +215,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
      */
     @POST
     public FormValidation doCheckDependencyTrackFrontendUrl(@QueryParameter String value, @AncestorInPath @Nullable Item item) {
-        if (item == null) {
-            Jenkins.get().checkPermission(Jenkins.ADMINISTER);
-        } else {
-            item.checkPermission(Item.CONFIGURE);
-        }
-        return PluginUtil.doCheckUrl(value);
+        return doCheckDependencyTrackUrl(value, item);
     }
 
     /**

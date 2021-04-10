@@ -19,6 +19,11 @@ import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.CredentialsScope;
 import com.cloudbees.plugins.credentials.domains.Domain;
 import hudson.model.Descriptor;
+import hudson.model.FreeStyleProject;
+import hudson.model.Item;
+import hudson.model.User;
+import hudson.security.ACL;
+import hudson.security.ACLContext;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
@@ -27,17 +32,22 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import net.sf.json.JSONObject;
+import org.acegisecurity.AccessDeniedException;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.MockAuthorizationStrategy;
 import org.kohsuke.stapler.StaplerRequest;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner.StrictStubs;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
@@ -57,10 +67,14 @@ public class DescriptorImplTest {
     @Mock
     private ApiClient client;
     private DescriptorImpl uut;
+    private MockAuthorizationStrategy mockAuthorizationStrategy;
 
     @Before
     public void setup() {
         uut = new DescriptorImpl((url, apiKey, logger, connTimeout, readTimeout) -> client);
+        mockAuthorizationStrategy = new MockAuthorizationStrategy();
+        r.jenkins.setAuthorizationStrategy(mockAuthorizationStrategy);
+        r.jenkins.setSecurityRealm(r.createDummySecurityRealm());
     }
 
     @Test
@@ -135,6 +149,24 @@ public class DescriptorImplTest {
     }
 
     @Test
+    public void doTestConnectionPermissionTest() throws IOException {
+        final User anonymous = User.getOrCreateByIdOrFullName(ACL.ANONYMOUS_USERNAME);
+        // without propper global permissions
+        try (ACLContext ignored = ACL.as(anonymous)) {
+            assertThatThrownBy(() -> uut.doTestConnection("foo", "", null)).isInstanceOf(AccessDeniedException.class);
+        }
+        // test for item permissions
+        final FreeStyleProject project = r.createFreeStyleProject();
+        try (ACLContext ignored = ACL.as(anonymous)) {
+            // without item permissions
+            assertThatThrownBy(() -> uut.doTestConnection("foo", "", project)).isInstanceOf(AccessDeniedException.class);
+            // now grant Item.CONFIGURE
+            mockAuthorizationStrategy.grant(Item.CONFIGURE).onItems(project).to(anonymous);
+            assertThatCode(() -> uut.doTestConnection("foo", "", project)).doesNotThrowAnyException();
+        }
+    }
+
+    @Test
     public void doTestConnectionTestWithEmptyArgs() throws ApiClientException, IOException {
         final String apikey = "api-key";
         final String credentialsid = "credentials-id";
@@ -165,6 +197,24 @@ public class DescriptorImplTest {
         assertThat(uut.doCheckDependencyTrackUrl("foo", null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                 .hasMessage("The specified value is not a valid URL");
+    }
+
+    @Test
+    public void doCheckDependencyTrackUrlPermissionTest() throws IOException {
+        final User anonymous = User.getOrCreateByIdOrFullName(ACL.ANONYMOUS_USERNAME);
+        // without propper global permissions
+        try (ACLContext ignored = ACL.as(anonymous)) {
+            assertThatThrownBy(() -> uut.doCheckDependencyTrackUrl("foo", null)).isInstanceOf(AccessDeniedException.class);
+        }
+        // test for item permissions
+        final FreeStyleProject project = r.createFreeStyleProject();
+        try (ACLContext ignored = ACL.as(anonymous)) {
+            // without item permissions
+            assertThatThrownBy(() -> uut.doCheckDependencyTrackUrl("foo", project)).isInstanceOf(AccessDeniedException.class);
+            // now grant Item.CONFIGURE
+            mockAuthorizationStrategy.grant(Item.CONFIGURE).onItems(project).to(anonymous);
+            assertThatCode(() -> uut.doCheckDependencyTrackUrl("foo", project)).doesNotThrowAnyException();
+        }
     }
 
     @Test
