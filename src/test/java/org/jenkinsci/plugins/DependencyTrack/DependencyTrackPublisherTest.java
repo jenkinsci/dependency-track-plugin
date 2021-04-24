@@ -198,12 +198,12 @@ public class DependencyTrackPublisherTest {
         uut.setDependencyTrackApiKey(apikeyId);
 
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
-        when(client.isTokenBeingProcessed(eq("token-1"))).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
-        when(client.getFindings(eq("uuid-1"))).thenReturn(Collections.emptyList());
+        when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
+        when(client.getFindings("uuid-1")).thenReturn(Collections.emptyList());
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
-        verify(client, times(2)).isTokenBeingProcessed(eq("token-1"));
-        verify(client).getFindings(eq("uuid-1"));
+        verify(client, times(2)).isTokenBeingProcessed("token-1");
+        verify(client).getFindings("uuid-1");
     }
 
     @Test
@@ -217,13 +217,13 @@ public class DependencyTrackPublisherTest {
         uut.setAutoCreateProjects(Boolean.TRUE);
 
         when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(true))).thenReturn(new UploadResult(true, "token-1"));
-        when(client.isTokenBeingProcessed(eq("token-1"))).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
-        when(client.getFindings(eq("uuid-1"))).thenReturn(Collections.emptyList());
-        when(client.lookupProject(eq("name-1"), eq("version-1"))).thenReturn(Project.builder().uuid("uuid-1").build());
+        when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
+        when(client.getFindings("uuid-1")).thenReturn(Collections.emptyList());
+        when(client.lookupProject("name-1", "version-1")).thenReturn(Project.builder().uuid("uuid-1").build());
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
-        verify(client, times(2)).isTokenBeingProcessed(eq("token-1"));
-        verify(client).getFindings(eq("uuid-1"));
+        verify(client, times(2)).isTokenBeingProcessed("token-1");
+        verify(client).getFindings("uuid-1");
     }
 
     @Test

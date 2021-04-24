@@ -39,7 +39,6 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
 import org.kohsuke.stapler.StaplerRequest;
 import org.mockito.Mock;
@@ -48,7 +47,6 @@ import org.mockito.junit.MockitoJUnitRunner.StrictStubs;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -248,6 +246,6 @@ public class DescriptorImplTest {
 
         assertThat(uut.configure(req, formData)).isTrue();
 
-        verify(req).bindJSON(eq(uut), eq(formData));
+        verify(req).bindJSON(uut, formData);
     }
 }

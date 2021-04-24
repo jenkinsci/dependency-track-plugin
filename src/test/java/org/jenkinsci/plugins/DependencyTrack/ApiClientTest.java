@@ -47,7 +47,6 @@ import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.entry;
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -128,7 +127,7 @@ public class ApiClientTest {
                 .hasNoCause()
                 .hasMessage(Messages.ApiClient_Error_Connection(500, "Internal Server Error"));
         
-        verify(logger).log(eq("something went wrong"));
+        verify(logger).log("something went wrong");
     }
 
     @Test()
@@ -282,19 +281,19 @@ public class ApiClientTest {
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.BAD_REQUEST).send())).bindNow();
         uut = createClient();
         assertThat(uut.upload(null, "p1", "v1", new FilePath(tmpDir.newFile()), true)).isEqualTo(new UploadResult(false));
-        verify(logger).log(eq(Messages.Builder_Payload_Invalid()));
+        verify(logger).log(Messages.Builder_Payload_Invalid());
         server.disposeNow();
         
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.UNAUTHORIZED).send())).bindNow();
         uut = createClient();
         assertThat(uut.upload(null, "p1", "v1", new FilePath(tmpDir.newFile()), true)).isEqualTo(new UploadResult(false));
-        verify(logger).log(eq(Messages.Builder_Unauthorized()));
+        verify(logger).log(Messages.Builder_Unauthorized());
         server.disposeNow();
         
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.NOT_FOUND).send())).bindNow();
         uut = createClient();
         assertThat(uut.upload(null, "p1", "v1", new FilePath(tmpDir.newFile()), true)).isEqualTo(new UploadResult(false));
-        verify(logger).log(eq(Messages.Builder_Project_NotFound()));
+        verify(logger).log(Messages.Builder_Project_NotFound());
         server.disposeNow();
 
         File mockFile = mock(File.class);

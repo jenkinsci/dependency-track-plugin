@@ -20,7 +20,6 @@ import java.io.PrintStream;
 import java.util.Arrays;
 import org.junit.Test;
 
-import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
@@ -37,7 +36,7 @@ public class ConsoleLoggerTest {
         PrintStream ps = mock(PrintStream.class);
         ConsoleLogger uut = new ConsoleLogger(ps);
         uut.log("test\r\nline2");
-        verify(ps).println(eq("[DependencyTrack] test\r\n[DependencyTrack] line2"));
+        verify(ps).println("[DependencyTrack] test\r\n[DependencyTrack] line2");
     }
     
     @Test
