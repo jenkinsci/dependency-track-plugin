@@ -19,7 +19,6 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Plugin;
 import hudson.PluginWrapper;
 import hudson.model.Action;
-import hudson.model.Job;
 import hudson.model.Run;
 import java.io.Serializable;
 import java.util.Collection;
@@ -111,7 +110,7 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
      */
     @JavaScriptMethod
     public JSONArray getFindingsJson() {
-        run.checkPermission(Job.READ);
+        run.checkPermission(hudson.model.Item.READ);
         return JSONArray.fromObject(findings);
     }
 

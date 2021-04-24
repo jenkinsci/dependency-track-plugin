@@ -58,7 +58,7 @@ public class JobAction extends InvisibleAction {
      */
     @JavaScriptMethod
     public JSONArray getSeverityDistributionTrend() {
-        project.checkPermission(Job.READ);
+        project.checkPermission(hudson.model.Item.READ);
         final List<SeverityDistribution> severityDistributions = project.getBuilds().stream()
                 .sorted(Comparator.naturalOrder())
                 .map(run -> run.getAction(ResultAction.class)).filter(Objects::nonNull)
