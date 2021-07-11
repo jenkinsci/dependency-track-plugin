@@ -69,19 +69,19 @@ limitations under the License.
                     <tbody>
                         <tr>
                             <td style="vertical-align: middle;">
-                                <img src="${resURL}/plugin/dependency-track/icons/yellow.svg" width="24" height="24" clazz="positive-number"/>
+                                <img src="${resURL}/plugin/dependency-track/icons/yellow.svg" width="24" height="24" clazz="positive-number" min="1"/>
                             </td>
                             <td>
-                                <f:number field="unstableTotalCritical" value="${instance.unstableTotalCritical}" clazz="positive-number"/>
+                                <f:number field="unstableTotalCritical" value="${instance.unstableTotalCritical}" clazz="positive-number" min="1"/>
                             </td>
                             <td>
-                                <f:number field="unstableTotalHigh" value="${instance.unstableTotalHigh}" clazz="positive-number"/>
+                                <f:number field="unstableTotalHigh" value="${instance.unstableTotalHigh}" clazz="positive-number" min="1"/>
                             </td>
                             <td>
-                                <f:number field="unstableTotalMedium" value="${instance.unstableTotalMedium}" clazz="positive-number"/>
+                                <f:number field="unstableTotalMedium" value="${instance.unstableTotalMedium}" clazz="positive-number" min="1"/>
                             </td>
                             <td>
-                                <f:number field="unstableTotalLow" value="${instance.unstableTotalLow}" clazz="positive-number"/>
+                                <f:number field="unstableTotalLow" value="${instance.unstableTotalLow}" clazz="positive-number" min="1"/>
                             </td>
                         </tr>
                         <tr>
@@ -89,16 +89,16 @@ limitations under the License.
                                 <img src="${resURL}/plugin/dependency-track/icons/red.svg" width="24" height="24"/>
                             </td>
                             <td>
-                                <f:number field="failedTotalCritical" value="${instance.failedTotalCritical}" clazz="positive-number"/>
+                                <f:number field="failedTotalCritical" value="${instance.failedTotalCritical}" clazz="positive-number" min="1"/>
                             </td>
                             <td>
-                                <f:number field="failedTotalHigh" value="${instance.failedTotalHigh}" clazz="positive-number"/>
+                                <f:number field="failedTotalHigh" value="${instance.failedTotalHigh}" clazz="positive-number" min="1"/>
                             </td>
                             <td>
-                                <f:number field="failedTotalMedium" value="${instance.failedTotalMedium}" clazz="positive-number"/>
+                                <f:number field="failedTotalMedium" value="${instance.failedTotalMedium}" clazz="positive-number" min="1"/>
                             </td>
                             <td>
-                                <f:number field="failedTotalLow" value="${instance.failedTotalLow}" clazz="positive-number"/>
+                                <f:number field="failedTotalLow" value="${instance.failedTotalLow}" clazz="positive-number" min="1"/>
                             </td>
                         </tr>
                     </tbody>
@@ -122,16 +122,16 @@ limitations under the License.
                                 <img src="${resURL}/plugin/dependency-track/icons/yellow.svg" width="24" height="24"/>
                             </td>
                             <td>
-                                <f:number field="unstableNewCritical" value="${instance.unstableNewCritical}" clazz="positive-number"/>
+                                <f:number field="unstableNewCritical" value="${instance.unstableNewCritical}" clazz="positive-number" min="1"/>
                             </td>
                             <td>
-                                <f:number field="unstableNewHigh" value="${instance.unstableNewHigh}" clazz="positive-number"/>
+                                <f:number field="unstableNewHigh" value="${instance.unstableNewHigh}" clazz="positive-number" min="1"/>
                             </td>
                             <td>
-                                <f:number field="unstableNewMedium" value="${instance.unstableNewMedium}" clazz="positive-number"/>
+                                <f:number field="unstableNewMedium" value="${instance.unstableNewMedium}" clazz="positive-number" min="1"/>
                             </td>
                             <td>
-                                <f:number field="unstableNewLow" value="${instance.unstableNewLow}" clazz="positive-number"/>
+                                <f:number field="unstableNewLow" value="${instance.unstableNewLow}" clazz="positive-number" min="1"/>
                             </td>
                         </tr>
                         <tr>
@@ -139,16 +139,16 @@ limitations under the License.
                                 <img src="${resURL}/plugin/dependency-track/icons/red.svg" width="24" height="24"/>
                             </td>
                             <td>
-                                <f:number field="failedNewCritical" value="${instance.failedNewCritical}" clazz="positive-number"/>
+                                <f:number field="failedNewCritical" value="${instance.failedNewCritical}" clazz="positive-number" min="1"/>
                             </td>
                             <td>
-                                <f:number field="failedNewHigh" value="${instance.failedNewHigh}" clazz="positive-number"/>
+                                <f:number field="failedNewHigh" value="${instance.failedNewHigh}" clazz="positive-number" min="1"/>
                             </td>
                             <td>
-                                <f:number field="failedNewMedium" value="${instance.failedNewMedium}" clazz="positive-number"/>
+                                <f:number field="failedNewMedium" value="${instance.failedNewMedium}" clazz="positive-number" min="1"/>
                             </td>
                             <td>
-                                <f:number field="failedNewLow" value="${instance.failedNewLow}" clazz="positive-number"/>
+                                <f:number field="failedNewLow" value="${instance.failedNewLow}" clazz="positive-number" min="1"/>
                             </td>
                         </tr>
                     </tbody>

@@ -24,6 +24,7 @@ import hudson.model.Item;
 import hudson.model.User;
 import hudson.security.ACL;
 import hudson.security.ACLContext;
+import hudson.security.AccessDeniedException3;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
@@ -32,7 +33,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import net.sf.json.JSONObject;
-import org.acegisecurity.AccessDeniedException;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.junit.Before;
@@ -83,13 +83,13 @@ public class DescriptorImplTest {
         doReturn(projects).doThrow(new ApiClientException("test failure"))
                 .when(client).getProjects();
 
-        assertThat(uut.doFillProjectIdItems(null, null, null)).usingElementComparatorOnFields("name", "value", "selected").containsExactly(
+        assertThat(uut.doFillProjectIdItems(null, null, null)).usingRecursiveFieldByFieldElementComparatorOnFields("name", "value", "selected").containsExactly(
                 new ListBoxModel.Option("-- Select Project --", null, false),
                 new ListBoxModel.Option("Project 1", "uuid-1", false),
                 new ListBoxModel.Option("Project 2 1.2.3", "uuid-2", false)
         );
 
-        assertThat(uut.doFillProjectIdItems(null, null, null)).usingElementComparatorOnFields("name", "value", "selected").containsExactly(
+        assertThat(uut.doFillProjectIdItems(null, null, null)).usingRecursiveFieldByFieldElementComparatorOnFields("name", "value", "selected").containsExactly(
                 new ListBoxModel.Option(Messages.Builder_Error_Projects("test failure"), null, false)
         );
     }
@@ -99,11 +99,11 @@ public class DescriptorImplTest {
         final String apikey = "api-key";
         final String credentialsid = "credentials-id";
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
-        assertThat(uut.doFillDependencyTrackApiKeyItems(null, null)).usingElementComparatorOnFields("name", "value", "selected").containsExactly(
+        assertThat(uut.doFillDependencyTrackApiKeyItems(null, null)).usingRecursiveFieldByFieldElementComparatorOnFields("name", "value", "selected").containsExactly(
                 new ListBoxModel.Option("- none -", "", false),
                 new ListBoxModel.Option("test", credentialsid, false)
         );
-        assertThat(uut.doFillDependencyTrackApiKeyItems(credentialsid, null)).usingElementComparatorOnFields("name", "value", "selected").containsExactly(
+        assertThat(uut.doFillDependencyTrackApiKeyItems(credentialsid, null)).usingRecursiveFieldByFieldElementComparatorOnFields("name", "value", "selected").containsExactly(
                 new ListBoxModel.Option("- none -", "", false),
                 new ListBoxModel.Option("test", credentialsid, false)
         );
@@ -151,13 +151,13 @@ public class DescriptorImplTest {
         final User anonymous = User.getOrCreateByIdOrFullName(ACL.ANONYMOUS_USERNAME);
         // without propper global permissions
         try (ACLContext ignored = ACL.as(anonymous)) {
-            assertThatThrownBy(() -> uut.doTestConnection("foo", "", null)).isInstanceOf(AccessDeniedException.class);
+            assertThatThrownBy(() -> uut.doTestConnection("foo", "", null)).isInstanceOf(AccessDeniedException3.class);
         }
         // test for item permissions
         final FreeStyleProject project = r.createFreeStyleProject();
         try (ACLContext ignored = ACL.as(anonymous)) {
             // without item permissions
-            assertThatThrownBy(() -> uut.doTestConnection("foo", "", project)).isInstanceOf(AccessDeniedException.class);
+            assertThatThrownBy(() -> uut.doTestConnection("foo", "", project)).isInstanceOf(AccessDeniedException3.class);
             // now grant Item.CONFIGURE
             mockAuthorizationStrategy.grant(Item.CONFIGURE).onItems(project).to(anonymous);
             assertThatCode(() -> uut.doTestConnection("foo", "", project)).doesNotThrowAnyException();
@@ -202,13 +202,13 @@ public class DescriptorImplTest {
         final User anonymous = User.getOrCreateByIdOrFullName(ACL.ANONYMOUS_USERNAME);
         // without propper global permissions
         try (ACLContext ignored = ACL.as(anonymous)) {
-            assertThatThrownBy(() -> uut.doCheckDependencyTrackUrl("foo", null)).isInstanceOf(AccessDeniedException.class);
+            assertThatThrownBy(() -> uut.doCheckDependencyTrackUrl("foo", null)).isInstanceOf(AccessDeniedException3.class);
         }
         // test for item permissions
         final FreeStyleProject project = r.createFreeStyleProject();
         try (ACLContext ignored = ACL.as(anonymous)) {
             // without item permissions
-            assertThatThrownBy(() -> uut.doCheckDependencyTrackUrl("foo", project)).isInstanceOf(AccessDeniedException.class);
+            assertThatThrownBy(() -> uut.doCheckDependencyTrackUrl("foo", project)).isInstanceOf(AccessDeniedException3.class);
             // now grant Item.CONFIGURE
             mockAuthorizationStrategy.grant(Item.CONFIGURE).onItems(project).to(anonymous);
             assertThatCode(() -> uut.doCheckDependencyTrackUrl("foo", project)).doesNotThrowAnyException();

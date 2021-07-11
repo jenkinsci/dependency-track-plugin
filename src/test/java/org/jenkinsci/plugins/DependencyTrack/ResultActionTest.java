@@ -21,13 +21,13 @@ import hudson.model.Job;
 import hudson.model.User;
 import hudson.security.ACL;
 import hudson.security.ACLContext;
+import hudson.security.AccessDeniedException3;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredRule;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import net.sf.json.JSONArray;
-import org.acegisecurity.AccessDeniedException;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.util.Files;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
@@ -75,7 +75,7 @@ public class ResultActionTest {
         final User anonymous = User.getOrCreateByIdOrFullName(ACL.ANONYMOUS_USERNAME);
         // without propper permissions
         try (ACLContext ignored = ACL.as(anonymous)) {
-            assertThatThrownBy(() -> uut.getFindingsJson()).isInstanceOf(AccessDeniedException.class);
+            assertThatThrownBy(() -> uut.getFindingsJson()).isInstanceOf(AccessDeniedException3.class);
         }
         // with propper permissions
         try (ACLContext ignored = ACL.as(anonymous)) {

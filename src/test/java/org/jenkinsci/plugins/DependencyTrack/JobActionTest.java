@@ -22,13 +22,13 @@ import hudson.model.Run;
 import hudson.model.User;
 import hudson.security.ACL;
 import hudson.security.ACLContext;
+import hudson.security.AccessDeniedException3;
 import hudson.util.RunList;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredRule;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import net.sf.json.JSONArray;
-import org.acegisecurity.AccessDeniedException;
 import org.assertj.core.api.Assertions;
 import org.jenkinsci.plugins.DependencyTrack.model.Severity;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
@@ -74,7 +74,7 @@ public class JobActionTest {
         final User anonymous = User.getOrCreateByIdOrFullName(ACL.ANONYMOUS_USERNAME);
         // without propper permissions
         try (ACLContext ignored = ACL.as(anonymous)) {
-            assertThatThrownBy(() -> uut.getSeverityDistributionTrend()).isInstanceOf(AccessDeniedException.class);
+            assertThatThrownBy(() -> uut.getSeverityDistributionTrend()).isInstanceOf(AccessDeniedException3.class);
         }
         // with propper permissions
         try (ACLContext ignored = ACL.as(anonymous)) {
