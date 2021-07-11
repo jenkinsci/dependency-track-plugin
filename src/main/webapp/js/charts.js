@@ -1,9 +1,38 @@
-/* global echarts, dtrackTrendAction */
+/* global echarts */
 'use strict';
 
 (function () {
-    dtrackTrendAction.getSeverityDistributionTrend(result => {
-        const data = result.responseJSON || [];
+    const actionUrl = new URL(document.currentScript.dataset.actionUrl, window.location.origin);
+    if (!(actionUrl.origin === window.location.origin
+            && /^https?:$/.test(actionUrl.protocol)
+            && actionUrl.pathname.startsWith(`${document.head.dataset.rooturl}/$stapler/bound/`)
+        )) {
+        throw new Error('malicious URL in data-action-url detected!');
+    }
+    
+    const crumbHeaderName = document.head.dataset.crumbHeader || 'Jenkins-Crumb';
+    const crumbValue = document.head.dataset.crumbValue || '';
+    const fetchHeaders = {
+        'Content-Type': 'application/x-stapler-method-invocation;charset=UTF-8',
+        Crumb: crumbValue
+    };
+    fetchHeaders[crumbHeaderName] = crumbValue;
+
+    window.fetch(`${actionUrl.href}/getSeverityDistributionTrend`, {
+        method: 'POST',
+        mode: 'cors',
+        cache: 'default',
+        body: '[]',
+        headers: fetchHeaders,
+    })
+    .then(response => {
+        if (response.ok) {
+            return response.json().then(data => Array.isArray(data) ? data : []);
+        } else {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+    })
+    .then(data => {
         if (data.length) {
             const container = document.getElementById('dtrackTrend-history-chart');
             const textColor = window.getComputedStyle(container).getPropertyValue('color');

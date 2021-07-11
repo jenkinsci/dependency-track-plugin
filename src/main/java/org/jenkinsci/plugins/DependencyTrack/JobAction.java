@@ -26,6 +26,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.sf.json.JSONArray;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
+import org.kohsuke.stapler.WebApp;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 @RequiredArgsConstructor
@@ -52,7 +53,8 @@ public class JobAction extends InvisibleAction {
     }
 
     /**
-     * Returns the UI model for an ECharts line chart that shows the issues stacked by severity.
+     * Returns the UI model for an ECharts line chart that shows the issues
+     * stacked by severity.
      *
      * @return the UI model as JSON
      */
@@ -66,4 +68,9 @@ public class JobAction extends InvisibleAction {
                 .collect(Collectors.toList());
         return JSONArray.fromObject(severityDistributions);
     }
+
+    public String getBindUrl() {
+        return WebApp.getCurrent().boundObjectTable.bind(this).getURL();
+    }
+
 }

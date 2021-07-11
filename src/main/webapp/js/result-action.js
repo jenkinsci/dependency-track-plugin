@@ -1,4 +1,3 @@
-/* global view */
 'use strict';
 
 function getNativeFunction(clazz, func) {
@@ -23,6 +22,22 @@ if (Array.prototype.filter.toString().indexOf('[native code]') === -1) {
 
 // create vue.js based table
 (function () {
+    const actionUrl = new URL(document.currentScript.dataset.actionUrl, window.location.origin);
+    if (!(actionUrl.origin === window.location.origin
+            && /^https?:$/.test(actionUrl.protocol)
+            && actionUrl.pathname.startsWith(`${document.head.dataset.rooturl}/$stapler/bound/`)
+        )) {
+        throw new Error('malicious URL in data-action-url detected!');
+    }
+
+    const crumbHeaderName = document.head.dataset.crumbHeader || 'Jenkins-Crumb';
+    const crumbValue = document.head.dataset.crumbValue || '';
+    const fetchHeaders = {
+        'Content-Type': 'application/x-stapler-method-invocation;charset=UTF-8',
+        Crumb: crumbValue
+    };
+    fetchHeaders[crumbHeaderName] = crumbValue;
+
     /**
      * update severity-bar
      * 
@@ -36,6 +51,7 @@ if (Array.prototype.filter.toString().indexOf('[native code]') === -1) {
         this.countBySeverity.INFO = items.filter(finding => finding.vulnerability.severity === 'INFO').length;
         this.countBySeverity.UNASSIGNED = items.filter(finding => finding.vulnerability.severity === 'UNASSIGNED').length;
     }
+
     /**
      * Trigger pagination to update the number of buttons/pages due to filtering
      * 
@@ -76,10 +92,20 @@ if (Array.prototype.filter.toString().indexOf('[native code]') === -1) {
         },
         methods: {
             items(ctx, callback) {
-                return new Promise(resolve => view.getFindingsJson(result => {
-                        const items = Array.isArray(result.responseJSON) ? result.responseJSON : [];
-                        resolve(items);
-                    })).then(items => {
+                return window.fetch(`${actionUrl.href}/getFindingsJson`, {
+                    method: 'POST',
+                    mode: 'cors',
+                    cache: 'default',
+                    body: '[]',
+                    headers: fetchHeaders,
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json().then(data => Array.isArray(data) ? data : []);
+                    } else {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                }).then(items => {
                     updatePaging.call(this, items);
                     updateCounter.call(this, items);
                     return items;

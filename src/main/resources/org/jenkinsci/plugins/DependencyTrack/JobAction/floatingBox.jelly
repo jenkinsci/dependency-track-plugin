@@ -1,5 +1,5 @@
 <?jelly escape-by-default='true'?>
-<j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler">
+<j:jelly xmlns:j="jelly:core">
 
     <j:if test="${from.isTrendVisible()}">
 
@@ -12,10 +12,7 @@
         </div>
 
         <script src="${resURL}/plugin/dependency-track/js/libs/echarts.common.min.js" defer="defer"></script>
-        <script>
-            const ${from.urlName}Action = <st:bind value="${from}"/>;
-        </script>
-        <script src="${resURL}/plugin/dependency-track/js/charts.js" defer="defer"></script>
+        <script src="${resURL}/plugin/dependency-track/js/charts.js" defer="defer" data-action-url="${from.bindUrl}"></script>
     </j:if>
 
 </j:jelly>

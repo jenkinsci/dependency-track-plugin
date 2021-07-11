@@ -36,6 +36,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -51,6 +52,13 @@ public class ResultActionTest {
     private List<Finding> getTestFindings() {
         File findings = new File("src/test/resources/findings.json");
         return FindingParser.parse(Files.contentOf(findings, StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void getVersionHashTest() {
+        final ResultAction uut = new ResultAction(null, null);
+        // does not equal sha-256 of empty string
+        assertThat(uut.getVersionHash()).matches("[a-f0-9]{64}").isNotEqualTo("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
     }
 
     @Test

@@ -37,6 +37,7 @@ import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
+import org.kohsuke.stapler.WebApp;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 @Getter
@@ -112,6 +113,10 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
     public JSONArray getFindingsJson() {
         run.checkPermission(hudson.model.Item.READ);
         return JSONArray.fromObject(findings);
+    }
+
+    public String getBindUrl() {
+        return WebApp.getCurrent().boundObjectTable.bind(this).getURL();
     }
 
 }

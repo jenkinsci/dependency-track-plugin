@@ -1,6 +1,9 @@
 # Dependency-Track Jenkins Plugin - Changelog
 
 ## Unreleased
+### ⭐ New Features
+- replaced inline JavaScript ... one step closer to compatibility with the CSP header
+
 ### 🐞 Bugs Fixed
 - enforce Job/read permission in order to read the analysis results for a build run and the trend data on the project page
 
