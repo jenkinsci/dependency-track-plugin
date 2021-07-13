@@ -28,6 +28,7 @@ import java.io.Serializable;
 import java.util.List;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.EnvVars;
+import hudson.tasks.Recorder;
 import hudson.util.Secret;
 import java.util.Optional;
 import jenkins.tasks.SimpleBuildStep;
@@ -39,6 +40,7 @@ import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.RiskGate;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
+import org.jenkinsci.plugins.DependencyTrack.model.Thresholds;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
 import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
@@ -48,7 +50,7 @@ import org.kohsuke.stapler.DataBoundSetter;
 @Getter
 @Setter(onMethod_ = {@DataBoundSetter})
 @EqualsAndHashCode(callSuper = true)
-public final class DependencyTrackPublisher extends ThresholdCapablePublisher implements SimpleBuildStep, Serializable {
+public final class DependencyTrackPublisher extends Recorder implements SimpleBuildStep, Serializable {
 
     private static final long serialVersionUID = 480115440498217963L;
 
@@ -85,7 +87,8 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
     private String dependencyTrackUrl;
 
     /**
-     * Specifies the alternative base URL to the frontend of Dependency-Track v3 or higher.
+     * Specifies the alternative base URL to the frontend of Dependency-Track v3
+     * or higher.
      */
     private String dependencyTrackFrontendUrl;
 
@@ -99,6 +102,90 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
      * permission.
      */
     private Boolean autoCreateProjects;
+
+    /**
+     * Threshold level for total number of critical findings for job status
+     * UNSTABLE
+     */
+    private Integer unstableTotalCritical;
+
+    /**
+     * Threshold level for total number of high findings for job status UNSTABLE
+     */
+    private Integer unstableTotalHigh;
+
+    /**
+     * Threshold level for total number of medium findings for job status
+     * UNSTABLE
+     */
+    private Integer unstableTotalMedium;
+
+    /**
+     * Threshold level for total number of low findings for job status UNSTABLE
+     */
+    private Integer unstableTotalLow;
+
+    /**
+     * Threshold level for total number of critical findings for job status
+     * FAILED
+     */
+    private Integer failedTotalCritical;
+
+    /**
+     * Threshold level for total number of high findings for job status FAILED
+     */
+    private Integer failedTotalHigh;
+
+    /**
+     * Threshold level for total number of medium findings for job status FAILED
+     */
+    private Integer failedTotalMedium;
+
+    /**
+     * Threshold level for total number of low findings for job status FAILED
+     */
+    private Integer failedTotalLow;
+
+    /**
+     * Threshold level for number of new critical findings for job status
+     * UNSTABLE
+     */
+    private Integer unstableNewCritical;
+
+    /**
+     * Threshold level for number of new high findings for job status UNSTABLE
+     */
+    private Integer unstableNewHigh;
+
+    /**
+     * Threshold level for number of new medium findings for job status UNSTABLE
+     */
+    private Integer unstableNewMedium;
+
+    /**
+     * Threshold level for number of new low findings for job status UNSTABLE
+     */
+    private Integer unstableNewLow;
+
+    /**
+     * Threshold level for number of new critical findings for job status FAILED
+     */
+    private Integer failedNewCritical;
+
+    /**
+     * Threshold level for number of new high findings for job status FAILED
+     */
+    private Integer failedNewHigh;
+
+    /**
+     * Threshold level for number of new medium findings for job status FAILED
+     */
+    private Integer failedNewMedium;
+
+    /**
+     * Threshold level for number of new low findings for job status FAILED
+     */
+    private Integer failedNewLow;
 
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
@@ -268,7 +355,7 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
         if (descriptor == null) {
             descriptor = getDescriptor();
         }
-        overrideGlobals = StringUtils.isNotBlank(dependencyTrackUrl) ||StringUtils.isNotBlank(dependencyTrackFrontendUrl) || StringUtils.isNotBlank(dependencyTrackApiKey) || autoCreateProjects != null;
+        overrideGlobals = StringUtils.isNotBlank(dependencyTrackUrl) || StringUtils.isNotBlank(dependencyTrackFrontendUrl) || StringUtils.isNotBlank(dependencyTrackApiKey) || autoCreateProjects != null;
         return this;
     }
 
@@ -334,5 +421,27 @@ public final class DependencyTrackPublisher extends ThresholdCapablePublisher im
      */
     public boolean isEffectiveAutoCreateProjects() {
         return Optional.ofNullable(autoCreateProjects).orElse(descriptor.isDependencyTrackAutoCreateProjects());
+    }
+
+    private Thresholds getThresholds() {
+        final Thresholds thresholds = new Thresholds();
+        thresholds.totalFindings.unstableCritical = unstableTotalCritical;
+        thresholds.totalFindings.unstableHigh = unstableTotalHigh;
+        thresholds.totalFindings.unstableMedium = unstableTotalMedium;
+        thresholds.totalFindings.unstableLow = unstableTotalLow;
+        thresholds.totalFindings.failedCritical = failedTotalCritical;
+        thresholds.totalFindings.failedHigh = failedTotalHigh;
+        thresholds.totalFindings.failedMedium = failedTotalMedium;
+        thresholds.totalFindings.failedLow = failedTotalLow;
+
+        thresholds.newFindings.unstableCritical = unstableNewCritical;
+        thresholds.newFindings.unstableHigh = unstableNewHigh;
+        thresholds.newFindings.unstableMedium = unstableNewMedium;
+        thresholds.newFindings.unstableLow = unstableNewLow;
+        thresholds.newFindings.failedCritical = failedNewCritical;
+        thresholds.newFindings.failedHigh = failedNewHigh;
+        thresholds.newFindings.failedMedium = failedNewMedium;
+        thresholds.newFindings.failedLow = failedNewLow;
+        return thresholds;
     }
 }

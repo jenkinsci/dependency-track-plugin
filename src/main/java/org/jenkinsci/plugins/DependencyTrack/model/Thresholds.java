@@ -37,7 +37,6 @@ public class Thresholds implements Serializable {
         public Integer failedHigh;
         public Integer failedMedium;
         public Integer failedLow;
-        public boolean limitToAnalysisExploitable;
     }
 
     @EqualsAndHashCode
@@ -51,6 +50,5 @@ public class Thresholds implements Serializable {
         public Integer failedHigh;
         public Integer failedMedium;
         public Integer failedLow;
-        public boolean limitToAnalysisExploitable;
     }
 }

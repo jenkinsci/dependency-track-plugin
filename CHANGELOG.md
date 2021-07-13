@@ -10,6 +10,7 @@
 
 ### 🐞 Bugs Fixed
 - enforce Job/read permission in order to read the analysis results for a build run and the trend data on the project page
+- configured threshold levels in classic jobs where empty in the UI after saving them and reloading the config page. saving them again resulted in the deletion of previous none-empty values.
 
 ## v3.1.1 - 2021-03-30
 ### 🐞 Bugs Fixed
