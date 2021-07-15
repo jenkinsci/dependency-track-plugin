@@ -7,6 +7,7 @@
 ### ⭐ New Features
 - replaced inline JavaScript ... one step closer to compatibility with the CSP header
 - add 'min' values in field definitions of forms
+- uses modern div-layout for threshold level settings section
 
 ### 🐞 Bugs Fixed
 - enforce Job/read permission in order to read the analysis results for a build run and the trend data on the project page
