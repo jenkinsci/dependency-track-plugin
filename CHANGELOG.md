@@ -8,6 +8,7 @@
 - replaced inline JavaScript ... one step closer to compatibility with the CSP header
 - add 'min' values in field definitions of forms
 - uses modern div-layout for threshold level settings section
+- Clicking on the x-axis label (the job number) of the trend graph will take you directly to the full report.
 
 ### 🐞 Bugs Fixed
 - enforce Job/read permission in order to read the analysis results for a build run and the trend data on the project page

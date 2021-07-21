@@ -8,7 +8,7 @@
         </div>
         <div align="right">
             <div id="${from.urlName}-history-chart" class="graph-cursor-pointer"
-                 style="width: 500px; min-height: 200px; min-width: 500px; height: 200px;"/>
+                 style="width: 500px; min-height: 210px; min-width: 500px; height: 210px;"/>
         </div>
 
         <script src="${resURL}/plugin/dependency-track/js/libs/echarts.common.min.js" defer="defer"></script>
