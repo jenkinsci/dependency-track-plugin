@@ -9,7 +9,7 @@
         )) {
         throw new Error('malicious URL in data-action-url detected!');
     }
-    
+
     const crumbHeaderName = document.head.dataset.crumbHeader || 'Jenkins-Crumb';
     const crumbValue = document.head.dataset.crumbValue || '';
     const fetchHeaders = {
@@ -17,6 +17,97 @@
         Crumb: crumbValue
     };
     fetchHeaders[crumbHeaderName] = crumbValue;
+
+    const container = document.getElementById('dtrackTrend-history-chart');
+    const textColor = window.getComputedStyle(container).getPropertyValue('color');
+    const fontFamily = window.getComputedStyle(container).getPropertyValue('font-family');
+    const chart = echarts.init(container);
+    chart.setOption({
+        tooltip: {
+            trigger: 'axis',
+            axisPointer: {
+                label: {
+                    formatter: 'Vulnerabilities of Build #{value}',
+                },
+            },
+        },
+        legend: {
+            data: ['Critical', 'High', 'Medium', 'Low', 'Info', 'Unassigned'],
+            orient: 'horizontal',
+            x: 'center',
+            y: 'bottom',
+            textStyle: {
+                color: textColor,
+                fontFamily,
+            }
+        },
+        grid: {
+            left: 20,
+            right: 10,
+            bottom: 30,
+            top: 10,
+            containLabel: true
+        },
+        xAxis: {
+            type: 'category',
+            boundaryGap: false,
+            axisLabel: {
+                fontWeight: 'bolder',
+                formatter: '#{value}',
+            },
+            triggerEvent: true,
+        },
+        yAxis: [
+            {
+                name: 'Vulnerabilities',
+                nameLocation: 'center',
+                boundaryGap: false,
+                nameGap: 30,
+                nameRotate: 90,
+                type: 'value'
+            }
+        ],
+        color: ['#dc0000', '#fd8c00', '#fdc500', '#4cae4c', '#357abd', '#c0c0c0'],
+        textStyle: {
+            color: textColor,
+            fontFamily,
+        },
+        series: [
+            {
+                name: 'Critical',
+                type: 'line',
+            },
+            {
+                name: 'High',
+                type: 'line',
+            },
+            {
+                name: 'Medium',
+                type: 'line',
+            },
+            {
+                name: 'Low',
+                type: 'line',
+            },
+            {
+                name: 'Info',
+                type: 'line',
+            },
+            {
+                name: 'Unassigned',
+                type: 'line',
+            }
+        ]
+    });
+    chart.resize();
+    chart.on('click', 'xAxis', event => {
+        if (event.targetType === 'axisLabel' && event.value) {
+            window.location += parseInt(event.value, 10) + '/dependency-track-findings';
+        }
+    });
+    window.addEventListener('resize', () => {
+        chart.resize();
+    });
 
     window.fetch(`${actionUrl.href}/getSeverityDistributionTrend`, {
         method: 'POST',
@@ -34,106 +125,36 @@
     })
     .then(data => {
         if (data.length) {
-            const container = document.getElementById('dtrackTrend-history-chart');
-            const textColor = window.getComputedStyle(container).getPropertyValue('color');
-            const fontFamily = window.getComputedStyle(container).getPropertyValue('font-family');
-            const options = {
-                tooltip: {
-                    trigger: 'axis',
-                    axisPointer: {
-                        label: {
-                            formatter: 'Vulnerabilities of Build #{value}',
-                        },
-                    },
-                },
-                legend: {
-                    data: ['Critical', 'High', 'Medium', 'Low', 'Info', 'Unassigned'],
-                    orient: 'horizontal',
-                    x: 'center',
-                    y: 'bottom',
-                    textStyle: {
-                        color: textColor,
-                        fontFamily,
-                    }
-                },
-                grid: {
-                    left: 20,
-                    right: 10,
-                    bottom: 30,
-                    top: 10,
-                    containLabel: true
-                },
-                xAxis: [
-                    {
-                        type: 'category',
-                        boundaryGap: false,
-                        axisLabel: {
-                            fontWeight: 'bolder',
-                            formatter: '#{value}',
-                        },
-                        triggerEvent: true,
-                        data: data.map(run => run.buildNumber),
-                    }
-                ],
-                yAxis: [
-                    {
-                        name: 'Vulnerabilities',
-                        nameLocation: 'center',
-                        boundaryGap: false,
-                        nameGap: 30,
-                        nameRotate: 90,
-                        type: 'value'
-                    }
-                ],
-                color: ['#dc0000', '#fd8c00', '#fdc500', '#4cae4c', '#357abd', '#c0c0c0'],
-                textStyle: {
-                    color: textColor,
-                    fontFamily,
+            chart.setOption({
+                xAxis: {
+                    data: data.map(run => run.buildNumber),
                 },
                 series: [
                     {
                         name: 'Critical',
-                        type: 'line',
                         data: data.map(run => run.critical)
                     },
                     {
                         name: 'High',
-                        type: 'line',
                         data: data.map(run => run.high)
                     },
                     {
                         name: 'Medium',
-                        type: 'line',
                         data: data.map(run => run.medium)
                     },
                     {
                         name: 'Low',
-                        type: 'line',
                         data: data.map(run => run.low)
                     },
                     {
                         name: 'Info',
-                        type: 'line',
                         data: data.map(run => run.info)
                     },
                     {
                         name: 'Unassigned',
-                        type: 'line',
                         data: data.map(run => run.unassigned)
                     }
                 ]
-            };
-
-            const chart = echarts.init(container);
-            chart.setOption(options);
-            chart.resize();
-            chart.on('click', 'xAxis', event => {
-                if (event.targetType === 'axisLabel' && event.value) {
-                    window.location += parseInt(event.value, 10) + '/dependency-track-findings';
-                }
-            });
-            window.addEventListener('resize', () => {
-                chart.resize();
             });
         }
     });
