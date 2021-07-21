@@ -76,26 +76,50 @@
             {
                 name: 'Critical',
                 type: 'line',
+                z: 5,
+                emphasis: {
+                    focus: 'series',
+                },
             },
             {
                 name: 'High',
                 type: 'line',
+                z: 4,
+                emphasis: {
+                    focus: 'series',
+                },
             },
             {
                 name: 'Medium',
                 type: 'line',
+                z: 3,
+                emphasis: {
+                    focus: 'series',
+                },
             },
             {
                 name: 'Low',
                 type: 'line',
+                z: 2,
+                emphasis: {
+                    focus: 'series',
+                },
             },
             {
                 name: 'Info',
                 type: 'line',
+                z: 1,
+                emphasis: {
+                    focus: 'series',
+                },
             },
             {
                 name: 'Unassigned',
                 type: 'line',
+                z: 0,
+                emphasis: {
+                    focus: 'series',
+                },
             }
         ]
     });
