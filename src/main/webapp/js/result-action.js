@@ -1,32 +1,32 @@
 'use strict';
 
-function getNativeFunction(clazz, func) {
-    const frame = document.createElement('iframe');
-    frame.style.display = 'none';
-    document.body.appendChild(frame);
-    const nativeClazz = frame.contentWindow[clazz];
-    frame.parentNode.removeChild(frame);
-    return nativeClazz.prototype[func];
-}
+// create vue.js based table
+(function () {
+    function getNativeFunction(clazz, func) {
+        const frame = document.createElement('iframe');
+        frame.style.display = 'none';
+        document.body.appendChild(frame);
+        const nativeClazz = frame.contentWindow[clazz];
+        frame.parentNode.removeChild(frame);
+        return nativeClazz.prototype[func];
+    }
 
 // make String.trim() work again like it should
 // otherwise sorting the vue.js-table will not work
-if (String.prototype.trim.toString().indexOf('[native code]') === -1) {
-    String.prototype.trim = getNativeFunction('String', 'trim');
-}
+    if (String.prototype.trim.toString().indexOf('[native code]') === -1) {
+        String.prototype.trim = getNativeFunction('String', 'trim');
+    }
 // restore Array.filter ... damn ancient prototype.js!
 // otherwise "updateAriaDescribedby" in boostrape-vue (2.21+) will not work because 3rd arg in filter callback is undefined
-if (Array.prototype.filter.toString().indexOf('[native code]') === -1) {
-    Array.prototype.filter = getNativeFunction('Array', 'filter');
-}
+    if (Array.prototype.filter.toString().indexOf('[native code]') === -1) {
+        Array.prototype.filter = getNativeFunction('Array', 'filter');
+    }
 
-// create vue.js based table
-(function () {
     const actionUrl = new URL(document.currentScript.dataset.actionUrl, window.location.origin);
     if (!(actionUrl.origin === window.location.origin
             && /^https?:$/.test(actionUrl.protocol)
             && actionUrl.pathname.startsWith(`${document.head.dataset.rooturl}/$stapler/bound/`)
-        )) {
+            )) {
         throw new Error('malicious URL in data-action-url detected!');
     }
 
@@ -99,13 +99,13 @@ if (Array.prototype.filter.toString().indexOf('[native code]') === -1) {
                     body: '[]',
                     headers: fetchHeaders,
                 })
-                .then(response => {
-                    if (response.ok) {
-                        return response.json().then(data => Array.isArray(data) ? data : []);
-                    } else {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                }).then(items => {
+                        .then(response => {
+                            if (response.ok) {
+                                return response.json().then(data => Array.isArray(data) ? data : []);
+                            } else {
+                                throw new Error(`HTTP error! status: ${response.status}`);
+                            }
+                        }).then(items => {
                     updatePaging.call(this, items);
                     updateCounter.call(this, items);
                     return items;
