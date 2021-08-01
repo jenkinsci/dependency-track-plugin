@@ -4,7 +4,7 @@
     <j:if test="${from.isTrendVisible()}">
 
         <div class="test-trend-caption">
-            Dependency-Track Trend
+            ${%TrendChartTitle}
         </div>
         <div align="right">
             <div id="${from.urlName}-history-chart" class="graph-cursor-pointer"

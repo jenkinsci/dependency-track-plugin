@@ -3,7 +3,7 @@
 
     <st:header name="viewport" value="width=device-width, initial-scale=1, shrink-to-fit=no" />
 
-    <l:layout title="${it.displayName} for ${it.run.parent.displayName}${it.run.displayName}">
+    <l:layout title="${%page.title(it.displayName, it.run.parent.displayName, it.run.displayName)}">
 
         <l:side-panel>
             <st:include page="sidepanel.jelly" it="${it.run}" optional="true" />
@@ -20,9 +20,9 @@
 
             <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/result-action.js?v=${it.versionHash}" defer="defer" data-action-url="${it.bindUrl}"></script>
 
-            <h1>${it.displayName} for ${it.run.parent.displayName}${it.run.displayName}</h1>
+            <h1>${%page.title(it.displayName, it.run.parent.displayName, it.run.displayName)}</h1>
             <div class="alert alert-warning" role="alert">
-                These results may not be up to date.<j:if test="${it.dependencyTrackUrl != null and !it.dependencyTrackUrl.isEmpty()}"> Please visit <a class="alert-link" href="${it.dependencyTrackUrl}/project/?uuid=${it.projectId}">the Dependency Track project page</a> for the most recent results.</j:if>
+                ${%page.globalwarning.1} <j:if test="${it.dependencyTrackUrl != null and !it.dependencyTrackUrl.isEmpty()}">${%page.globalwarning.2(it.dependencyTrackUrl + '/project/?uuid=' + it.projectId, 'alert-link')}</j:if>
             </div>
 
             <div id="app">
@@ -39,20 +39,20 @@
                         type="search"
                         id="filterInput"
                         debounce="500"
-                        placeholder="Type to Search"
+                        placeholder="${%searchinput.placeholder}"
                     ></b-form-input>
                     <b-input-group-append>
-                        <b-button :disabled="!filter" v-on:click="filter = ''">Clear</b-button>
-                        <b-dropdown text="Filter on" size="sm" dropleft="dropleft">
+                        <b-button :disabled="!filter" v-on:click="filter = ''">${%searchinput.clear}</b-button>
+                        <b-dropdown text="${%filter.title}" size="sm" dropleft="dropleft">
                             <b-dropdown-form>
-                                <b-form-group description="Leave all unchecked to filter on all data">
+                                <b-form-group description="${%filter.description}">
                                 <b-form-checkbox-group v-model="filterOn">
-                                    <b-form-checkbox value="component.name">Name</b-form-checkbox>
-                                    <b-form-checkbox value="component.version">Version</b-form-checkbox>
-                                    <b-form-checkbox value="component.group">Group</b-form-checkbox>
-                                    <b-form-checkbox value="vulnerability.vulnId">Vulnerability</b-form-checkbox>
-                                    <b-form-checkbox value="vulnerability.severityRank">Severity</b-form-checkbox>
-                                    <b-form-checkbox value="vulnerability.cweId">CWE</b-form-checkbox>
+                                    <b-form-checkbox value="component.name">${%filter.value.name}</b-form-checkbox>
+                                    <b-form-checkbox value="component.version">${%filter.value.version}</b-form-checkbox>
+                                    <b-form-checkbox value="component.group">${%filter.value.group}</b-form-checkbox>
+                                    <b-form-checkbox value="vulnerability.vulnId">${%filter.value.vuln}</b-form-checkbox>
+                                    <b-form-checkbox value="vulnerability.severityRank">${%filter.value.severity}</b-form-checkbox>
+                                    <b-form-checkbox value="vulnerability.cweId">${%filter.value.cwe}</b-form-checkbox>
                                 </b-form-checkbox-group>
                                 </b-form-group>
                             </b-dropdown-form>
@@ -61,14 +61,14 @@
                 </b-input-group>
             </b-form-group>
 
-            <span class="sr-only">#Findings:</span>
+            <span class="sr-only">${%findingsbar.description}</span>
             <b-progress :max="rows" class="mb-1">
-                <b-progress-bar variant="danger" :value="countBySeverity.CRITICAL" show-value="show-value" title="#critical findings"></b-progress-bar>
-                <b-progress-bar variant="warning" :value="countBySeverity.HIGH" show-value="show-value" title="#high findings"></b-progress-bar>
-                <b-progress-bar variant="primary" :value="countBySeverity.MEDIUM" show-value="show-value" title="#medium findings"></b-progress-bar>
-                <b-progress-bar variant="success" :value="countBySeverity.LOW" show-value="show-value" title="#low findings"></b-progress-bar>
-                <b-progress-bar variant="info" :value="countBySeverity.INFO" show-value="show-value" title="#info findings"></b-progress-bar>
-                <b-progress-bar variant="secondary" :value="countBySeverity.UNASSIGNED" show-value="show-value" title="#unassigned findings"></b-progress-bar>
+                <b-progress-bar variant="danger" :value="countBySeverity.CRITICAL" show-value="show-value" title="${%findingsbar.title.critical}"></b-progress-bar>
+                <b-progress-bar variant="warning" :value="countBySeverity.HIGH" show-value="show-value" title="${%findingsbar.title.high}"></b-progress-bar>
+                <b-progress-bar variant="primary" :value="countBySeverity.MEDIUM" show-value="show-value" title="${%findingsbar.title.medium}"></b-progress-bar>
+                <b-progress-bar variant="success" :value="countBySeverity.LOW" show-value="show-value" title="${%findingsbar.title.low}"></b-progress-bar>
+                <b-progress-bar variant="info" :value="countBySeverity.INFO" show-value="show-value" title="${%findingsbar.title.info}"></b-progress-bar>
+                <b-progress-bar variant="secondary" :value="countBySeverity.UNASSIGNED" show-value="show-value" title="${%findingsbar.title.unassigned}"></b-progress-bar>
             </b-progress>
 
             <b-table striped="striped" hover="hover" responsive="responsive" show-empty="show-empty"
@@ -94,9 +94,9 @@
                 </template>
                 <template slot="cell(vulnerability.vulnId)" slot-scope="data"><j:whitespace>
                     <b-badge pill="pill" variant="info">{{data.item.vulnerability.source}}</b-badge>
-                    <a v-if="data.item.vulnerability.source === 'NVD'" :href="'https://nvd.nist.gov/vuln/detail/'+data.value" title="View Details on NVD" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
-                    <a v-else-if="data.item.vulnerability.source === 'OSSINDEX'" :href="'https://ossindex.sonatype.org/vuln/'+data.value" title="View Details on Sonatype OSS INDEX" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
-                    <a v-else-if="data.item.vulnerability.source === 'NPM'" :href="'https://www.npmjs.com/advisories/'+data.value" title="View Details on npm" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
+                    <a v-if="data.item.vulnerability.source === 'NVD'" :href="'https://nvd.nist.gov/vuln/detail/'+data.value" title="${%link.title('NVD')}" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
+                    <a v-else-if="data.item.vulnerability.source === 'OSSINDEX'" :href="'https://ossindex.sonatype.org/vuln/'+data.value" title="${%link.title('Sonatype OSS INDEX')}" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
+                    <a v-else-if="data.item.vulnerability.source === 'NPM'" :href="'https://www.npmjs.com/advisories/'+data.value" title="${%link.title('npm')}" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
                     <template v-else="v-else">{{data.value}}</template>
                 </j:whitespace></template>
                 <template slot="cell(vulnerability.severityRank)" slot-scope="data"><j:whitespace>
@@ -109,7 +109,7 @@
                     <span class="text-capitalize">{{data.item.vulnerability.severity.toLowerCase()}}</span>
                 </j:whitespace></template>
                 <template slot="cell(vulnerability.cweId)" slot-scope="data" v-if="data.value">
-                    <a :href="'https://cwe.mitre.org/data/definitions/'+data.value+'.html'" title="View Details on MITRE" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">CWE-{{data.value}} {{data.item.vulnerability.cweName}}</a>
+                    <a :href="'https://cwe.mitre.org/data/definitions/'+data.value+'.html'" title="${%link.title('MITRE')}" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">CWE-{{data.value}} {{data.item.vulnerability.cweName}}</a>
                 </template>
                 <template v-slot:row-details="row">
                     <b-card 
@@ -118,7 +118,7 @@
                         border-variant="info"
                     >
                         <b-card-text>{{ row.item.vulnerability.description }}</b-card-text>
-                        <h6 v-if="row.item.vulnerability.recommendation">Recommendation</h6>
+                        <h6 v-if="row.item.vulnerability.recommendation">${%recommendation.title}</h6>
                         <b-card-text v-if="row.item.vulnerability.recommendation">{{ row.item.vulnerability.recommendation }}</b-card-text>
                         <b-card-footer v-if="row.item.analysis.state"><b>Analysis state:</b> {{ row.item.analysis.state }}</b-card-footer>
                     </b-card>
