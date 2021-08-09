@@ -1,0 +1,12 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:h="/lib/hudson" xmlns:l="/lib/layout">
+
+    <section>
+        <h3><l:icon src="${resURL}${from.iconFileName}" alt="" class="icon icon-md" /><a href="${from.urlName}/" title="${%summary.title}">${%summary.text}</a></h3>
+        <figure id="${from.urlName}-summary-chart" style="margin:0; width: 500px; height: 210px;"/>
+
+        <script src="${resURL}/plugin/dependency-track/js/libs/echarts.common.min.js" defer="defer"></script>
+        <script src="${resURL}/plugin/dependency-track/js/result-summary.js?v=${from.versionHash}" defer="defer" data-action-url="${it.bindUrl}"></script>
+    </section>
+
+</j:jelly>
