@@ -2,17 +2,15 @@
 <j:jelly xmlns:j="jelly:core">
 
     <j:if test="${from.isTrendVisible()}">
+        <aside>
+            <h3 class="test-trend-caption">
+                ${%TrendChartTitle}
+            </h3>
+            <figure id="${from.urlName}-history-chart" style="margin: 0; width: 500px; height: 210px;"/>
 
-        <div class="test-trend-caption">
-            ${%TrendChartTitle}
-        </div>
-        <div align="right">
-            <div id="${from.urlName}-history-chart" class="graph-cursor-pointer"
-                 style="width: 500px; min-height: 210px; min-width: 500px; height: 210px;"/>
-        </div>
-
-        <script src="${resURL}/plugin/dependency-track/js/libs/echarts.common.min.js" defer="defer"></script>
-        <script src="${resURL}/plugin/dependency-track/js/charts.js" defer="defer" data-action-url="${from.bindUrl}"></script>
+            <script src="${resURL}/plugin/dependency-track/js/libs/echarts.common.min.js" defer="defer"></script>
+            <script src="${resURL}/plugin/dependency-track/js/charts.js" defer="defer" data-action-url="${from.bindUrl}"></script>
+        </aside>
     </j:if>
 
 </j:jelly>
