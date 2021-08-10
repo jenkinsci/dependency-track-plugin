@@ -1,8 +1,7 @@
-/* global echarts */
-'use strict';
+import { init as echartsInit } from './libs/echarts.esm.min.js';
+const currentScript = document.currentScript || document.querySelector('script[type="module"][src$="/plugin/dependency-track/js/charts.js"][data-action-url]');
 
-(function () {
-    const actionUrl = new URL(document.currentScript.dataset.actionUrl, window.location.origin);
+    const actionUrl = new URL(currentScript.dataset.actionUrl, window.location.origin);
     if (!(actionUrl.origin === window.location.origin
             && /^https?:$/.test(actionUrl.protocol)
             && actionUrl.pathname.startsWith(`${document.head.dataset.rooturl}/$stapler/bound/`)
@@ -21,7 +20,7 @@
     const container = document.getElementById('dtrackTrend-history-chart');
     const textColor = window.getComputedStyle(container).getPropertyValue('color');
     const fontFamily = window.getComputedStyle(container).getPropertyValue('font-family');
-    const chart = echarts.init(container);
+    const chart = echartsInit(container);
     chart.setOption({
         tooltip: {
             trigger: 'axis',
@@ -135,7 +134,7 @@
 
     window.fetch(`${actionUrl.href}/getSeverityDistributionTrend`, {
         method: 'POST',
-        mode: 'cors',
+        mode: 'same-origin',
         cache: 'default',
         body: '[]',
         headers: fetchHeaders,
@@ -182,4 +181,3 @@
             });
         }
     });
-})();

@@ -195,7 +195,7 @@
                                 <include>bootstrap-vue.min.js</include>
                                 <include>bootstrap-vue-icons.min.js</include>
                                 <include>vue.min.js</include>
-                                <include>echarts.common.min.js</include>
+                                <include>echarts.esm.min.js</include>
                             </includes>
                         </fileset>
                         <fileset>
@@ -257,7 +257,7 @@
                                 <resource>
                                     <directory>node_modules/echarts/dist</directory>
                                     <includes>
-                                        <include>echarts.common.min.js</include>
+                                        <include>echarts.esm.min.js</include>
                                     </includes>
                                 </resource>
                             </resources>

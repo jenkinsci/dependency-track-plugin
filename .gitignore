@@ -11,4 +11,5 @@
 /src/main/webapp/js/libs/bootstrap-vue-icons.min.js
 /src/main/webapp/js/libs/bootstrap-vue.min.js
 /src/main/webapp/js/libs/echarts.common.min.js
+/src/main/webapp/js/libs/echarts.esm.min.js
 /src/main/webapp/js/libs/vue.min.js

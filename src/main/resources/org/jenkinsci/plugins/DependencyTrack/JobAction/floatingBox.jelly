@@ -8,8 +8,7 @@
             </h3>
             <figure id="${from.urlName}-history-chart" style="margin: 0; width: 500px; height: 210px;"/>
 
-            <script src="${resURL}/plugin/dependency-track/js/libs/echarts.common.min.js" defer="defer"></script>
-            <script src="${resURL}/plugin/dependency-track/js/charts.js" defer="defer" data-action-url="${from.bindUrl}"></script>
+            <script src="${resURL}/plugin/dependency-track/js/charts.js" type="module" async="async" data-action-url="${from.bindUrl}"></script>
         </aside>
     </j:if>
 
