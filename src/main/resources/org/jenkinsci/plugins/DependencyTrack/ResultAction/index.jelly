@@ -106,7 +106,12 @@
                     <b-badge variant="success" v-if="data.value === 3"><b-icon icon="bug-fill" font-scale="1.5"></b-icon></b-badge>
                     <b-badge variant="info" v-if="data.value === 4"><b-icon icon="bug-fill" font-scale="1.5"></b-icon></b-badge>
                     <b-badge variant="secondary" v-if="data.value === 5"><b-icon icon="bug-fill" font-scale="1.5"></b-icon></b-badge>
-                    <span class="text-capitalize">{{data.item.vulnerability.severity.toLowerCase()}}</span>
+                    <span v-if="data.value === 0">${%severity.critical}</span>
+                    <span v-if="data.value === 1">${%severity.high}</span>
+                    <span v-if="data.value === 2">${%severity.medium}</span>
+                    <span v-if="data.value === 3">${%severity.low}</span>
+                    <span v-if="data.value === 4">${%severity.info}</span>
+                    <span v-if="data.value === 5">${%severity.unassigned}</span>
                 </j:whitespace></template>
                 <template slot="cell(vulnerability.cweId)" slot-scope="data" v-if="data.value">
                     <a :href="'https://cwe.mitre.org/data/definitions/'+data.value+'.html'" title="${%link.title('MITRE')}" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">CWE-{{data.value}} {{data.item.vulnerability.cweName}}</a>
@@ -120,7 +125,7 @@
                         <b-card-text>{{ row.item.vulnerability.description }}</b-card-text>
                         <h6 v-if="row.item.vulnerability.recommendation">${%recommendation.title}</h6>
                         <b-card-text v-if="row.item.vulnerability.recommendation">{{ row.item.vulnerability.recommendation }}</b-card-text>
-                        <b-card-footer v-if="row.item.analysis.state"><b>Analysis state:</b> {{ row.item.analysis.state }}</b-card-footer>
+                        <b-card-footer v-if="row.item.analysis.state"><b>${%analysis.state.title}:</b> {{ row.item.analysis.state }}</b-card-footer>
                     </b-card>
                 </template>
             </b-table>

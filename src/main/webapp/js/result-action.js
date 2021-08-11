@@ -26,17 +26,17 @@
     if (!(actionUrl.origin === window.location.origin
             && /^https?:$/.test(actionUrl.protocol)
             && actionUrl.pathname.startsWith(`${document.head.dataset.rooturl}/$stapler/bound/`)
-            )) {
+    )) {
         throw new Error('malicious URL in data-action-url detected!');
     }
 
     const crumbHeaderName = document.head.dataset.crumbHeader || 'Jenkins-Crumb';
     const crumbValue = document.head.dataset.crumbValue || '';
-    const fetchHeaders = {
-        'Content-Type': 'application/x-stapler-method-invocation;charset=UTF-8',
-        Crumb: crumbValue
-    };
-    fetchHeaders[crumbHeaderName] = crumbValue;
+    const fetchHeaders = new Headers([
+        ['Content-Type', 'application/x-stapler-method-invocation;charset=UTF-8'],
+        ['Crumb', crumbValue],
+        [crumbHeaderName, crumbValue],
+    ]);
 
     /**
      * update severity-bar
@@ -94,18 +94,19 @@
             items(ctx, callback) {
                 return window.fetch(`${actionUrl.href}/getFindingsJson`, {
                     method: 'POST',
-                    mode: 'cors',
+                    mode: 'same-origin',
+                    credentials: 'same-origin',
                     cache: 'default',
                     body: '[]',
                     headers: fetchHeaders,
                 })
-                        .then(response => {
-                            if (response.ok) {
-                                return response.json().then(data => Array.isArray(data) ? data : []);
-                            } else {
-                                throw new Error(`HTTP error! status: ${response.status}`);
-                            }
-                        }).then(items => {
+                .then(response => {
+                    if (response.ok) {
+                        return response.json().then(data => Array.isArray(data) ? data : []);
+                    } else {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                }).then(items => {
                     updatePaging.call(this, items);
                     updateCounter.call(this, items);
                     return items;
@@ -139,5 +140,25 @@
                 return searchValues.some(value => value.includes(term.trim().toLowerCase()));
             }
         },
+    });
+
+    window.fetch(`${document.head.dataset.rooturl}/i18n/resourceBundle/?baseName=org.jenkinsci.plugins.DependencyTrack.ResultAction.index`, {
+        mode: 'same-origin',
+        credentials: 'same-origin',
+        cache: 'default',
+        headers: new Headers([
+            ['Content-Type', 'application/json'],
+            ['Crumb', crumbValue],
+            [crumbHeaderName, crumbValue],
+        ]),
+    })
+    .then(response => response.ok ? response.json().then(json => json.data) : {})
+    .then(i18n => {
+        app.fields.find(field => field.key === 'component.name').label = i18n['filter.value.name'];
+        app.fields.find(field => field.key === 'component.version').label = i18n['filter.value.version'];
+        app.fields.find(field => field.key === 'component.group').label = i18n['filter.value.group'];
+        app.fields.find(field => field.key === 'vulnerability.vulnId').label = i18n['filter.value.vuln'];
+        app.fields.find(field => field.key === 'vulnerability.severityRank').label = i18n['filter.value.severity'];
+        app.fields.find(field => field.key === 'vulnerability.cweId').label = i18n['filter.value.cwe'];
     });
 })();
