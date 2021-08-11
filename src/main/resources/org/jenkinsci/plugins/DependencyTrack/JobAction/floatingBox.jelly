@@ -4,7 +4,7 @@
     <j:if test="${from.isTrendVisible()}">
         <aside>
             <h3 class="test-trend-caption">
-                ${%TrendChartTitle}
+                ${%chart.title}
             </h3>
             <figure id="${from.urlName}-history-chart" style="margin: 0; width: 500px; height: 210px;"/>
 

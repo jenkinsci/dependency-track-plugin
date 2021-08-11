@@ -5,17 +5,17 @@ const currentScript = document.currentScript || document.querySelector('script[t
     if (!(actionUrl.origin === window.location.origin
             && /^https?:$/.test(actionUrl.protocol)
             && actionUrl.pathname.startsWith(`${document.head.dataset.rooturl}/$stapler/bound/`)
-        )) {
+    )) {
         throw new Error('malicious URL in data-action-url detected!');
     }
 
     const crumbHeaderName = document.head.dataset.crumbHeader || 'Jenkins-Crumb';
     const crumbValue = document.head.dataset.crumbValue || '';
-    const fetchHeaders = {
-        'Content-Type': 'application/x-stapler-method-invocation;charset=UTF-8',
-        Crumb: crumbValue
-    };
-    fetchHeaders[crumbHeaderName] = crumbValue;
+    const fetchHeaders = new Headers([
+        ['Content-Type', 'application/x-stapler-method-invocation;charset=UTF-8'],
+        ['Crumb', crumbValue],
+        [crumbHeaderName, crumbValue],
+    ]);
 
     const container = document.getElementById('dtrackTrend-history-chart');
     const textColor = window.getComputedStyle(container).getPropertyValue('color');
@@ -31,7 +31,6 @@ const currentScript = document.currentScript || document.querySelector('script[t
             },
         },
         legend: {
-            data: ['Critical', 'High', 'Medium', 'Low', 'Info', 'Unassigned'],
             orient: 'horizontal',
             x: 'center',
             y: 'bottom',
@@ -43,7 +42,7 @@ const currentScript = document.currentScript || document.querySelector('script[t
         grid: {
             left: 20,
             right: 10,
-            bottom: 30,
+            bottom: '20%',
             top: 10,
             containLabel: true
         },
@@ -58,6 +57,7 @@ const currentScript = document.currentScript || document.querySelector('script[t
         },
         yAxis: [
             {
+                id: 'Vulnerabilities',
                 name: 'Vulnerabilities',
                 nameLocation: 'center',
                 boundaryGap: false,
@@ -73,6 +73,7 @@ const currentScript = document.currentScript || document.querySelector('script[t
         },
         series: [
             {
+                id: 'Critical',
                 name: 'Critical',
                 type: 'line',
                 z: 5,
@@ -81,6 +82,7 @@ const currentScript = document.currentScript || document.querySelector('script[t
                 },
             },
             {
+                id: 'High',
                 name: 'High',
                 type: 'line',
                 z: 4,
@@ -89,6 +91,7 @@ const currentScript = document.currentScript || document.querySelector('script[t
                 },
             },
             {
+                id: 'Medium',
                 name: 'Medium',
                 type: 'line',
                 z: 3,
@@ -97,6 +100,7 @@ const currentScript = document.currentScript || document.querySelector('script[t
                 },
             },
             {
+                id: 'Low',
                 name: 'Low',
                 type: 'line',
                 z: 2,
@@ -105,6 +109,7 @@ const currentScript = document.currentScript || document.querySelector('script[t
                 },
             },
             {
+                id: 'Info',
                 name: 'Info',
                 type: 'line',
                 z: 1,
@@ -113,6 +118,7 @@ const currentScript = document.currentScript || document.querySelector('script[t
                 },
             },
             {
+                id: 'Unassigned',
                 name: 'Unassigned',
                 type: 'line',
                 z: 0,
@@ -132,9 +138,42 @@ const currentScript = document.currentScript || document.querySelector('script[t
         chart.resize();
     });
 
+    window.fetch(`${document.head.dataset.rooturl}/i18n/resourceBundle/?baseName=org.jenkinsci.plugins.DependencyTrack.JobAction.floatingBox`, {
+        mode: 'same-origin',
+        credentials: 'same-origin',
+        cache: 'default',
+        headers: new Headers([
+            ['Content-Type', 'application/json'],
+            ['Crumb', crumbValue],
+            [crumbHeaderName, crumbValue],
+        ]),
+    })
+    .then(response => response.ok ? response.json().then(json => json.data) : {})
+    .then(i18n => {
+        chart.setOption({
+            tooltip: {
+                axisPointer: {
+                    label: { formatter: i18n['tooltip.title'] }
+                },
+            },
+            yAxis: [
+                { id: 'Vulnerabilities', name: i18n['yAxis.title'] },
+            ],
+            series: [
+                { id: 'Critical', name: i18n['seriesTitle.critical'] },
+                { id: 'High', name: i18n['seriesTitle.high'] },
+                { id: 'Medium', name: i18n['seriesTitle.medium'] },
+                { id: 'Low', name: i18n['seriesTitle.low'] },
+                { id: 'Info', name: i18n['seriesTitle.info'] },
+                { id: 'Unassigned', name: i18n['seriesTitle.unassigned'] },
+            ]
+        });
+    });
+    
     window.fetch(`${actionUrl.href}/getSeverityDistributionTrend`, {
         method: 'POST',
         mode: 'same-origin',
+        credentials: 'same-origin',
         cache: 'default',
         body: '[]',
         headers: fetchHeaders,
@@ -154,27 +193,27 @@ const currentScript = document.currentScript || document.querySelector('script[t
                 },
                 series: [
                     {
-                        name: 'Critical',
+                        id: 'Critical',
                         data: data.map(run => run.critical)
                     },
                     {
-                        name: 'High',
+                        id: 'High',
                         data: data.map(run => run.high)
                     },
                     {
-                        name: 'Medium',
+                        id: 'Medium',
                         data: data.map(run => run.medium)
                     },
                     {
-                        name: 'Low',
+                        id: 'Low',
                         data: data.map(run => run.low)
                     },
                     {
-                        name: 'Info',
+                        id: 'Info',
                         data: data.map(run => run.info)
                     },
                     {
-                        name: 'Unassigned',
+                        id: 'Unassigned',
                         data: data.map(run => run.unassigned)
                     }
                 ]
