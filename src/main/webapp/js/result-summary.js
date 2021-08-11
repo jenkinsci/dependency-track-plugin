@@ -52,6 +52,7 @@ const currentScript = document.currentScript || document.querySelector('script[t
         },
         series: [
             {
+                id: 'Vulnerabilities',
                 name: 'Vulnerabilities',
                 type: 'bar',
                 emphasis: {
@@ -59,6 +60,28 @@ const currentScript = document.currentScript || document.querySelector('script[t
                 },
             },
         ]
+    });
+
+    window.fetch(`${document.head.dataset.rooturl}/i18n/resourceBundle/?baseName=org.jenkinsci.plugins.DependencyTrack.ResultAction.summary`, {
+        mode: 'same-origin',
+        credentials: 'same-origin',
+        cache: 'default',
+        headers: new Headers([
+            ['Content-Type', 'application/json'],
+            ['Crumb', crumbValue],
+            [crumbHeaderName, crumbValue],
+        ]),
+    })
+    .then(response => response.ok ? response.json().then(json => json.data) : {})
+    .then(i18n => {
+        chart.setOption({
+            series: [
+                { id: 'Vulnerabilities', name: i18n['tooltip.title'] }
+            ],
+            yAxis: {
+                data: [i18n['seriesTitle.critical'], i18n['seriesTitle.high'], i18n['seriesTitle.medium'], i18n['seriesTitle.low'], i18n['seriesTitle.info'], i18n['seriesTitle.unassigned']],
+            }
+        });
     });
 
     window.fetch(`${actionUrl.href}/getFindingsJson`, {
@@ -92,7 +115,7 @@ const currentScript = document.currentScript || document.querySelector('script[t
             chart.setOption({
                 series: [
                     {
-                        name: 'Vulnerabilities',
+                        id: 'Vulnerabilities',
                         data: chartData.map(item => {
                             return { value: item.value, itemStyle: { color: item.color } };
                         }),
