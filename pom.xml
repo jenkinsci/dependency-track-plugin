@@ -308,7 +308,7 @@
                                         <file>${project.build.directory}/${project.build.finalName}/js/libs/bootstrap-vue.min.js</file>
                                         <file>${project.build.directory}/${project.build.finalName}/js/libs/bootstrap-vue-icons.min.js</file>
                                         <file>${project.build.directory}/${project.build.finalName}/js/libs/vue.min.js</file>
-                                        <file>${project.build.directory}/${project.build.finalName}/js/libs/echarts.common.min.js</file>
+                                        <file>${project.build.directory}/${project.build.finalName}/js/libs/echarts.esm.min.js</file>
                                         <file>${project.build.directory}/${project.build.finalName}/css/bootstrap.min.css</file>
                                         <file>${project.build.directory}/${project.build.finalName}/css/bootstrap-vue.min.css</file>
                                     </files>
