@@ -3,9 +3,13 @@
 
     <section>
         <h3><l:icon src="${resURL}${from.iconFileName}" alt="" class="icon icon-md" /><a href="${from.urlName}/" title="${%summary.title}">${%summary.text}</a></h3>
-        <figure id="${from.urlName}-summary-chart" style="margin:0; width: 500px; height: 210px;"/>
-
-        <script src="${resURL}/plugin/dependency-track/js/result-summary.js?v=${from.versionHash}" type="module" async="async" data-action-url="${it.bindUrl}"></script>
+        <j:choose>
+            <j:when test="${from.hasFindings()}">
+                <figure id="${from.urlName}-summary-chart" style="margin:0; width: 500px; height: 210px;"/>
+                <script src="${resURL}/plugin/dependency-track/js/result-summary.js?v=${from.versionHash}" type="module" async="async" data-action-url="${it.bindUrl}"></script>
+            </j:when>
+            <j:otherwise><p>${%summary.noFindings}</p></j:otherwise>
+        </j:choose>
     </section>
 
 </j:jelly>

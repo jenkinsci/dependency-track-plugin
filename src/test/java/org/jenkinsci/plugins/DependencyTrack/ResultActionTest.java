@@ -26,6 +26,7 @@ import io.jenkins.plugins.casc.misc.JenkinsConfiguredRule;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Collections;
 import java.util.List;
 import net.sf.json.JSONArray;
 import org.assertj.core.api.Assertions;
@@ -93,4 +94,10 @@ public class ResultActionTest {
         Assertions.<JSONArray>assertThat(uut.getFindingsJson()).isEqualTo(JSONArray.fromObject(getTestFindings()));
     }
 
+    @Test
+    public void hasFindingsTest() {
+        assertThat(new ResultAction(null, new SeverityDistribution(1)).hasFindings()).isFalse();
+        assertThat(new ResultAction(Collections.emptyList(), new SeverityDistribution(1)).hasFindings()).isFalse();
+        assertThat(new ResultAction(getTestFindings(), new SeverityDistribution(1)).hasFindings()).isTrue();
+    }
 }

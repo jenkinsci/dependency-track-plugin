@@ -104,6 +104,10 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
         );
     }
 
+    public boolean hasFindings() {
+        return findings != null && !findings.isEmpty();
+    }
+
     /**
      * Returns the UI model for an ECharts line chart that shows the findings.
      *
