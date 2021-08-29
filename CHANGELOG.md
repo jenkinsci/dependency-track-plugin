@@ -2,6 +2,11 @@
 
 ## Unreleased
 ### ⚠ Breaking
+### ⭐ New Features
+### 🐞 Bugs Fixed
+
+## v4.0.0 - 2021-08-29
+### ⚠ Breaking
 - minimum required Jenkins version is now 2.289.2
 
 ### ⭐ New Features
