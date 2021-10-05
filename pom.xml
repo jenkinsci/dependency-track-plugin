@@ -189,22 +189,6 @@
                                 <include>package-lock.json</include>
                             </includes>
                         </fileset>
-                        <fileset>
-                            <directory>src/main/webapp/js/libs</directory>
-                            <includes>
-                                <include>bootstrap-vue.min.js</include>
-                                <include>bootstrap-vue-icons.min.js</include>
-                                <include>vue.min.js</include>
-                                <include>echarts.esm.min.js</include>
-                            </includes>
-                        </fileset>
-                        <fileset>
-                            <directory>src/main/webapp/css</directory>
-                            <includes>
-                                <include>bootstrap.min.css</include>
-                                <include>bootstrap-vue.min.css</include>
-                            </includes>
-                        </fileset>
                     </filesets>
                 </configuration>
             </plugin>
@@ -227,69 +211,48 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-resources-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>copy-js-libs</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${basedir}/src/main/webapp/js/libs</outputDirectory>
-                            <overwrite>true</overwrite>
-                            <nonFilteredFileExtensions>js</nonFilteredFileExtensions>
-                            <resources>
-                                <resource>
-                                    <directory>node_modules/bootstrap-vue/dist</directory>
-                                    <includes>
-                                        <include>bootstrap-vue.min.js</include>
-                                        <include>bootstrap-vue-icons.min.js</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <directory>node_modules/vue/dist</directory>
-                                    <includes>
-                                        <include>vue.min.js</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <directory>node_modules/echarts/dist</directory>
-                                    <includes>
-                                        <include>echarts.esm.min.js</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>copy-css-libs</id>
-                        <phase>process-resources</phase>
-                        <goals>
-                            <goal>copy-resources</goal>
-                        </goals>
-                        <configuration>
-                            <outputDirectory>${basedir}/src/main/webapp/css</outputDirectory>
-                            <overwrite>true</overwrite>
-                            <nonFilteredFileExtensions>css</nonFilteredFileExtensions>
-                            <resources>
-                                <resource>
-                                    <directory>node_modules/bootstrap/dist/css</directory>
-                                    <includes>
-                                        <include>bootstrap.min.css</include>
-                                    </includes>
-                                </resource>
-                                <resource>
-                                    <directory>node_modules/bootstrap-vue/dist</directory>
-                                    <includes>
-                                        <include>bootstrap-vue.min.css</include>
-                                    </includes>
-                                </resource>
-                            </resources>
-                        </configuration>
-                    </execution>
-                </executions>
+                <groupId>org.jenkins-ci.tools</groupId>
+                <artifactId>maven-hpi-plugin</artifactId>
+                <configuration>
+                    <webResources>
+                        <resource>
+                            <directory>node_modules/bootstrap-vue/dist</directory>
+                            <targetPath>js/libs</targetPath>
+                            <includes>
+                                <include>bootstrap-vue.min.js</include>
+                                <include>bootstrap-vue-icons.min.js</include>
+                            </includes>
+                        </resource>
+                        <resource>
+                            <directory>node_modules/vue/dist</directory>
+                            <targetPath>js/libs</targetPath>
+                            <includes>
+                                <include>vue.min.js</include>
+                            </includes>
+                        </resource>
+                        <resource>
+                            <directory>node_modules/echarts/dist</directory>
+                            <targetPath>js/libs</targetPath>
+                            <includes>
+                                <include>echarts.esm.min.js</include>
+                            </includes>
+                        </resource>
+                        <resource>
+                            <directory>node_modules/bootstrap/dist/css</directory>
+                            <targetPath>css</targetPath>
+                            <includes>
+                                <include>bootstrap.min.css</include>
+                            </includes>
+                        </resource>
+                        <resource>
+                            <directory>node_modules/bootstrap-vue/dist</directory>
+                            <targetPath>css</targetPath>
+                            <includes>
+                                <include>bootstrap-vue.min.css</include>
+                            </includes>
+                        </resource>
+                    </webResources>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
