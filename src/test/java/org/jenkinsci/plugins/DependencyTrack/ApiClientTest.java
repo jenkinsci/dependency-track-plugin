@@ -214,7 +214,7 @@ public class ApiClientTest {
 
         assertThatCode(() -> uut.getFindings("foo")).isInstanceOf(ApiClientException.class)
                 .hasNoCause()
-                .hasMessage("An error occurred while retrieving findings - HTTP response code: 404 Not Found");
+                .hasMessage(Messages.ApiClient_Error_RetrieveFindings("404", "Not Found"));
 
         assertThat(uut.getFindings("uuid-1")).isEmpty();
     }
