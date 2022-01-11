@@ -73,4 +73,8 @@ public class JobAction extends InvisibleAction {
         return WebApp.getCurrent().boundObjectTable.bind(this).getURL();
     }
 
+    public String getCrumb() {
+        return WebApp.getCurrent().getCrumbIssuer().issueCrumb();
+    }
+
 }

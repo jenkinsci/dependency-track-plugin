@@ -18,7 +18,7 @@
             <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/libs/bootstrap-vue.min.js?v=${it.versionHash}" defer="defer"></script>
             <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/libs/bootstrap-vue-icons.min.js?v=${it.versionHash}" defer="defer"></script>
 
-            <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/result-action.js?v=${it.versionHash}" defer="defer" data-action-url="${it.bindUrl}"></script>
+            <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/result-action.js?v=${it.versionHash}" defer="defer" data-action-url="${it.bindUrl}" data-crumb-value="${it.crumb}"></script>
 
             <h1>${%page.title(it.displayName, it.run.parent.displayName, it.run.displayName)}</h1>
             <div class="alert alert-warning" role="alert">
