@@ -31,7 +31,7 @@
     }
 
     const crumbHeaderName = document.head.dataset.crumbHeader || 'Jenkins-Crumb';
-    const crumbValue = document.head.dataset.crumbValue || '';
+    const crumbValue = document.head.dataset.crumbValue || document.currentScript.dataset.crumbValue || '';
     const fetchHeaders = new Headers([
         ['Content-Type', 'application/x-stapler-method-invocation;charset=UTF-8'],
         ['Crumb', crumbValue],

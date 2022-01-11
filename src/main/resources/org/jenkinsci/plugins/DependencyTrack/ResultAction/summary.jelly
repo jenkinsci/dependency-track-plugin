@@ -6,7 +6,7 @@
         <j:choose>
             <j:when test="${from.hasFindings()}">
                 <figure id="${from.urlName}-summary-chart" style="margin:0; width: 500px; height: 210px;"/>
-                <script src="${resURL}/plugin/dependency-track/js/result-summary.js?v=${from.versionHash}" type="module" async="async" data-action-url="${it.bindUrl}"></script>
+                <script src="${resURL}/plugin/dependency-track/js/result-summary.js?v=${from.versionHash}" type="module" async="async" data-action-url="${it.bindUrl}" data-crumb-value="${it.crumb}"></script>
             </j:when>
             <j:otherwise><p>${%summary.noFindings}</p></j:otherwise>
         </j:choose>

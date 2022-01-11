@@ -123,4 +123,8 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
         return WebApp.getCurrent().boundObjectTable.bind(this).getURL();
     }
 
+    public String getCrumb() {
+        return WebApp.getCurrent().getCrumbIssuer().issueCrumb();
+    }
+
 }

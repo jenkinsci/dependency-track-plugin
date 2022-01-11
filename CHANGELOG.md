@@ -4,6 +4,7 @@
 ### ⚠ Breaking
 ### ⭐ New Features
 ### 🐞 Bugs Fixed
+- Analysis result information not shown when CSRF Protection is turned off (fixes [#73](https://github.com/jenkinsci/dependency-track-plugin/issues/73))
 
 ## v4.0.0 - 2021-08-29
 ### ⚠ Breaking
