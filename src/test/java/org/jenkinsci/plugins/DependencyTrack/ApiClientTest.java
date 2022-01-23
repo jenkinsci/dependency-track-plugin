@@ -374,11 +374,15 @@ public class ApiClientTest {
         
         final ProjectProperties props = new ProjectProperties();
         props.setTags(Arrays.asList("tag2", "tag4"));
+        props.setSwidTagId("my swid tag id");
+        props.setGroup("my group");
 
         assertThatCode(() -> uut.updateProjectProperties("uuid-3", props)).doesNotThrowAnyException();
         completionSignal.await(5, TimeUnit.SECONDS);
         final Project project = ProjectParser.parse(JSONObject.fromObject(requestBody.get()));
         assertThat(project.getTags()).containsExactlyInAnyOrder("tag1", "tag2", "tag4");
+        assertThat(project.getSwidTagId()).isEqualTo(props.getSwidTagId());
+        assertThat(project.getGroup()).isEqualTo(props.getGroup());
     }
 
 }

@@ -26,6 +26,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -36,6 +37,7 @@ import static org.jenkinsci.plugins.DependencyTrack.PluginUtil.areAllElementsOfT
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
+@Getter
 @lombok.NoArgsConstructor(onConstructor_ = {@DataBoundConstructor})
 @EqualsAndHashCode(callSuper = false, doNotUseGetters = true)
 public final class ProjectProperties extends AbstractDescribableImpl<ProjectProperties> implements Serializable {
@@ -46,6 +48,16 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
      * Tags to set for the (new) project
      */
     private List<String> tags;
+
+    /**
+     * SWID Tag ID for the project
+     */
+    private String swidTagId;
+    
+    /**
+     * Group to set for the project
+     */
+    private String group;
 
     @NonNull
     public List<String> getTags() {
@@ -78,6 +90,16 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
 
     private void setTagsIntern(@NonNull final Collection<String> values) {
         tags = normalizeTags(values);
+    }
+
+    @DataBoundSetter
+    public void setSwidTagId(final String swidTagId) {
+        this.swidTagId = StringUtils.trimToNull(swidTagId);
+    }
+
+    @DataBoundSetter
+    public void setGroup(final String group) {
+        this.group = StringUtils.trimToNull(group);
     }
 
     @NonNull

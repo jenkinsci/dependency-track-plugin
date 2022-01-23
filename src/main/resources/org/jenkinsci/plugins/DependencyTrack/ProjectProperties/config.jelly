@@ -19,5 +19,11 @@ limitations under the License.
     <f:entry title="${%tags}" help="/plugin/dependency-track/help-dt-tag.html">
         <f:expandableTextbox name="tags" value="${instance.tagsAsText}" />
     </f:entry>
+    <f:entry field="swidTagId" title="${%swidTagId}" help="/plugin/dependency-track/help-dt-swidtagid.html">
+        <f:textbox id="swidTagId" />
+    </f:entry>
+    <f:entry field="group" title="${%group}" help="/plugin/dependency-track/help-dt-group.html">
+        <f:textbox id="group" />
+    </f:entry>
 
 </j:jelly>

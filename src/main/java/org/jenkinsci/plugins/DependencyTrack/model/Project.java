@@ -21,4 +21,6 @@ public class Project implements Serializable {
     private String lastBomImportFormat;
     private Double lastInheritedRiskScore;
     private Boolean active;
+    private String swidTagId;
+    private String group;
 }

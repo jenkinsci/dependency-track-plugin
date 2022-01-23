@@ -42,6 +42,8 @@ class ProjectParser {
                 .lastBomImportFormat(getKeyOrNull(json, "lastBomImportFormat"))
                 .lastInheritedRiskScore(lastInheritedRiskScoreStr != null ? Double.parseDouble(lastInheritedRiskScoreStr) : null)
                 .active(activeStr != null ? Boolean.parseBoolean(activeStr) : null)
+                .swidTagId(getKeyOrNull(json, "swidTagId"))
+                .group(getKeyOrNull(json, "group"))
                 .build();
     }
 

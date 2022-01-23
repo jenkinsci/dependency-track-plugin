@@ -274,6 +274,10 @@ public class ApiClient {
                 .map(tag -> Collections.singletonMap("name", tag))
                 .collect(Collectors.toList());
         rawProject.element("tags", mergedTags);
+        // overwrite swidTagId only if it is set (means not null)
+        rawProject.elementOpt("swidTagId", properties.getSwidTagId());
+        // overwrite group only if it is set (means not null)
+        rawProject.elementOpt("group", properties.getGroup());
         // 3. update project
         updateProject(projectUuid, rawProject);
     }
