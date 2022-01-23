@@ -68,7 +68,12 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      * the project version to upload to. This is a per-build config item.
      */
     private String projectVersion;
-
+    
+    /**
+     * Additional project properties to set
+     */
+    private ProjectProperties projectProperties;
+    
     /**
      * Retrieves the path and filename of the artifact. This is a per-build
      * config item.
@@ -266,6 +271,8 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         run.addOrReplaceAction(linkAction);
 
         logger.log(Messages.Builder_Success(String.format("%s/projects/%s", getEffectiveFrontendUrl(), projectId != null ? projectId : StringUtils.EMPTY)));
+        
+        updateProjectProperties(logger, apiClient, effectiveProjectName, effectiveProjectVersion);
 
         if (synchronous && StringUtils.isNotBlank(uploadResult.getToken())) {
             publishAnalysisResult(logger, apiClient, uploadResult.getToken(), run, effectiveProjectName, effectiveProjectVersion);
@@ -443,5 +450,17 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         thresholds.newFindings.failedMedium = failedNewMedium;
         thresholds.newFindings.failedLow = failedNewLow;
         return thresholds;
+    }
+    
+    private void updateProjectProperties(ConsoleLogger logger, final ApiClient apiClient, final String effectiveProjectName, final String effectiveProjectVersion) throws ApiClientException {
+        if (projectProperties != null) {
+            logger.log(Messages.Builder_Project_Update());
+            if (StringUtils.isBlank(projectId)) {
+                // project was auto-created. Fetch it's new uuid so that we can update its properties
+                logger.log(Messages.Builder_Project_Lookup(effectiveProjectName, effectiveProjectVersion));
+                projectId = apiClient.lookupProject(effectiveProjectName, effectiveProjectVersion).getUuid();
+            }
+            apiClient.updateProjectProperties(projectId, projectProperties);
+        }
     }
 }

@@ -59,6 +59,8 @@ Once configured with a valid URL and API key, simply configure a job to publish 
 
 **Enable synchronous publishing mode**: Uploads a SBOM to Dependency-Track and waits for Dependency-Track to process and return results. The results returned are identical to the auditable findings but exclude findings that have previously been suppressed. Analysis decisions and vulnerability details are included in the response. Synchronous mode is possible with Dependency-Track v3.3.1 and higher.
 
+**Project Properties**: Allows to update some project properties after uploading the BOM, such as tags. The API key provided requires the `PORTFOLIO_MANAGEMENT` permission to use this feature!
+
 **Override global settings**: Allows to override global settings for "Auto Create Projects", "Dependency-Track URL", "Dependency-Track Frontend URL" and "API key".
 
 ### Thresholds

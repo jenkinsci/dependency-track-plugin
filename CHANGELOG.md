@@ -3,6 +3,8 @@
 ## Unreleased
 ### ⚠ Breaking
 ### ⭐ New Features
+- allow to specify tags that should be set for the project (fixes [#12](https://github.com/jenkinsci/dependency-track-plugin/issues/12))
+
 ### 🐞 Bugs Fixed
 - Analysis result information not shown when CSRF Protection is turned off (fixes [#73](https://github.com/jenkinsci/dependency-track-plugin/issues/73))
 
