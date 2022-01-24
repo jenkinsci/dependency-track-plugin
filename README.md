@@ -59,7 +59,10 @@ Once configured with a valid URL and API key, simply configure a job to publish 
 
 **Enable synchronous publishing mode**: Uploads a SBOM to Dependency-Track and waits for Dependency-Track to process and return results. The results returned are identical to the auditable findings but exclude findings that have previously been suppressed. Analysis decisions and vulnerability details are included in the response. Synchronous mode is possible with Dependency-Track v3.3.1 and higher.
 
-**Project Properties**: Allows to update some project properties after uploading the BOM, such as tags, SWID and vendor. The API key provided requires the `PORTFOLIO_MANAGEMENT` permission to use this feature!
+**Project Properties**: Allows updating of some project properties after uploading the BOM. The provided API key requires the `PORTFOLIO_MANAGEMENT` permission to use this feature! These properties are:
+- tags
+- SWID tag ID
+- group/vendor
 
 **Override global settings**: Allows to override global settings for "Auto Create Projects", "Dependency-Track URL", "Dependency-Track Frontend URL" and "API key".
 
@@ -84,7 +87,7 @@ pipeline {
         stage('dependencyTrackPublisher') {
             steps {
                 withCredentials([string(credentialsId: '506ed685-4e2b-4d31-a44f-8ba8e67b6341', variable: 'API_KEY')]) {
-                    dependencyTrackPublisher artifact: 'target/bom.xml', projectName: 'my-project', projectVersion: 'my-version', synchronous: true, dependencyTrackApiKey: API_KEY
+                    dependencyTrackPublisher artifact: 'target/bom.xml', projectName: 'my-project', projectVersion: 'my-version', synchronous: true, dependencyTrackApiKey: API_KEY, projectProperties: [tags: ['tag1', 'tag2'], swidTagId: 'my swid tag', group: 'my group']
                 }
             }
         }
