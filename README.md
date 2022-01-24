@@ -9,8 +9,7 @@
 
 # Dependency-Track Jenkins Plugin
 
-The [Dependency-Track](https://dependencytrack.org/) Jenkins plugin aids in publishing [CycloneDX](https://cyclonedx.org/) and [SPDX](https://spdx.org/) 
-Software Bill-of-Materials (SBOM) to the Dependency-Track platform.
+The [Dependency-Track](https://dependencytrack.org/) Jenkins plugin aids in publishing [CycloneDX](https://cyclonedx.org/) Software Bill-of-Materials (SBOM) to the Dependency-Track platform.
 
 [Dependency-Track](https://dependencytrack.org/) is an intelligent Software [Supply Chain Component Analysis](https://owasp.org/www-community/Component_Analysis) platform that allows organizations to 
 identify and reduce risk from the use of third-party and open source components.
