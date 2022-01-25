@@ -22,8 +22,11 @@ limitations under the License.
     <f:entry field="swidTagId" title="${%swidTagId}" help="/plugin/dependency-track/help-dt-swidtagid.html">
         <f:textbox id="swidTagId" />
     </f:entry>
-    <f:entry field="group" title="${%group}" help="/plugin/dependency-track/help-dt-group.html">
+    <f:entry field="group" title="${%group}" help="/plugin/dependency-track/help-dt-project-group.html">
         <f:textbox id="group" />
+    </f:entry>
+    <f:entry field="description" title="${%description}" help="/plugin/dependency-track/help-dt-project-description.html">
+        <f:textbox id="description" />
     </f:entry>
 
 </j:jelly>

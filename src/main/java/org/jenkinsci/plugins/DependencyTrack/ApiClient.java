@@ -278,6 +278,8 @@ public class ApiClient {
         rawProject.elementOpt("swidTagId", properties.getSwidTagId());
         // overwrite group only if it is set (means not null)
         rawProject.elementOpt("group", properties.getGroup());
+        // overwrite description only if it is set (means not null)
+        rawProject.elementOpt("description", properties.getDescription());
         // 3. update project
         updateProject(projectUuid, rawProject);
     }

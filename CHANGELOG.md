@@ -5,6 +5,7 @@
 ### ⭐ New Features
 - allow to specify tags that should be set for the project (fixes [#12](https://github.com/jenkinsci/dependency-track-plugin/issues/12))
 - allow to specify SWID and group that should be set for the project (fixes [#50](https://github.com/jenkinsci/dependency-track-plugin/issues/50))
+- allow to specify a description that should be set for the project
 
 ### 🐞 Bugs Fixed
 - Analysis result information not shown when CSRF Protection is turned off (fixes [#73](https://github.com/jenkinsci/dependency-track-plugin/issues/73))

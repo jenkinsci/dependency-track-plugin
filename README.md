@@ -62,6 +62,7 @@ Once configured with a valid URL and API key, simply configure a job to publish 
 - tags
 - SWID tag ID
 - group/vendor
+- description
 
 **Override global settings**: Allows to override global settings for "Auto Create Projects", "Dependency-Track URL", "Dependency-Track Frontend URL" and "API key".
 

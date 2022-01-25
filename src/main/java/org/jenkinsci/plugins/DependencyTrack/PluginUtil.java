@@ -64,7 +64,7 @@ class PluginUtil {
      * coll is empty), else {@code false}
      * @see Validate#allElementsOfType(java.util.Collection, java.lang.Class)
      */
-    static boolean areAllElementsOfType(@NonNull final Collection coll, @NonNull final Class type) {
+    static boolean areAllElementsOfType(@NonNull final Collection<?> coll, @NonNull final Class<?> type) {
         try {
             Validate.allElementsOfType(coll, type);
         } catch (IllegalArgumentException invalid) {

@@ -45,7 +45,7 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
     private static final long serialVersionUID = 5343757342998957784L;
 
     /**
-     * Tags to set for the (new) project
+     * Tags to set for the project
      */
     private List<String> tags;
 
@@ -58,6 +58,11 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
      * Group to set for the project
      */
     private String group;
+    
+    /**
+     * Description to set for the project
+     */
+    private String description;
 
     @NonNull
     public List<String> getTags() {
@@ -75,8 +80,10 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
             setTagsIntern((Set<String>) value);
         } else if (value instanceof List && areAllElementsOfType((List) value, String.class)) {
             setTagsIntern((List<String>) value);
+        } else if (value == null) {
+            tags = null;
         } else {
-            throw new IllegalArgumentException("expected String, String[], Set<String> or List<String> but got " + (value != null ? value.getClass().getName() : "null"));
+            throw new IllegalArgumentException("expected String, String[], Set<String> or List<String> but got " + value.getClass().getName());
         }
     }
 
@@ -100,6 +107,11 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
     @DataBoundSetter
     public void setGroup(final String group) {
         this.group = StringUtils.trimToNull(group);
+    }
+
+    @DataBoundSetter
+    public void setDescription(final String description) {
+        this.description = StringUtils.trimToNull(description);
     }
 
     @NonNull
