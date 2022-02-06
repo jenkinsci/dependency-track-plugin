@@ -16,6 +16,7 @@
 package org.jenkinsci.plugins.DependencyTrack;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.FilePath;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -32,7 +33,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -90,11 +93,7 @@ public class ApiClient {
     @NonNull
     public String testConnection() throws ApiClientException {
         try {
-            final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + PROJECT_URL).openConnection();
-            conn.setRequestProperty(HEADER_ACCEPT, MEDIATYPE_JSON);
-            conn.setRequestProperty(API_KEY_HEADER, apiKey);
-            conn.setConnectTimeout(connectionTimeout * MS_TO_S_FACTOR);
-            conn.setReadTimeout(readTimeout * MS_TO_S_FACTOR);
+            final HttpURLConnection conn = createConnection(PROJECT_URL);
             conn.connect();
             if (conn.getResponseCode() == HTTP_OK) {
                 return StringUtils.trimToEmpty(conn.getHeaderField("X-Powered-By"));
@@ -125,11 +124,7 @@ public class ApiClient {
     @NonNull
     private List<Project> getProjectsPaged(int page) throws ApiClientException {
         try {
-            final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + PROJECT_URL + "?limit=500&excludeInactive=true&page=" + page).openConnection();
-            conn.setRequestProperty(HEADER_ACCEPT, MEDIATYPE_JSON);
-            conn.setRequestProperty(API_KEY_HEADER, apiKey);
-            conn.setConnectTimeout(connectionTimeout * MS_TO_S_FACTOR);
-            conn.setReadTimeout(readTimeout * MS_TO_S_FACTOR);
+            final HttpURLConnection conn = createConnection(PROJECT_URL + "?limit=500&excludeInactive=true&page=" + page);
             conn.setDoOutput(true);
             conn.connect();
             if (conn.getResponseCode() == HTTP_OK) {
@@ -147,17 +142,12 @@ public class ApiClient {
     }
 
     @NonNull
-    public Project lookupProject(String projectName, String projectVersion) throws ApiClientException {
+    public Project lookupProject(@NonNull final String projectName, @NonNull final String projectVersion) throws ApiClientException {
         try {
-            final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + PROJECT_LOOKUP_URL + "?"
+            final HttpURLConnection conn = createConnection(PROJECT_LOOKUP_URL + "?"
                     + PROJECT_LOOKUP_NAME_PARAM + "=" + URLEncoder.encode(projectName, StandardCharsets.UTF_8.name()) + "&"
-                    + PROJECT_LOOKUP_VERSION_PARAM + "=" + URLEncoder.encode(projectVersion, StandardCharsets.UTF_8.name()))
-                    .openConnection();
+                    + PROJECT_LOOKUP_VERSION_PARAM + "=" + URLEncoder.encode(projectVersion, StandardCharsets.UTF_8.name()));
             conn.setDoOutput(true);
-            conn.setRequestProperty(API_KEY_HEADER, apiKey);
-            conn.setRequestProperty(HEADER_ACCEPT, MEDIATYPE_JSON);
-            conn.setConnectTimeout(connectionTimeout * MS_TO_S_FACTOR);
-            conn.setReadTimeout(readTimeout * MS_TO_S_FACTOR);
             conn.connect();
             // Checks the server response
             if (conn.getResponseCode() == HTTP_OK) {
@@ -184,15 +174,10 @@ public class ApiClient {
     }
 
     @NonNull
-    public List<Finding> getFindings(String projectUuid) throws ApiClientException {
+    public List<Finding> getFindings(@NonNull final String projectUuid) throws ApiClientException {
         try {
-            final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + PROJECT_FINDINGS_URL + "/" + URLEncoder.encode(projectUuid, StandardCharsets.UTF_8.name()))
-                    .openConnection();
+            final HttpURLConnection conn = createConnection(PROJECT_FINDINGS_URL + "/" + URLEncoder.encode(projectUuid, StandardCharsets.UTF_8.name()));
             conn.setDoOutput(true);
-            conn.setRequestProperty(API_KEY_HEADER, apiKey);
-            conn.setRequestProperty(HEADER_ACCEPT, MEDIATYPE_JSON);
-            conn.setConnectTimeout(connectionTimeout * MS_TO_S_FACTOR);
-            conn.setReadTimeout(readTimeout * MS_TO_S_FACTOR);
             conn.connect();
             // Checks the server response
             if (conn.getResponseCode() == HTTP_OK) {
@@ -211,7 +196,7 @@ public class ApiClient {
     }
 
     @NonNull
-    public UploadResult upload(String projectId, String projectName, String projectVersion, FilePath artifact,
+    public UploadResult upload(@Nullable final String projectId, @Nullable final String projectName, @Nullable final String projectVersion, @NonNull final FilePath artifact,
             boolean autoCreateProject) throws IOException {
         final String encodedScan;
         try {
@@ -232,15 +217,11 @@ public class ApiClient {
         }
         byte[] payloadBytes = jsonObject.toString().getBytes(StandardCharsets.UTF_8);
         // Creates the request and connects
-        final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + BOM_URL).openConnection();
+        final HttpURLConnection conn = createConnection(BOM_URL);
         conn.setDoOutput(true);
         conn.setRequestMethod("PUT");
-        conn.setRequestProperty(HEADER_CONTENT_TYPE, MEDIATYPE_JSON);
-        conn.setRequestProperty(HEADER_ACCEPT, MEDIATYPE_JSON);
-        conn.setConnectTimeout(connectionTimeout * MS_TO_S_FACTOR);
-        conn.setReadTimeout(readTimeout * MS_TO_S_FACTOR);
         conn.setRequestProperty("Content-Length", Integer.toString(payloadBytes.length));
-        conn.setRequestProperty(API_KEY_HEADER, apiKey);
+        conn.setRequestProperty(HEADER_CONTENT_TYPE, MEDIATYPE_JSON);
         conn.connect();
         // Sends the payload bytes
         try (OutputStream os = new BufferedOutputStream(conn.getOutputStream())) {
@@ -254,14 +235,14 @@ public class ApiClient {
         switch (conn.getResponseCode()) {
             case HTTP_OK:
                 try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
-                    String responseBody = getResponseBody(in);
-                    if (StringUtils.isNotBlank(responseBody)) {
-                        final JSONObject json = JSONObject.fromObject(responseBody);
-                        return new UploadResult(true, StringUtils.trimToNull(json.getString("token")));
-                    } else {
-                        return new UploadResult(true);
-                    }
+                String responseBody = getResponseBody(in);
+                if (StringUtils.isNotBlank(responseBody)) {
+                    final JSONObject json = JSONObject.fromObject(responseBody);
+                    return new UploadResult(true, StringUtils.trimToNull(json.getString("token")));
+                } else {
+                    return new UploadResult(true);
                 }
+            }
             case HTTP_BAD_REQUEST:
                 logger.log(Messages.Builder_Payload_Invalid());
                 logHttpError(conn);
@@ -282,16 +263,77 @@ public class ApiClient {
         return new UploadResult(false);
     }
 
-    @NonNull
-    public boolean isTokenBeingProcessed(String token) throws ApiClientException {
+    public void updateProjectProperties(@NonNull final String projectUuid, @NonNull final ProjectProperties properties) throws ApiClientException {
+        // update overwrites all properties. missing properties in the request will cause them to be deleted in the project!
+        // 1. load project
+        final JSONObject rawProject = loadProject(projectUuid);
+        final Project project = ProjectParser.parse(rawProject);
+        // 2. merge tags
+        final List<Map<String, String>> mergedTags = Stream.concat(project.getTags().stream(), properties.getTags().stream())
+                .distinct()
+                .map(tag -> Collections.singletonMap("name", tag))
+                .collect(Collectors.toList());
+        rawProject.element("tags", mergedTags);
+        // overwrite swidTagId only if it is set (means not null)
+        rawProject.elementOpt("swidTagId", properties.getSwidTagId());
+        // overwrite group only if it is set (means not null)
+        rawProject.elementOpt("group", properties.getGroup());
+        // overwrite description only if it is set (means not null)
+        rawProject.elementOpt("description", properties.getDescription());
+        // 3. update project
+        updateProject(projectUuid, rawProject);
+    }
+
+    private void updateProject(@NonNull final String projectUuid, @NonNull final JSONObject project) throws ApiClientException {
         try {
-            final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + BOM_TOKEN_URL + "/" + URLEncoder.encode(token, StandardCharsets.UTF_8.name()))
-                    .openConnection();
+            byte[] payloadBytes = project.toString().getBytes(StandardCharsets.UTF_8);
+            final HttpURLConnection conn = createConnection(PROJECT_URL);
             conn.setDoOutput(true);
-            conn.setRequestProperty(API_KEY_HEADER, apiKey);
-            conn.setRequestProperty(HEADER_ACCEPT, MEDIATYPE_JSON);
-            conn.setConnectTimeout(connectionTimeout * MS_TO_S_FACTOR);
-            conn.setReadTimeout(readTimeout * MS_TO_S_FACTOR);
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Length", Integer.toString(payloadBytes.length));
+            conn.setRequestProperty(HEADER_CONTENT_TYPE, MEDIATYPE_JSON);
+            conn.connect();
+            // Sends the payload bytes
+            try (OutputStream os = new BufferedOutputStream(conn.getOutputStream())) {
+                os.write(payloadBytes);
+                os.flush();
+            }
+            if (conn.getResponseCode() != HTTP_OK) {
+                logger.log(Messages.ApiClient_Error_ProjectUpdate(projectUuid, conn.getResponseCode(), conn.getResponseMessage()));
+                logHttpError(conn);
+                throw new ApiClientException(Messages.ApiClient_Error_ProjectUpdate(projectUuid, conn.getResponseCode(), conn.getResponseMessage()));
+            }
+        } catch (ApiClientException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new ApiClientException(Messages.ApiClient_Error_ProjectUpdate(projectUuid, StringUtils.EMPTY, StringUtils.EMPTY), e);
+        }
+    }
+
+    @NonNull
+    private JSONObject loadProject(@NonNull final String projectUuid) throws ApiClientException {
+        try {
+            final HttpURLConnection conn = createConnection(PROJECT_URL + "/" + URLEncoder.encode(projectUuid, StandardCharsets.UTF_8.name()));
+            conn.connect();
+            if (conn.getResponseCode() == HTTP_OK) {
+                try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
+                    return JSONObject.fromObject(getResponseBody(in));
+                }
+            } else {
+                logger.log(Messages.ApiClient_Error_ProjectLoad(projectUuid, conn.getResponseCode(), conn.getResponseMessage()));
+                logHttpError(conn);
+                throw new ApiClientException(Messages.ApiClient_Error_ProjectLoad(projectUuid, conn.getResponseCode(), conn.getResponseMessage()));
+            }
+        } catch (ApiClientException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new ApiClientException(Messages.ApiClient_Error_ProjectLoad(projectUuid, StringUtils.EMPTY, StringUtils.EMPTY), e);
+        }
+    }
+
+    public boolean isTokenBeingProcessed(@NonNull final String token) throws ApiClientException {
+        try {
+            final HttpURLConnection conn = createConnection(BOM_TOKEN_URL + "/" + URLEncoder.encode(token, StandardCharsets.UTF_8.name()));
             conn.connect();
             if (conn.getResponseCode() == HTTP_OK) {
                 try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
@@ -321,5 +363,14 @@ public class ApiClient {
         } catch (UncheckedIOException | IOException ignore) {
             // ignored ... the error stream might have been closed already or whatever
         }
+    }
+
+    private HttpURLConnection createConnection(final String url) throws IOException {
+        final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + url).openConnection();
+        conn.setRequestProperty(API_KEY_HEADER, apiKey);
+        conn.setRequestProperty(HEADER_ACCEPT, MEDIATYPE_JSON);
+        conn.setConnectTimeout(connectionTimeout * MS_TO_S_FACTOR);
+        conn.setReadTimeout(readTimeout * MS_TO_S_FACTOR);
+        return conn;
     }
 }

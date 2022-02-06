@@ -160,6 +160,7 @@ public class DependencyTrackPublisherTest {
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, clientFactory);
         uut.setProjectId("uuid-1");
         uut.setDependencyTrackApiKey(apikeyId);
+        uut.setProjectProperties(new ProjectProperties());
 
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false)))
                 .thenReturn(new UploadResult(true))
@@ -168,6 +169,7 @@ public class DependencyTrackPublisherTest {
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
         verify(client, never()).getFindings(anyString());
         verify(client, never()).lookupProject(anyString(), anyString());
+        verify(client).updateProjectProperties(eq("uuid-1"), any(ProjectProperties.class));
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Upload_Failed());
     }
@@ -215,6 +217,7 @@ public class DependencyTrackPublisherTest {
         uut.setProjectVersion("version-1");
         uut.setDependencyTrackApiKey(apikeyId);
         uut.setAutoCreateProjects(Boolean.TRUE);
+        uut.setProjectProperties(new ProjectProperties());
 
         when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(true))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
@@ -224,6 +227,7 @@ public class DependencyTrackPublisherTest {
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
         verify(client, times(2)).isTokenBeingProcessed("token-1");
         verify(client).getFindings("uuid-1");
+        verify(client).updateProjectProperties(eq("uuid-1"), any(ProjectProperties.class));
     }
 
     @Test
@@ -283,6 +287,7 @@ public class DependencyTrackPublisherTest {
         uut.setDependencyTrackFrontendUrl("foo-ui");
         uut.setDependencyTrackApiKey("bar");
         uut.setOverrideGlobals(true);
+        uut.setProjectProperties(new ProjectProperties());
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (ObjectOutputStream oos = new ObjectOutputStream(baos)) {
@@ -296,6 +301,7 @@ public class DependencyTrackPublisherTest {
                 assertThat(actual.getDependencyTrackApiKey()).isEqualTo("bar");
                 assertThat(actual.getAutoCreateProjects()).isTrue();
                 assertThat(actual.isOverrideGlobals()).isTrue();
+                assertThat(actual.getProjectProperties()).isNotNull();
             });
         }
     }

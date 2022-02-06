@@ -15,12 +15,15 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.util.FormValidation;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.Collection;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.Validate;
 
 @UtilityClass
 class PluginUtil {
@@ -49,5 +52,24 @@ class PluginUtil {
     @Nullable
     static String parseBaseUrl(final String baseUrl) {
         return StringUtils.removeEnd(StringUtils.trimToNull(baseUrl), "/");
+    }
+
+    /**
+     * Checks if all elements of the given collection {@code coll} are of type
+     * {@code type}
+     *
+     * @param coll the collection to check
+     * @param type the class which the collection's elements are expected to be
+     * @return {@code true} if all elements are of type {@code type} (also if
+     * coll is empty), else {@code false}
+     * @see Validate#allElementsOfType(java.util.Collection, java.lang.Class)
+     */
+    static boolean areAllElementsOfType(@NonNull final Collection<?> coll, @NonNull final Class<?> type) {
+        try {
+            Validate.allElementsOfType(coll, type);
+        } catch (IllegalArgumentException invalid) {
+            return false;
+        }
+        return true;
     }
 }

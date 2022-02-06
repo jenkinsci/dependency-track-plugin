@@ -29,6 +29,10 @@ import java.time.Month;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import net.sf.json.JSONObject;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
@@ -214,7 +218,7 @@ public class ApiClientTest {
 
         assertThatCode(() -> uut.getFindings("foo")).isInstanceOf(ApiClientException.class)
                 .hasNoCause()
-                .hasMessage(Messages.ApiClient_Error_RetrieveFindings("404", "Not Found"));
+                .hasMessage(Messages.ApiClient_Error_RetrieveFindings(404, "Not Found"));
 
         assertThat(uut.getFindings("uuid-1")).isEmpty();
     }
@@ -223,6 +227,8 @@ public class ApiClientTest {
     public void uploadTestWithUuid() throws IOException, InterruptedException {
         File bom = tmpDir.newFile();
         Files.write(bom.toPath(), "<test />".getBytes(StandardCharsets.UTF_8));
+        final AtomicReference<String> requestBody = new AtomicReference<>();
+        final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
@@ -231,10 +237,10 @@ public class ApiClientTest {
                     assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
                     assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
                     assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_LENGTH)).isTrue();
-                    String expectedBody = "{\"bom\":\"PHRlc3QgLz4=\",\"project\":\"uuid-1\"}";
                     return response.sendString(
                             request.receive().asString(StandardCharsets.UTF_8)
-                            .filter(expectedBody::equals)
+                            .doOnNext(body -> requestBody.set(body))
+                            .doOnComplete(() -> completionSignal.countDown())
                             .map(body -> "{\"token\":\"uuid-1\"}")
                     );
                 }))
@@ -247,12 +253,17 @@ public class ApiClientTest {
         when(mockFile.getPath()).thenReturn(tmpDir.getRoot().getPath());
         FilePath fileWithError = new FilePath(mockFile);
         assertThat(uut.upload(null, "p1", "v1", fileWithError, true)).isEqualTo(new UploadResult(false));
+        String expectedBody = "{\"bom\":\"PHRlc3QgLz4=\",\"project\":\"uuid-1\"}";
+        completionSignal.await(5, TimeUnit.SECONDS);
+        assertThat(requestBody.get()).isEqualTo(expectedBody);
     }
 
     @Test
     public void uploadTestWithName() throws IOException, InterruptedException {
         File bom = tmpDir.newFile();
         Files.write(bom.toPath(), "<test />".getBytes(StandardCharsets.UTF_8));
+        final AtomicReference<String> requestBody = new AtomicReference<>();
+        final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
@@ -261,10 +272,10 @@ public class ApiClientTest {
                     assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
                     assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
                     assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_LENGTH)).isTrue();
-                    String expectedBody = "{\"bom\":\"PHRlc3QgLz4=\",\"projectName\":\"p1\",\"projectVersion\":\"v1\",\"autoCreate\":false}";
                     return response.sendString(
                             request.receive().asString(StandardCharsets.UTF_8)
-                            .filter(expectedBody::equals)
+                            .doOnNext(body -> requestBody.set(body))
+                            .doOnComplete(() -> completionSignal.countDown())
                             .map(body -> "")
                     );
                 }))
@@ -272,6 +283,9 @@ public class ApiClientTest {
 
         ApiClient uut = createClient();
         assertThat(uut.upload(null, "p1", "v1", new FilePath(bom), false)).isEqualTo(new UploadResult(true));
+        String expectedBody = "{\"bom\":\"PHRlc3QgLz4=\",\"projectName\":\"p1\",\"projectVersion\":\"v1\",\"autoCreate\":false}";
+        completionSignal.await(5, TimeUnit.SECONDS);
+        assertThat(requestBody.get()).isEqualTo(expectedBody);
     }
 
     @Test
@@ -329,6 +343,48 @@ public class ApiClientTest {
                 .hasMessage(Messages.ApiClient_Error_TokenProcessing(404, "Not Found"));
 
         assertThat(uut.isTokenBeingProcessed("uuid-1")).isTrue();
+    }
+    
+    @Test
+    public void updateProjectPropertiesTest() throws ApiClientException, InterruptedException {
+        final AtomicReference<String> requestBody = new AtomicReference<>();
+        final CountDownLatch completionSignal = new CountDownLatch(1);
+        server = HttpServer.create()
+                .host("localhost")
+                .port(0)
+                .route(routes -> routes
+                    .get(ApiClient.PROJECT_URL + "/uuid-3", (request, response) -> {
+                        assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
+                        assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
+                        return response.sendString(Mono.just("{\"name\":\"test-project\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\",\"tags\":[{\"name\":\"tag1\"},{\"name\":\"tag2\"}]}"));
+                    })
+                    .post(ApiClient.PROJECT_URL, (request, response) -> {
+                        assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
+                        assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
+                        return response.sendString(
+                                request.receive().asString(StandardCharsets.UTF_8)
+                                .doOnNext(body -> requestBody.set(body))
+                                .doOnComplete(() -> completionSignal.countDown())
+                        );
+                    })
+                )
+                .bindNow();
+
+        ApiClient uut = createClient();
+        
+        final ProjectProperties props = new ProjectProperties();
+        props.setTags(Arrays.asList("tag2", "tag4"));
+        props.setSwidTagId("my swid tag id");
+        props.setGroup("my group");
+        props.setDescription("my description");
+
+        assertThatCode(() -> uut.updateProjectProperties("uuid-3", props)).doesNotThrowAnyException();
+        completionSignal.await(5, TimeUnit.SECONDS);
+        final Project project = ProjectParser.parse(JSONObject.fromObject(requestBody.get()));
+        assertThat(project.getTags()).containsExactlyInAnyOrder("tag1", "tag2", "tag4");
+        assertThat(project.getSwidTagId()).isEqualTo(props.getSwidTagId());
+        assertThat(project.getGroup()).isEqualTo(props.getGroup());
+        assertThat(project.getDescription()).isEqualTo(props.getDescription());
     }
 
 }
