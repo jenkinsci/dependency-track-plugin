@@ -15,6 +15,10 @@ limitations under the License.
 -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:c="/lib/credentials" xmlns:l="/lib/layout">
+    <f:block>
+        <f:helpLink url="/plugin/dependency-track/help-dt-projectproperties.html" />
+        <f:helpArea />
+    </f:block>
 
     <f:entry title="${%tags}" help="/plugin/dependency-track/help-dt-tag.html">
         <f:expandableTextbox name="tags" value="${instance.tagsAsText}" />

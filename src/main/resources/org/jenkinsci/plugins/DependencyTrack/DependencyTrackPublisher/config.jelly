@@ -35,11 +35,11 @@ limitations under the License.
             <f:textbox id="artifact"/>
         </f:entry>
 
-        <f:optionalProperty field="projectProperties" title="${%projectProperties}" help="/plugin/dependency-track/help-dt-projectproperties.html" />
-
         <f:entry title="${%enable.synchronous}" field="synchronous" help="/plugin/dependency-track/help-dt-synchronous-mode.html">
             <f:checkbox name="synchronous" checked="${instance.isSynchronous()}"/>
         </f:entry>
+
+        <f:optionalProperty field="projectProperties" title="${%projectProperties}" />
 
         <f:optionalBlock inline="true" field="overrideGlobals" title="${%overrideGlobals}">
             <f:entry title="${%dependencytrack.url}" field="dependencyTrackUrl" help="/plugin/dependency-track/help-dt-url.html">
