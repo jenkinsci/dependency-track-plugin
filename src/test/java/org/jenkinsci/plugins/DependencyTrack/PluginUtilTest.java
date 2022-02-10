@@ -34,8 +34,8 @@ public class PluginUtilTest {
         assertThat(PluginUtil.doCheckUrl("http://foo.bar/asd")).isEqualTo(FormValidation.ok());
         assertThat(PluginUtil.doCheckUrl("http://foo.bar")).isEqualTo(FormValidation.ok());
 
-        assertThat(PluginUtil.doCheckUrl("foo")).hasMessage("The specified value is not a valid URL").hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR);
-        assertThat(PluginUtil.doCheckUrl("ftp://foo.bar")).hasMessage("Only URLs with http and https are supported").hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR);
+        assertThat(PluginUtil.doCheckUrl("foo")).hasMessage(Messages.Publisher_ConnectionTest_UrlMalformed()).hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR);
+        assertThat(PluginUtil.doCheckUrl("ftp://foo.bar")).hasMessage(Messages.Publisher_ConnectionTest_InvalidProtocols()).hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR);
     }
 
     @Test

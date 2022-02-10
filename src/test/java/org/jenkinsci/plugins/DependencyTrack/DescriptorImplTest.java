@@ -126,23 +126,23 @@ public class DescriptorImplTest {
 
         assertThat(uut.doTestConnection("http:///url.tld", credentialsid, null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
-                .hasMessage("Connection successful - Dependency-Track v3.8.0")
+                .hasMessage(Messages.Publisher_ConnectionTest_Success("Dependency-Track v3.8.0"))
                 .hasNoCause();
 
         assertThat(uut.doTestConnection("http:///url.tld/", credentialsid, null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
-                .hasMessageStartingWith("Connection failed - test")
+                .hasMessageStartingWith(Messages.Publisher_ConnectionTest_Error("test"))
                 .hasNoCause();
 
         assertThat(uut.doTestConnection("http:///url.tld/", credentialsid, null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
-                .hasMessageStartingWith("Connection failed")
+                .hasMessageStartingWith(Messages.Publisher_ConnectionTest_Error(null))
                 .hasMessageContaining(ApiClientException.class.getCanonicalName())
                 .hasNoCause();
 
         assertThat(uut.doTestConnection("url", "", null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.WARNING)
-                .hasMessage("URL must be valid and Api-Key must not be empty")
+                .hasMessage(Messages.Publisher_ConnectionTest_Warning())
                 .hasNoCause();
     }
 

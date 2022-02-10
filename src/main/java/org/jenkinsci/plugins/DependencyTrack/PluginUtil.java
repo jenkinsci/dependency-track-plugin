@@ -34,6 +34,7 @@ class PluginUtil {
      * @param value The value of the URL as specified in the global config
      * @return a FormValidation object
      */
+    @NonNull
     static FormValidation doCheckUrl(final String value) {
         if (StringUtils.isBlank(value)) {
             return FormValidation.ok();
@@ -41,10 +42,10 @@ class PluginUtil {
         try {
             URL url = new URL(value);
             if (!url.getProtocol().toLowerCase().matches("https?")) {
-                return FormValidation.error("Only URLs with http and https are supported");
+                return FormValidation.error(Messages.Publisher_ConnectionTest_InvalidProtocols());
             }
         } catch (MalformedURLException e) {
-            return FormValidation.error("The specified value is not a valid URL");
+            return FormValidation.error(Messages.Publisher_ConnectionTest_UrlMalformed());
         }
         return FormValidation.ok();
     }

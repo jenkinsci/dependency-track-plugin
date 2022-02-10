@@ -244,12 +244,12 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
             try {
                 final ApiClient apiClient = getClient(url, apiKey);
                 final String result = apiClient.testConnection();
-                return result.startsWith("Dependency-Track v") ? FormValidation.ok("Connection successful - " + result) : FormValidation.error("Connection failed - " + result);
+                return result.startsWith("Dependency-Track v") ? FormValidation.ok(Messages.Publisher_ConnectionTest_Success(result)) : FormValidation.error(Messages.Publisher_ConnectionTest_Error(result));
             } catch (ApiClientException e) {
-                return FormValidation.error(e, "Connection failed");
+                return FormValidation.error(e, Messages.Publisher_ConnectionTest_Error(null));
             }
         }
-        return FormValidation.warning("URL must be valid and Api-Key must not be empty");
+        return FormValidation.warning(Messages.Publisher_ConnectionTest_Warning());
     }
 
     /**
