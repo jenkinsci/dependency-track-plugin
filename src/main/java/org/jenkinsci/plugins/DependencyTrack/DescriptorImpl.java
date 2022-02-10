@@ -155,9 +155,9 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
         final ListBoxModel projects = new ListBoxModel();
         try {
             // url may come from instance-config. if empty, then take it from global config (this)
-            final String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElse(getDependencyTrackUrl());
+            final String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElseGet(this::getDependencyTrackUrl);
             // api-key may come from instance-config. if empty, then take it from global config (this)
-            final String apiKey = lookupApiKey(Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElse(getDependencyTrackApiKey()), item);
+            final String apiKey = lookupApiKey(Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElseGet(this::getDependencyTrackApiKey), item);
             final ApiClient apiClient = getClient(url, apiKey);
             projects.addAll(apiClient.getProjects().stream()
                     .map(p -> new ListBoxModel.Option(p.getName().concat(" ").concat(Optional.ofNullable(p.getVersion()).orElse(StringUtils.EMPTY)).trim(), p.getUuid()))
@@ -237,9 +237,9 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
             item.checkPermission(Item.CONFIGURE);
         }
         // url may come from instance-config. if empty, then take it from global config (this)
-        final String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElse(getDependencyTrackUrl());
+        final String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElseGet(this::getDependencyTrackUrl);
         // api-key may come from instance-config. if empty, then take it from global config (this)
-        final String apiKey = lookupApiKey(Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElse(getDependencyTrackApiKey()), item);
+        final String apiKey = lookupApiKey(Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElseGet(this::getDependencyTrackApiKey), item);
         if (doCheckDependencyTrackUrl(url, item).kind == FormValidation.Kind.OK && StringUtils.isNotBlank(apiKey)) {
             try {
                 final ApiClient apiClient = getClient(url, apiKey);

@@ -394,7 +394,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      */
     @NonNull
     private String getEffectiveUrl() {
-        String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElse(descriptor.getDependencyTrackUrl());
+        String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElseGet(descriptor::getDependencyTrackUrl);
         return Optional.ofNullable(url).orElse(StringUtils.EMPTY);
     }
 
@@ -403,8 +403,8 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      */
     @NonNull
     private String getEffectiveFrontendUrl() {
-        String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackFrontendUrl)).orElse(descriptor.getDependencyTrackFrontendUrl());
-        return Optional.ofNullable(url).orElse(getEffectiveUrl());
+        String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackFrontendUrl)).orElseGet(descriptor::getDependencyTrackFrontendUrl);
+        return Optional.ofNullable(url).orElseGet(this::getEffectiveUrl);
     }
 
     /**
@@ -415,7 +415,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      */
     @NonNull
     private String getEffectiveApiKey(@NonNull Run<?, ?> run) {
-        final String credId = Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElse(descriptor.getDependencyTrackApiKey());
+        final String credId = Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElseGet(descriptor::getDependencyTrackApiKey);
         if (credId != null) {
             StringCredentials cred = CredentialsProvider.findCredentialById(credId, StringCredentials.class, run);
             // for compatibility reasons when updating from v2.x to 3.0: return original value as is because it may be the api-key itself.
@@ -429,7 +429,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      * @return effective autoCreateProjects
      */
     public boolean isEffectiveAutoCreateProjects() {
-        return Optional.ofNullable(autoCreateProjects).orElse(descriptor.isDependencyTrackAutoCreateProjects());
+        return Optional.ofNullable(autoCreateProjects).orElseGet(descriptor::isDependencyTrackAutoCreateProjects);
     }
 
     /**
