@@ -164,7 +164,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
                     .sorted(Comparator.comparing(o -> o.name))
                     .collect(Collectors.toList())
             );
-            projects.add(0, new ListBoxModel.Option("-- Select Project --", null));
+            projects.add(0, new ListBoxModel.Option(Messages.Publisher_ProjectList_Placeholder(), null));
         } catch (ApiClientException e) {
             projects.add(Messages.Builder_Error_Projects(e.getLocalizedMessage()), null);
         }
