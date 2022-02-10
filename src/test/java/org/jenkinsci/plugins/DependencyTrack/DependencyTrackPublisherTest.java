@@ -23,6 +23,7 @@ import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Job;
+import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.util.Secret;
@@ -35,6 +36,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.Collections;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
+import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.junit.Before;
@@ -51,6 +53,8 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
@@ -202,10 +206,22 @@ public class DependencyTrackPublisherTest {
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(Collections.emptyList());
+        
+        Run buildWithResultAction = mock(Run.class);
+        when(buildWithResultAction.getResult()).thenReturn(Result.SUCCESS);
+        when(buildWithResultAction.getAction(ResultAction.class)).thenReturn(new ResultAction(Collections.emptyList(), new SeverityDistribution(42)));
+        Run buildWithNoResultAction = mock(Run.class);
+        when(buildWithNoResultAction.getResult()).thenReturn(Result.SUCCESS);
+        when(buildWithNoResultAction.getPreviousBuiltBuild()).thenReturn(buildWithResultAction);
+        Run abortedBuild = mock(Run.class);
+        when(abortedBuild.getResult()).thenReturn(Result.NOT_BUILT);
+        when(abortedBuild.getPreviousBuiltBuild()).thenReturn(buildWithNoResultAction);
+        when(build.getPreviousBuiltBuild()).thenReturn(abortedBuild);
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
         verify(client, times(2)).isTokenBeingProcessed("token-1");
         verify(client).getFindings("uuid-1");
+        verify(buildWithResultAction, times(2)).getAction(ResultAction.class);
     }
 
     @Test

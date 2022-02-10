@@ -27,6 +27,7 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.EnvVars;
 import hudson.tasks.Recorder;
 import hudson.util.Secret;
@@ -313,15 +314,16 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         build.addOrReplaceAction(linkAction);
 
         // Get previous results and evaluate to thresholds
-        final SeverityDistribution previousSeverityDistribution = Optional.ofNullable(build.getPreviousBuild())
+        final SeverityDistribution previousSeverityDistribution = Optional.ofNullable(getPreviousBuildWithAnalysisResult(build))
                 .map(previousBuild -> previousBuild.getAction(ResultAction.class))
                 .map(ResultAction::getSeverityDistribution)
-                .orElse(new SeverityDistribution(0));
+                .orElseGet(() -> new SeverityDistribution(0));
 
         evaluateRiskGates(build, logger, severityDistribution, previousSeverityDistribution);
     }
 
     private void evaluateRiskGates(final Run<?, ?> build, final ConsoleLogger logger, final SeverityDistribution currentDistribution, final SeverityDistribution previousDistribution) throws AbortException {
+        logger.log(Messages.Builder_Threshold_ComparingTo(previousDistribution.getBuildNumber()));
         final RiskGate riskGate = new RiskGate(getThresholds());
         final Result result = riskGate.evaluate(currentDistribution, previousDistribution);
         if (result.isWorseOrEqualTo(Result.UNSTABLE) && result.isCompleteBuild()) {
@@ -430,6 +432,21 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         return Optional.ofNullable(autoCreateProjects).orElse(descriptor.isDependencyTrackAutoCreateProjects());
     }
 
+    /**
+     * Returns the last build that was actually built and has an analysis result ({@link ResultAction}) 
+     * @param run the build from where to start (the one running now)
+     * @return the last build that was actually built and has an analysis result, or {@code null} if none was found
+     */
+    @Nullable
+    private Run<?, ?> getPreviousBuildWithAnalysisResult(final @NonNull Run<?, ?> run) {
+        Run<?, ?> r = run.getPreviousBuiltBuild();
+        while (r != null && (r.getResult() == null || r.getResult() == Result.NOT_BUILT || r.getAction(ResultAction.class) == null)) {
+            r = r.getPreviousBuiltBuild();
+        }
+        return r;
+    }
+
+    @NonNull
     private Thresholds getThresholds() {
         final Thresholds thresholds = new Thresholds();
         thresholds.totalFindings.unstableCritical = unstableTotalCritical;
