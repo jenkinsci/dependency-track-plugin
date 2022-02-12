@@ -32,6 +32,7 @@ import hudson.util.Secret;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 import jenkins.model.Jenkins;
@@ -159,12 +160,12 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
             // api-key may come from instance-config. if empty, then take it from global config (this)
             final String apiKey = lookupApiKey(Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElseGet(this::getDependencyTrackApiKey), item);
             final ApiClient apiClient = getClient(url, apiKey);
-            projects.addAll(apiClient.getProjects().stream()
+            final List<ListBoxModel.Option> options = apiClient.getProjects().stream()
                     .map(p -> new ListBoxModel.Option(p.getName().concat(" ").concat(Optional.ofNullable(p.getVersion()).orElse(StringUtils.EMPTY)).trim(), p.getUuid()))
                     .sorted(Comparator.comparing(o -> o.name))
-                    .collect(Collectors.toList())
-            );
-            projects.add(0, new ListBoxModel.Option(Messages.Publisher_ProjectList_Placeholder(), null));
+                    .collect(Collectors.toList());
+            projects.add(new ListBoxModel.Option(Messages.Publisher_ProjectList_Placeholder(), null));
+            projects.addAll(options);
         } catch (ApiClientException e) {
             projects.add(Messages.Builder_Error_Projects(e.getLocalizedMessage()), null);
         }
