@@ -28,6 +28,7 @@ import java.io.OutputStream;
 import java.io.UncheckedIOException;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
@@ -366,11 +367,15 @@ public class ApiClient {
     }
 
     private HttpURLConnection createConnection(final String url) throws IOException {
-        final HttpURLConnection conn = (HttpURLConnection) new URL(baseUrl + url).openConnection();
+        final URLConnection conn = new URL(baseUrl + url).openConnection();
         conn.setRequestProperty(API_KEY_HEADER, apiKey);
         conn.setRequestProperty(HEADER_ACCEPT, MEDIATYPE_JSON);
         conn.setConnectTimeout(connectionTimeout * MS_TO_S_FACTOR);
         conn.setReadTimeout(readTimeout * MS_TO_S_FACTOR);
-        return conn;
+        if (conn instanceof HttpURLConnection) {
+            return (HttpURLConnection) conn;
+        } else {
+            throw new ApiClientException(Messages.Publisher_ConnectionTest_InvalidProtocols());
+        }
     }
 }
