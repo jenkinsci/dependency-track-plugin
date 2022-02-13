@@ -15,21 +15,17 @@ limitations under the License.
 -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:c="/lib/credentials" xmlns:l="/lib/layout">
-    <f:block>
-        <f:helpLink url="/plugin/dependency-track/help-dt-projectproperties.html" />
-        <f:helpArea />
-    </f:block>
 
-    <f:entry title="${%tags}" help="/plugin/dependency-track/help-dt-tag.html">
-        <f:expandableTextbox name="tags" value="${instance.tagsAsText}" />
+    <f:entry field="tags" title="${%tags}">
+        <f:expandableTextbox id="tags" value="${instance.tagsAsText}" />
     </f:entry>
-    <f:entry field="swidTagId" title="${%swidTagId}" help="/plugin/dependency-track/help-dt-swidtagid.html">
+    <f:entry field="swidTagId" title="${%swidTagId}">
         <f:textbox id="swidTagId" />
     </f:entry>
-    <f:entry field="group" title="${%group}" help="/plugin/dependency-track/help-dt-project-group.html">
+    <f:entry field="group" title="${%group}">
         <f:textbox id="group" />
     </f:entry>
-    <f:entry field="description" title="${%description}" help="/plugin/dependency-track/help-dt-project-description.html">
+    <f:entry field="description" title="${%description}">
         <f:textbox id="description" />
     </f:entry>
 

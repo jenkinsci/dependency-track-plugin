@@ -18,41 +18,41 @@ limitations under the License.
     <l:css src="plugin/dependency-track/css/config.css" />
 
     <f:section title="${%publishToDependencytrack}">
-        <f:entry title="${%projectId}" field="projectId" help="/plugin/dependency-track/help-dt-projectid.html">
+        <f:entry title="${%projectId}" field="projectId">
             <f:select id="projectId"/>
         </f:entry>
 
         <j:if test="${instance.isEffectiveAutoCreateProjects()}">
-        <f:entry title="${%projectName}" field="projectName" help="/plugin/dependency-track/help-dt-projectname.html">
+        <f:entry title="${%projectName}" field="projectName">
             <f:textbox id="projectName"/>
         </f:entry>
-        <f:entry title="${%projectVersion}" field="projectVersion" help="/plugin/dependency-track/help-dt-projectversion.html">
+        <f:entry title="${%projectVersion}" field="projectVersion">
             <f:textbox id="projectVersion"/>
         </f:entry>
         </j:if>
 
-        <f:entry title="${%artifact}" field="artifact" help="/plugin/dependency-track/help-dt-artifact.html">
+        <f:entry title="${%artifact}" field="artifact">
             <f:textbox id="artifact"/>
         </f:entry>
 
-        <f:entry title="${%enable.synchronous}" field="synchronous" help="/plugin/dependency-track/help-dt-synchronous-mode.html">
+        <f:entry title="${%enable.synchronous}" field="synchronous">
             <f:checkbox name="synchronous" checked="${instance.isSynchronous()}"/>
         </f:entry>
 
         <f:optionalProperty field="projectProperties" title="${%projectProperties}" />
 
         <f:optionalBlock inline="true" field="overrideGlobals" title="${%overrideGlobals}">
-            <f:entry title="${%dependencytrack.url}" field="dependencyTrackUrl" help="/plugin/dependency-track/help-dt-url.html">
+            <f:entry title="${%dependencytrack.url}" field="dependencyTrackUrl">
                 <f:textbox id="dependencytrack.url" checkMethod="post" />
             </f:entry>
-            <f:entry title="${%dependencytrack.url.frontend}" field="dependencyTrackFrontendUrl" help="/plugin/dependency-track/help-dt-url-frontend.html">
+            <f:entry title="${%dependencytrack.url.frontend}" field="dependencyTrackFrontendUrl">
                 <f:textbox id="dependencytrack.url.frontend" checkMethod="post" />
             </f:entry>
-            <f:entry title="${%dependencytrack.apikey}" field="dependencyTrackApiKey" help="/plugin/dependency-track/help-dt-apikey.html">
+            <f:entry title="${%dependencytrack.apikey}" field="dependencyTrackApiKey">
                 <c:select id="dependencytrack.apikey" />
             </f:entry>
             <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnection" with="dependencyTrackUrl,dependencyTrackApiKey" />
-            <f:entry title="${%dependencytrack.autocreate}" field="autoCreateProjects" help="/plugin/dependency-track/help-dt-autocreate.html">
+            <f:entry title="${%dependencytrack.autocreate}" field="autoCreateProjects" help="/descriptor/org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher/help/dependencyTrackAutoCreateProjects">
                 <f:checkbox id="dependencytrack.autocreate" />
             </f:entry>
         </f:optionalBlock>
@@ -61,7 +61,7 @@ limitations under the License.
     <f:advanced title="${%riskGateThresholds} - ${%totalFindings}" align="left">
         <f:section title="${%riskGateThresholds} - ${%totalFindings}">
             <f:description>
-                <f:helpLink url="/plugin/dependency-track/help-thresholds-total.html" featureName="${%riskGateThresholds} - ${%totalFindings}" />
+                <f:helpLink url="/descriptor/org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher/help/thresholds-total" featureName="${%riskGateThresholds} - ${%totalFindings}" />
                 <f:helpArea />
             </f:description>
             <fieldset class="dependency-track">
@@ -88,7 +88,7 @@ limitations under the License.
     <f:advanced title="${%riskGateThresholds} - ${%newFindings}" align="left">
         <f:section title="${%riskGateThresholds} - ${%newFindings}">
             <f:description>
-                <f:helpLink url="/plugin/dependency-track/help-thresholds-new.html" featureName="${%riskGateThresholds} - ${%newFindings}" />
+                <f:helpLink url="/descriptor/org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher/help/thresholds-new" featureName="${%riskGateThresholds} - ${%newFindings}" />
                 <f:helpArea />
             </f:description>
             <fieldset class="dependency-track">
