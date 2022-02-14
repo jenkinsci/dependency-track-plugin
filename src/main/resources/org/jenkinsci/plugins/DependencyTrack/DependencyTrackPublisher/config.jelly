@@ -52,7 +52,7 @@ limitations under the License.
                 <c:select id="dependencytrack.apikey" />
             </f:entry>
             <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnection" with="dependencyTrackUrl,dependencyTrackApiKey" />
-            <f:entry title="${%dependencytrack.autocreate}" field="autoCreateProjects" help="/descriptor/org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher/help/dependencyTrackAutoCreateProjects">
+            <f:entry title="${%dependencytrack.autocreate}" field="autoCreateProjects">
                 <f:checkbox id="dependencytrack.autocreate" />
             </f:entry>
         </f:optionalBlock>
