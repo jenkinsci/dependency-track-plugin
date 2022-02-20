@@ -97,6 +97,7 @@
                     <a v-if="data.item.vulnerability.source === 'NVD'" :href="'https://nvd.nist.gov/vuln/detail/'+data.value" title="${%link.title('NVD')}" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
                     <a v-else-if="data.item.vulnerability.source === 'OSSINDEX'" :href="'https://ossindex.sonatype.org/vuln/'+data.value" title="${%link.title('Sonatype OSS INDEX')}" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
                     <a v-else-if="data.item.vulnerability.source === 'NPM'" :href="'https://www.npmjs.com/advisories/'+data.value" title="${%link.title('npm')}" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
+                    <a v-else-if="data.item.vulnerability.source === 'GITHUB'" :href="'https://github.com/advisories/'+data.value" title="${%link.title('GitHub')}" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
                     <template v-else="v-else">{{data.value}}</template>
                 </j:whitespace></template>
                 <template slot="cell(vulnerability.severityRank)" slot-scope="data"><j:whitespace>
