@@ -22,7 +22,6 @@ import hudson.model.Descriptor;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.EqualsAndHashCode;
@@ -76,10 +75,8 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
             setTagsIntern((String) value);
         } else if (value instanceof String[]) {
             setTagsIntern((String[]) value);
-        } else if (value instanceof Set && areAllElementsOfType((Set) value, String.class)) {
-            setTagsIntern((Set<String>) value);
-        } else if (value instanceof List && areAllElementsOfType((List) value, String.class)) {
-            setTagsIntern((List<String>) value);
+        } else if (value instanceof Collection && areAllElementsOfType((Collection) value, String.class)) {
+            setTagsIntern((Collection<String>) value);
         } else if (value == null) {
             tags = null;
         } else {

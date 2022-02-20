@@ -15,7 +15,6 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -47,7 +46,7 @@ class ProjectPropertiesTest {
         uut.setTags(new String[]{"tag2", "tag1"});
         assertThat(uut.getTags()).containsExactly("tag1", "tag2");
 
-        uut.setTags(Arrays.asList("TAG2", "tag2"));
+        uut.setTags(Stream.of("TAG2", "tag2").collect(Collectors.toList()));
         assertThat(uut.getTags()).containsExactly("tag2");
 
         uut.setTags(Stream.of("TAG2", "tag2").collect(Collectors.toSet()));
