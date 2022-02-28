@@ -3,6 +3,11 @@
 ## Unreleased
 ### ⚠ Breaking
 ### ⭐ New Features
+### 🐞 Bugs Fixed
+
+## v4.1.0 - 2022-02-28
+### ⚠ Breaking
+### ⭐ New Features
 - allow to specify tags that should be set for the project (fixes [#12](https://github.com/jenkinsci/dependency-track-plugin/issues/12))
 - allow to specify SWID and group that should be set for the project (fixes [#50](https://github.com/jenkinsci/dependency-track-plugin/issues/50))
 - allow to specify a description that should be set for the project
