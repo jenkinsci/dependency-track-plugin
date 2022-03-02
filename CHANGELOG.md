@@ -4,6 +4,7 @@
 ### ⚠ Breaking
 ### ⭐ New Features
 ### 🐞 Bugs Fixed
+- The options "Dependency-Track project name" and "Dependency-Track project version" were only visible after saving and reloading the configuration page, although the global configuration "Auto Create projects" was set.
 
 ## v4.1.0 - 2022-02-28
 ### ⚠ Breaking
