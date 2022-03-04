@@ -84,13 +84,13 @@ public class DescriptorImplTest {
                 .when(client).getProjects();
 
         assertThat(uut.doFillProjectIdItems(null, null, null)).usingRecursiveFieldByFieldElementComparatorOnFields("name", "value", "selected").containsExactly(
-                new ListBoxModel.Option(Messages.Publisher_ProjectList_Placeholder(), null, false),
+                new ListBoxModel.Option(Messages.Publisher_ProjectList_Placeholder(), "", false),
                 new ListBoxModel.Option("Project 1", "uuid-1", false),
                 new ListBoxModel.Option("Project 2 1.2.3", "uuid-2", false)
         );
 
         assertThat(uut.doFillProjectIdItems(null, null, null)).usingRecursiveFieldByFieldElementComparatorOnFields("name", "value", "selected").containsExactly(
-                new ListBoxModel.Option(Messages.Builder_Error_Projects("test failure"), null, false)
+                new ListBoxModel.Option(Messages.Builder_Error_Projects("test failure"), "", false)
         );
     }
 

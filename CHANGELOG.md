@@ -5,6 +5,7 @@
 ### ⭐ New Features
 ### 🐞 Bugs Fixed
 - The options "Dependency-Track project name" and "Dependency-Track project version" were only visible after saving and reloading the configuration page, although the global configuration "Auto Create projects" was set.
+- Fixed an issue with "Dependency-Track project" in classic (freestyle) jobs and Jenkins 2.319 LTS that caused the value to be "null" instead of empty, resulting in upload errors. Affected users should edit and save the job after updating to this plugin version.
 
 ## v4.1.0 - 2022-02-28
 ### ⚠ Breaking

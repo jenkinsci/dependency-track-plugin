@@ -209,7 +209,7 @@ public class ApiClient {
         // Creates the JSON payload that will be sent to Dependency-Track
         JSONObject jsonObject = new JSONObject();
         jsonObject.element("bom", encodedScan);
-        if (projectId != null) {
+        if (StringUtils.isNotBlank(projectId)) {
             jsonObject.element("project", projectId);
         } else {
             jsonObject.element("projectName", projectName)

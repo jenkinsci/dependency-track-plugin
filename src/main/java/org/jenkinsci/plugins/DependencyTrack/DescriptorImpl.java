@@ -164,10 +164,10 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
                     .map(p -> new ListBoxModel.Option(p.getName().concat(" ").concat(Optional.ofNullable(p.getVersion()).orElse(StringUtils.EMPTY)).trim(), p.getUuid()))
                     .sorted(Comparator.comparing(o -> o.name))
                     .collect(Collectors.toList());
-            projects.add(new ListBoxModel.Option(Messages.Publisher_ProjectList_Placeholder(), null));
+            projects.add(new ListBoxModel.Option(Messages.Publisher_ProjectList_Placeholder(), StringUtils.EMPTY));
             projects.addAll(options);
         } catch (ApiClientException e) {
-            projects.add(Messages.Builder_Error_Projects(e.getLocalizedMessage()), null);
+            projects.add(Messages.Builder_Error_Projects(e.getLocalizedMessage()), StringUtils.EMPTY);
         }
         return projects;
     }
