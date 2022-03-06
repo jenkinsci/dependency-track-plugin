@@ -27,13 +27,13 @@ To setup, navigate to Jenkins > System Configuration and complete the Dependency
 
 ![global configuration](docs/images/jenkins-global-odt.png)
 
-**Dependency-Track URL**: URL to your Dependency-Track instance.
+**Dependency-Track Backend URL**: URL to the Backend of your Dependency-Track instance.
 
 **API key**: API Key used for authentication.
 
 **Auto Create Projects**: auto creation of projects by giving a project name and version. The API key provided requires the `PROJECT_CREATION_UPLOAD` permission to use this feature.
 
-**Dependency-Track Frontend URL**: alternative URL to the Frontend of your Dependency-Track instance. Use this if you run backend and frontend on different servers. If omitted, "Dependency-Track URL" will be used instead.
+**Dependency-Track Frontend URL**: URL to the Frontend of your Dependency-Track instance. Use this if you run backend and frontend on different servers. If omitted, "Dependency-Track Backend URL" will be used instead.
 
 **Polling Timeout**: Defines the maximum number of minutes to wait for Dependency-Track to process a job when using synchronous publishing.
 
