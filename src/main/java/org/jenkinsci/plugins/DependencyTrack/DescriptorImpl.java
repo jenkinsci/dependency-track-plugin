@@ -20,6 +20,7 @@ import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
 import edu.umd.cs.findbugs.annotations.CheckForNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
+import hudson.Util;
 import hudson.model.AbstractProject;
 import hudson.model.Descriptor;
 import hudson.model.Item;
@@ -29,12 +30,16 @@ import hudson.tasks.Publisher;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
+import hudson.util.VersionNumber;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import jenkins.model.Jenkins;
 import lombok.Getter;
 import lombok.NonNull;
@@ -42,12 +47,15 @@ import lombok.Setter;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
+import org.jenkinsci.plugins.DependencyTrack.model.Team;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest;
 import org.kohsuke.stapler.verb.POST;
+
+import static org.jenkinsci.plugins.DependencyTrack.model.Permissions.*;
 
 /**
  * <p>
@@ -219,19 +227,30 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
         return doCheckDependencyTrackUrl(value, item);
     }
 
+    @POST
+    public FormValidation doTestConnectionGlobal(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @QueryParameter final boolean dependencyTrackAutoCreateProjects, @AncestorInPath @Nullable Item item) {
+        return testConnection(dependencyTrackUrl, dependencyTrackApiKey, dependencyTrackAutoCreateProjects, false, item);
+    }
+
+    @POST
+    public FormValidation doTestConnectionJob(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @QueryParameter final boolean autoCreateProjects, @QueryParameter final boolean synchronous, @AncestorInPath @Nullable Item item) {
+        return testConnection(dependencyTrackUrl, dependencyTrackApiKey, autoCreateProjects, synchronous, item);
+    }
+
     /**
      * Performs an on-the-fly check of the Dependency-Track URL and api key
      * parameters by making a simple call to the server and validating the
      * response code.
      *
      * @param dependencyTrackUrl the base URL to Dependency-Track
-     * @param dependencyTrackApiKey the credential-id of the API key to use for authentication
-     * @param item used to lookup credentials in job config. ignored in global
-     * config
+     * @param dependencyTrackApiKey the credential-id of the API key to use for
+     * authentication
+     * @param autoCreateProjects if auto-create projects is enabled or not
+     * @param synchronous if sync-mode is enabled or not
+     * @param item used to check permission and lookup credentials
      * @return FormValidation
      */
-    @POST
-    public FormValidation doTestConnection(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable Item item) {
+    private FormValidation testConnection(final String dependencyTrackUrl, final String dependencyTrackApiKey, final boolean autoCreateProjects, final boolean synchronous, @AncestorInPath @Nullable Item item) {
         if (item == null) {
             Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         } else {
@@ -244,13 +263,66 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
         if (doCheckDependencyTrackUrl(url, item).kind == FormValidation.Kind.OK && StringUtils.isNotBlank(apiKey)) {
             try {
                 final ApiClient apiClient = getClient(url, apiKey);
-                final String result = apiClient.testConnection();
-                return result.startsWith("Dependency-Track v") ? FormValidation.ok(Messages.Publisher_ConnectionTest_Success(result)) : FormValidation.error(Messages.Publisher_ConnectionTest_Error(result));
+                final VersionNumber version = apiClient.getVersion();
+                return version.isNewerThanOrEqualTo(new VersionNumber("4.4.0")) ? checkTeamPermissions(apiClient, version, autoCreateProjects, synchronous) : testConnectionLegacy(apiClient);
             } catch (ApiClientException e) {
-                return FormValidation.error(e, Messages.Publisher_ConnectionTest_Error(null));
+                return FormValidation.error(e, Messages.Publisher_ConnectionTest_Error(e.getMessage()));
             }
         }
-        return FormValidation.warning(Messages.Publisher_ConnectionTest_Warning());
+        return FormValidation.error(Messages.Publisher_ConnectionTest_Warning());
+    }
+
+    private FormValidation testConnectionLegacy(final ApiClient apiClient) throws ApiClientException {
+        final String result = apiClient.testConnection();
+        return result.startsWith("Dependency-Track v") ? FormValidation.ok(Messages.Publisher_ConnectionTest_Success(result)) : FormValidation.error(Messages.Publisher_ConnectionTest_Error(result));
+    }
+
+    private FormValidation checkTeamPermissions(final ApiClient apiClient, final VersionNumber version, final boolean autoCreateProjects, final boolean synchronous) throws ApiClientException {
+        final Set<String> requiredPermissions = Stream.of(BOM_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS).map(Enum::toString).collect(Collectors.toSet());
+        final Set<String> optionalPermissions = Stream.of(PORTFOLIO_MANAGEMENT).map(Enum::toString).collect(Collectors.toSet());
+
+        if (autoCreateProjects) {
+            requiredPermissions.add(PROJECT_CREATION_UPLOAD.toString());
+        } else {
+            optionalPermissions.add(PROJECT_CREATION_UPLOAD.toString());
+        }
+        if (synchronous) {
+            requiredPermissions.add(VIEW_VULNERABILITY.toString());
+        } else {
+            optionalPermissions.add(VIEW_VULNERABILITY.toString());
+        }
+
+        final Team team = apiClient.getTeamPermissions();
+        final Set<String> allPermissions = new TreeSet<>(team.getPermissions());
+        allPermissions.addAll(requiredPermissions);
+        allPermissions.addAll(optionalPermissions);
+        final StringBuffer sb = new StringBuffer(Messages.Publisher_ConnectionTest_Success("Dependency-Track v" + version));
+        sb.append("<p class=\"team\">");
+        sb.append(Messages.Publisher_PermissionTest_Team(Util.escape(team.getName())));
+        sb.append("</p><ul>");
+        FormValidation.Kind worst = FormValidation.Kind.OK;
+        for (String perm : allPermissions) {
+            String cssClass = "optional";
+            FormValidation.Kind kind = FormValidation.Kind.OK;
+            String message = Messages.Publisher_PermissionTest_Optional(Util.escape(perm));
+            if (requiredPermissions.contains(perm)) {
+                cssClass = team.getPermissions().contains(perm) ? "okay" : "missing";
+                kind = team.getPermissions().contains(perm) ? FormValidation.Kind.OK : FormValidation.Kind.ERROR;
+                message = team.getPermissions().contains(perm) ? Messages.Publisher_PermissionTest_Okay(Util.escape(perm)) : Messages.Publisher_PermissionTest_Missing(Util.escape(perm));
+            } else {
+                if (!optionalPermissions.contains(perm)) {
+                    cssClass = "warn";
+                    kind = FormValidation.Kind.WARNING;
+                    message = Messages.Publisher_PermissionTest_Warning(Util.escape(perm));
+                }
+            }
+            sb.append(String.format("<li class=\"permission %s\">%s</li>", cssClass, message));
+            if (kind.ordinal() > worst.ordinal()) {
+                worst = kind;
+            }
+        }
+        sb.append("</ul>");
+        return FormValidation.respond(worst, sb.toString());
     }
 
     /**

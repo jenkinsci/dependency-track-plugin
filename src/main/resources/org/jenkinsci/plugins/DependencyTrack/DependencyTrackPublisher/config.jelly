@@ -51,10 +51,10 @@ limitations under the License.
             <f:entry title="${%dependencytrack.apikey}" field="dependencyTrackApiKey">
                 <c:select id="dependencytrack.apikey" />
             </f:entry>
-            <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnection" with="dependencyTrackUrl,dependencyTrackApiKey" />
             <f:entry title="${%dependencytrack.autocreate}" field="autoCreateProjects">
                 <f:checkbox id="dependencytrack.autocreate" />
             </f:entry>
+            <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnectionJob" with="dependencyTrackUrl,dependencyTrackApiKey,autoCreateProjects,synchronous" />
         </f:optionalBlock>
     </f:section>
 

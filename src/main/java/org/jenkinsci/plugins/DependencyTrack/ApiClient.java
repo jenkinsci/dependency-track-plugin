@@ -18,6 +18,7 @@ package org.jenkinsci.plugins.DependencyTrack;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.FilePath;
+import hudson.util.VersionNumber;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.BufferedReader;
@@ -44,6 +45,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
+import org.jenkinsci.plugins.DependencyTrack.model.Team;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
@@ -67,6 +69,8 @@ public class ApiClient {
     static final String PROJECT_LOOKUP_URL = PROJECT_URL + "/lookup";
     static final String PROJECT_LOOKUP_NAME_PARAM = "name";
     static final String PROJECT_LOOKUP_VERSION_PARAM = "version";
+    static final String TEAM_SELF_URL = API_URL + "/team/self";
+    static final String VERSION_URL = "/api/version";
 
     /**
      * the base url to DT instance without trailing slashes, e.g.
@@ -90,6 +94,27 @@ public class ApiClient {
      * the read-timeout in seconds for every call to DT
      */
     private final int readTimeout;
+    
+    @NonNull
+    public VersionNumber getVersion() throws ApiClientException {
+        try {
+            final HttpURLConnection conn = createConnection(VERSION_URL);
+            conn.connect();
+            if (conn.getResponseCode() == HTTP_OK) {
+                try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
+                    final JSONObject jsonObject = JSONObject.fromObject(getResponseBody(in));
+                    return new VersionNumber(jsonObject.getString("version"));
+                }
+            } else {
+                logHttpError(conn);
+                throw new ApiClientException(Messages.ApiClient_Error_Connection(conn.getResponseCode(), conn.getResponseMessage()));
+            }
+        } catch (ApiClientException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+        }
+    }
 
     @NonNull
     public String testConnection() throws ApiClientException {
@@ -98,6 +123,27 @@ public class ApiClient {
             conn.connect();
             if (conn.getResponseCode() == HTTP_OK) {
                 return StringUtils.trimToEmpty(conn.getHeaderField("X-Powered-By"));
+            } else {
+                logHttpError(conn);
+                throw new ApiClientException(Messages.ApiClient_Error_Connection(conn.getResponseCode(), conn.getResponseMessage()));
+            }
+        } catch (ApiClientException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+        }
+    }
+
+    @NonNull
+    public Team getTeamPermissions() throws ApiClientException {
+        try {
+            final HttpURLConnection conn = createConnection(TEAM_SELF_URL);
+            conn.connect();
+            if (conn.getResponseCode() == HTTP_OK) {
+                try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
+                    final JSONObject jsonObject = JSONObject.fromObject(getResponseBody(in));
+                    return TeamParser.parse(jsonObject);
+                }
             } else {
                 logHttpError(conn);
                 throw new ApiClientException(Messages.ApiClient_Error_Connection(conn.getResponseCode(), conn.getResponseMessage()));

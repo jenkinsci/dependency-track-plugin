@@ -15,6 +15,7 @@ limitations under the License.
 -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
+    <l:css src="plugin/dependency-track/css/global.css" />
 
     <f:section title="Dependency-Track">
         <f:entry title="${%dependencytrack.url}" field="dependencyTrackUrl">
@@ -43,7 +44,7 @@ limitations under the License.
                 <f:number id="dependencytrack.read.timeout" default="5" clazz="non-negative-number-required" min="0" />
             </f:entry>
         </f:advanced>
-        <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnection" with="dependencyTrackUrl,dependencyTrackApiKey" />
+        <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnectionGlobal" with="dependencyTrackUrl,dependencyTrackApiKey,dependencyTrackAutoCreateProjects" />
     </f:section>
 
 </j:jelly>

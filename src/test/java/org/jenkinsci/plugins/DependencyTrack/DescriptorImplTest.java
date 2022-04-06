@@ -28,12 +28,16 @@ import hudson.security.AccessDeniedException3;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
+import hudson.util.VersionNumber;
 import io.jenkins.plugins.casc.misc.JenkinsConfiguredRule;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import net.sf.json.JSONObject;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
+import org.jenkinsci.plugins.DependencyTrack.model.Team;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.junit.Before;
 import org.junit.Rule;
@@ -47,6 +51,7 @@ import org.mockito.junit.MockitoJUnitRunner.StrictStubs;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.jenkinsci.plugins.DependencyTrack.model.Permissions.*;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -110,7 +115,7 @@ public class DescriptorImplTest {
     }
 
     @Test
-    public void doTestConnectionTest() throws ApiClientException, IOException {
+    public void doTestConnectionTest() throws IOException {
         final String apikey = "api-key";
         final String credentialsid = "credentials-id";
         // custom factory here so we can check that doTestConnection strips trailing slashes from the url
@@ -121,27 +126,28 @@ public class DescriptorImplTest {
             return client;
         };
         when(client.testConnection()).thenReturn("Dependency-Track v3.8.0").thenReturn("test").thenThrow(ApiClientException.class);
+        when(client.getVersion()).thenReturn(new VersionNumber("3.8.0"));
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
         uut = new DescriptorImpl(factory);
 
-        assertThat(uut.doTestConnection("http:///url.tld", credentialsid, null))
+        assertThat(uut.doTestConnectionGlobal("http:///url.tld", credentialsid, false, null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
                 .hasMessage(Messages.Publisher_ConnectionTest_Success("Dependency-Track v3.8.0"))
                 .hasNoCause();
 
-        assertThat(uut.doTestConnection("http:///url.tld/", credentialsid, null))
+        assertThat(uut.doTestConnectionGlobal("http:///url.tld/", credentialsid, false, null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                 .hasMessageStartingWith(Messages.Publisher_ConnectionTest_Error("test"))
                 .hasNoCause();
 
-        assertThat(uut.doTestConnection("http:///url.tld/", credentialsid, null))
+        assertThat(uut.doTestConnectionGlobal("http:///url.tld/", credentialsid, false, null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                 .hasMessageStartingWith(Messages.Publisher_ConnectionTest_Error(null))
                 .hasMessageContaining(ApiClientException.class.getCanonicalName())
                 .hasNoCause();
 
-        assertThat(uut.doTestConnection("url", "", null))
-                .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.WARNING)
+        assertThat(uut.doTestConnectionGlobal("url", "", false, null))
+                .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                 .hasMessage(Messages.Publisher_ConnectionTest_Warning())
                 .hasNoCause();
     }
@@ -151,16 +157,16 @@ public class DescriptorImplTest {
         final User anonymous = User.getOrCreateByIdOrFullName(ACL.ANONYMOUS_USERNAME);
         // without propper global permissions
         try (ACLContext ignored = ACL.as(anonymous)) {
-            assertThatThrownBy(() -> uut.doTestConnection("foo", "", null)).isInstanceOf(AccessDeniedException3.class);
+            assertThatThrownBy(() -> uut.doTestConnectionGlobal("foo", "", false, null)).isInstanceOf(AccessDeniedException3.class);
         }
         // test for item permissions
         final FreeStyleProject project = r.createFreeStyleProject();
         try (ACLContext ignored = ACL.as(anonymous)) {
             // without item permissions
-            assertThatThrownBy(() -> uut.doTestConnection("foo", "", project)).isInstanceOf(AccessDeniedException3.class);
+            assertThatThrownBy(() -> uut.doTestConnectionGlobal("foo", "", false, project)).isInstanceOf(AccessDeniedException3.class);
             // now grant Item.CONFIGURE
             mockAuthorizationStrategy.grant(Item.CONFIGURE).onItems(project).to(anonymous);
-            assertThatCode(() -> uut.doTestConnection("foo", "", project)).doesNotThrowAnyException();
+            assertThatCode(() -> uut.doTestConnectionGlobal("foo", "", false, project)).doesNotThrowAnyException();
         }
     }
 
@@ -176,15 +182,100 @@ public class DescriptorImplTest {
             return client;
         };
         when(client.testConnection()).thenReturn("Dependency-Track v3.8.0").thenReturn("test").thenThrow(ApiClientException.class);
+        when(client.getVersion()).thenReturn(new VersionNumber("3.8.0"));
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
         uut = new DescriptorImpl(factory);
         uut.setDependencyTrackApiKey(credentialsid);
         uut.setDependencyTrackUrl("http:///url.tld/");
 
-        assertThat(uut.doTestConnection("", "", null))
+        assertThat(uut.doTestConnectionJob("", "", false, false, null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
                 .hasMessage("Connection successful - Dependency-Track v3.8.0")
                 .hasNoCause();
+    }
+
+    @Test
+    public void doTestConnectionTestWithTeamPermissions() throws IOException {
+        final String apikey = "api-key";
+        final String credentialsid = "credentials-id";
+        final Team team = Team.builder()
+                   .name("test-team")
+                   .permissions(Stream.of(BOM_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS, PROJECT_CREATION_UPLOAD).map(Enum::toString).collect(Collectors.toSet()))
+                   .build(); 
+        // custom factory here so we can check that doTestConnection strips trailing slashes from the url
+        ApiClientFactory factory = (url, apiKey, logger, connTimeout, readTimeout) -> {
+            assertThat(url).isEqualTo("http:///url.tld");
+            assertThat(apiKey).isEqualTo(apikey);
+            assertThat(logger).isInstanceOf(ConsoleLogger.class);
+            return client;
+        };
+        when(client.getVersion()).thenReturn(new VersionNumber("4.4.0"));
+        when(client.getTeamPermissions()).thenReturn(team);
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
+        uut = new DescriptorImpl(factory);
+
+        assertThat(uut.doTestConnectionJob("http:///url.tld", credentialsid, true, false, null))
+                .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
+                .hasNoCause()
+                .extracting(FormValidation::renderHtml).asString()
+                .contains(Messages.Publisher_PermissionTest_Team(team.getName()))
+                .contains(team.getPermissions().toArray(new String[0]));
+    }
+
+    @Test
+    public void doTestConnectionTestWithMissingRequiredPermission() throws IOException {
+        final String apikey = "api-key";
+        final String credentialsid = "credentials-id";
+        final Team team = Team.builder()
+                   .name("test-team")
+                    // missing VIEW_VULNERABILITY
+                   .permissions(Stream.of(BOM_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS, PROJECT_CREATION_UPLOAD).map(Enum::toString).collect(Collectors.toSet()))
+                   .build(); 
+        // custom factory here so we can check that doTestConnection strips trailing slashes from the url
+        ApiClientFactory factory = (url, apiKey, logger, connTimeout, readTimeout) -> {
+            assertThat(url).isEqualTo("http:///url.tld");
+            assertThat(apiKey).isEqualTo(apikey);
+            assertThat(logger).isInstanceOf(ConsoleLogger.class);
+            return client;
+        };
+        when(client.getVersion()).thenReturn(new VersionNumber("4.4.0"));
+        when(client.getTeamPermissions()).thenReturn(team);
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
+        uut = new DescriptorImpl(factory);
+
+        assertThat(uut.doTestConnectionJob("http:///url.tld", credentialsid, true, true, null))
+                .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
+                .hasNoCause()
+                .extracting(FormValidation::renderHtml).asString()
+                .contains("BOM_UPLOAD")
+                .contains(team.getPermissions().toArray(new String[0]));
+    }
+
+    @Test
+    public void doTestConnectionTestWithUnneededPermission() throws IOException {
+        final String apikey = "api-key";
+        final String credentialsid = "credentials-id";
+        final Team team = Team.builder()
+                   .name("test-team")
+                   .permissions(Stream.of("BOM_UPLOAD", "VIEW_PORTFOLIO", "VULNERABILITY_ANALYSIS", "PROJECT_CREATION_UPLOAD", "DUMMY_PERM").collect(Collectors.toSet()))
+                   .build(); 
+        // custom factory here so we can check that doTestConnection strips trailing slashes from the url
+        ApiClientFactory factory = (url, apiKey, logger, connTimeout, readTimeout) -> {
+            assertThat(url).isEqualTo("http:///url.tld");
+            assertThat(apiKey).isEqualTo(apikey);
+            assertThat(logger).isInstanceOf(ConsoleLogger.class);
+            return client;
+        };
+        when(client.getVersion()).thenReturn(new VersionNumber("4.4.0"));
+        when(client.getTeamPermissions()).thenReturn(team);
+        CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
+        uut = new DescriptorImpl(factory);
+
+        assertThat(uut.doTestConnectionJob("http:///url.tld", credentialsid, true, false, null))
+                .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.WARNING)
+                .hasNoCause()
+                .extracting(FormValidation::renderHtml).asString()
+                .contains(team.getPermissions().toArray(new String[0]));
     }
 
     @Test

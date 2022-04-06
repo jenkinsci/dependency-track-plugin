@@ -1,13 +1,44 @@
-.dependency-track.multi-line-input-row {
+[descriptorid="org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher"] .dependency-track.multi-line-input-row {
     display: grid;
     grid-template-rows: auto;
     grid-template-columns: auto auto auto auto;
     grid-column-gap: .5em;
 }
-fieldset.dependency-track {
+[descriptorid="org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher"] fieldset.dependency-track {
     border: 2px dashed var(--medium-grey);
     margin: .5em 0;
 }
-fieldset.dependency-track legend img {
+[descriptorid="org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher"] fieldset.dependency-track legend img {
     width: var(--btn-large-line-height);
+}
+[descriptorid="org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher"] .form-container.tr .help-sibling .team q {
+    color: var(--primary);
+}
+
+[descriptorid="org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher"] .form-container.tr .help-sibling .permission.okay {
+    color: var(--success);
+}
+[descriptorid="org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher"] .form-container.tr .help-sibling .permission.okay::after {
+    content: "\2705";
+    font-size: var(--font-size-base);
+}
+[descriptorid="org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher"] .form-container.tr .help-sibling .permission.missing::after {
+    content: "\274C";
+    font-size: var(--font-size-base);
+}
+[descriptorid="org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher"] .form-container.tr .help-sibling .permission.missing {
+    color: var(--danger);
+    font-weight: bold;
+}
+[descriptorid="org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher"] .form-container.tr .help-sibling .permission.missing::after {
+    content: "\26D4";
+    font-size: var(--font-size-base);
+}
+[descriptorid="org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher"] .form-container.tr .help-sibling .permission.warn {
+    color: var(--warning);
+    font-weight: bold;
+}
+[descriptorid="org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher"] .form-container.tr .help-sibling .permission.warn::after {
+    content: "\26A0";
+    font-size: var(--font-size-base);
 }

@@ -16,6 +16,7 @@
 package org.jenkinsci.plugins.DependencyTrack;
 
 import hudson.FilePath;
+import hudson.util.VersionNumber;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpResponseStatus;
@@ -387,6 +388,39 @@ public class ApiClientTest {
         assertThat(project.getSwidTagId()).isEqualTo(props.getSwidTagId());
         assertThat(project.getGroup()).isEqualTo(props.getGroup());
         assertThat(project.getDescription()).isEqualTo(props.getDescription());
+    }
+
+    @Test
+    public void testGetTeamPermissions() throws ApiClientException {
+        server = HttpServer.create()
+                .host("localhost")
+                .port(0)
+                .route(routes -> routes.get(ApiClient.TEAM_SELF_URL, (request, response) -> {
+                    return response.sendString(Mono.just("{\"name\":\"test-team\",\"permissions\":[{\"name\":\"BOM_UPLOAD\"},{\"name\":\"PROJECT_CREATION_UPLOAD\"}]}"));
+                }))
+                .bindNow();
+
+        ApiClient uut = createClient();
+
+        assertThat(uut.getTeamPermissions()).satisfies(team -> {
+                assertThat(team.getName()).isEqualTo("test-team");
+                assertThat(team.getPermissions()).containsExactlyInAnyOrder("BOM_UPLOAD", "PROJECT_CREATION_UPLOAD");
+        });
+    }
+
+    @Test
+    public void testGetVersion() throws ApiClientException {
+        server = HttpServer.create()
+                .host("localhost")
+                .port(0)
+                .route(routes -> routes.get(ApiClient.VERSION_URL, (request, response) -> {
+                    return response.sendString(Mono.just("{\"version\":\"1.2.4\"}"));
+                }))
+                .bindNow();
+
+        ApiClient uut = createClient();
+
+        assertThat(uut.getVersion()).isEqualTo(new VersionNumber("1.2.4"));
     }
 
 }

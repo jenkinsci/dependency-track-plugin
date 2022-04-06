@@ -3,6 +3,8 @@
 ## Unreleased
 ### ⚠ Breaking
 ### ⭐ New Features
+- Add check for serve-side permissions (fixes [#13](https://github.com/jenkinsci/dependency-track-plugin/issues/13))
+
 ### 🐞 Bugs Fixed
 
 ## v4.1.1 - 2022-03-06
