@@ -296,7 +296,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
         final Set<String> allPermissions = new TreeSet<>(team.getPermissions());
         allPermissions.addAll(requiredPermissions);
         allPermissions.addAll(optionalPermissions);
-        final StringBuffer sb = new StringBuffer(Messages.Publisher_ConnectionTest_Success("Dependency-Track v" + version));
+        final StringBuilder sb = new StringBuilder(Messages.Publisher_ConnectionTest_Success("Dependency-Track v" + version));
         sb.append("<p class=\"team\">");
         sb.append(Messages.Publisher_PermissionTest_Team(Util.escape(team.getName())));
         sb.append("</p><ul>");
