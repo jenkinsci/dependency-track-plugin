@@ -188,7 +188,7 @@ public class DescriptorImplTest {
         uut.setDependencyTrackApiKey(credentialsid);
         uut.setDependencyTrackUrl("http:///url.tld/");
 
-        assertThat(uut.doTestConnectionJob("", "", false, false, null))
+        assertThat(uut.doTestConnectionJob("", "", false, false, false, null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
                 .hasMessage("Connection successful - Dependency-Track v3.8.0")
                 .hasNoCause();
@@ -200,7 +200,7 @@ public class DescriptorImplTest {
         final String credentialsid = "credentials-id";
         final Team team = Team.builder()
                    .name("test-team")
-                   .permissions(Stream.of(BOM_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS, PROJECT_CREATION_UPLOAD).map(Enum::toString).collect(Collectors.toSet()))
+                   .permissions(Stream.of(BOM_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS, PROJECT_CREATION_UPLOAD, PORTFOLIO_MANAGEMENT).map(Enum::toString).collect(Collectors.toSet()))
                    .build(); 
         // custom factory here so we can check that doTestConnection strips trailing slashes from the url
         ApiClientFactory factory = (url, apiKey, logger, connTimeout, readTimeout) -> {
@@ -214,11 +214,16 @@ public class DescriptorImplTest {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
         uut = new DescriptorImpl(factory);
 
-        assertThat(uut.doTestConnectionJob("http:///url.tld", credentialsid, true, false, null))
+        assertThat(uut.doTestConnectionJob("http:///url.tld", credentialsid, true, false, false, null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
                 .hasNoCause()
                 .extracting(FormValidation::renderHtml).asString()
                 .contains(Messages.Publisher_PermissionTest_Team(team.getName()))
+                .contains(Messages.Publisher_PermissionTest_Okay(BOM_UPLOAD))
+                .contains(Messages.Publisher_PermissionTest_Okay(VIEW_PORTFOLIO))
+                .contains(Messages.Publisher_PermissionTest_Okay(VULNERABILITY_ANALYSIS))
+                .contains(Messages.Publisher_PermissionTest_Okay(PROJECT_CREATION_UPLOAD))
+                .contains(Messages.Publisher_PermissionTest_Optional(PORTFOLIO_MANAGEMENT))
                 .contains(team.getPermissions().toArray(new String[0]));
     }
 
@@ -228,7 +233,7 @@ public class DescriptorImplTest {
         final String credentialsid = "credentials-id";
         final Team team = Team.builder()
                    .name("test-team")
-                    // missing VIEW_VULNERABILITY
+                    // missing VIEW_VULNERABILITY and PORTFOLIO_MANAGEMENT
                    .permissions(Stream.of(BOM_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS, PROJECT_CREATION_UPLOAD).map(Enum::toString).collect(Collectors.toSet()))
                    .build(); 
         // custom factory here so we can check that doTestConnection strips trailing slashes from the url
@@ -243,11 +248,16 @@ public class DescriptorImplTest {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
         uut = new DescriptorImpl(factory);
 
-        assertThat(uut.doTestConnectionJob("http:///url.tld", credentialsid, true, true, null))
+        assertThat(uut.doTestConnectionJob("http:///url.tld", credentialsid, true, true, true, null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                 .hasNoCause()
                 .extracting(FormValidation::renderHtml).asString()
-                .contains("BOM_UPLOAD")
+                .contains(Messages.Publisher_PermissionTest_Okay(BOM_UPLOAD))
+                .contains(Messages.Publisher_PermissionTest_Okay(VIEW_PORTFOLIO))
+                .contains(Messages.Publisher_PermissionTest_Okay(VULNERABILITY_ANALYSIS))
+                .contains(Messages.Publisher_PermissionTest_Okay(PROJECT_CREATION_UPLOAD))
+                .contains(Messages.Publisher_PermissionTest_Missing(PORTFOLIO_MANAGEMENT))
+                .contains(Messages.Publisher_PermissionTest_Missing(VIEW_VULNERABILITY))
                 .contains(team.getPermissions().toArray(new String[0]));
     }
 
@@ -271,10 +281,15 @@ public class DescriptorImplTest {
         CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
         uut = new DescriptorImpl(factory);
 
-        assertThat(uut.doTestConnectionJob("http:///url.tld", credentialsid, true, false, null))
+        assertThat(uut.doTestConnectionJob("http:///url.tld", credentialsid, true, false, false, null))
                 .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.WARNING)
                 .hasNoCause()
                 .extracting(FormValidation::renderHtml).asString()
+                .contains(Messages.Publisher_PermissionTest_Okay(BOM_UPLOAD))
+                .contains(Messages.Publisher_PermissionTest_Okay(VIEW_PORTFOLIO))
+                .contains(Messages.Publisher_PermissionTest_Okay(VULNERABILITY_ANALYSIS))
+                .contains(Messages.Publisher_PermissionTest_Okay(PROJECT_CREATION_UPLOAD))
+                .contains(Messages.Publisher_PermissionTest_Warning("DUMMY_PERM"))
                 .contains(team.getPermissions().toArray(new String[0]));
     }
 

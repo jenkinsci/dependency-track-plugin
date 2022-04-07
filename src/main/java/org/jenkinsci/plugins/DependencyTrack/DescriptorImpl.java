@@ -34,6 +34,7 @@ import hudson.util.VersionNumber;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -229,12 +230,12 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
 
     @POST
     public FormValidation doTestConnectionGlobal(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @QueryParameter final boolean dependencyTrackAutoCreateProjects, @AncestorInPath @Nullable Item item) {
-        return testConnection(dependencyTrackUrl, dependencyTrackApiKey, dependencyTrackAutoCreateProjects, false, item);
+        return testConnection(dependencyTrackUrl, dependencyTrackApiKey, dependencyTrackAutoCreateProjects, false, false, item);
     }
 
     @POST
-    public FormValidation doTestConnectionJob(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @QueryParameter final boolean autoCreateProjects, @QueryParameter final boolean synchronous, @AncestorInPath @Nullable Item item) {
-        return testConnection(dependencyTrackUrl, dependencyTrackApiKey, autoCreateProjects, synchronous, item);
+    public FormValidation doTestConnectionJob(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @QueryParameter final boolean autoCreateProjects, @QueryParameter final boolean synchronous, @QueryParameter final boolean projectProperties, @AncestorInPath @Nullable Item item) {
+        return testConnection(dependencyTrackUrl, dependencyTrackApiKey, autoCreateProjects, synchronous, projectProperties, item);
     }
 
     /**
@@ -250,7 +251,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
      * @param item used to check permission and lookup credentials
      * @return FormValidation
      */
-    private FormValidation testConnection(final String dependencyTrackUrl, final String dependencyTrackApiKey, final boolean autoCreateProjects, final boolean synchronous, @AncestorInPath @Nullable Item item) {
+    private FormValidation testConnection(final String dependencyTrackUrl, final String dependencyTrackApiKey, final boolean autoCreateProjects, final boolean synchronous, final boolean updateProjectProperties, @AncestorInPath @Nullable Item item) {
         if (item == null) {
             Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         } else {
@@ -264,7 +265,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
             try {
                 final ApiClient apiClient = getClient(url, apiKey);
                 final VersionNumber version = apiClient.getVersion();
-                return version.isNewerThanOrEqualTo(new VersionNumber("4.4.0")) ? checkTeamPermissions(apiClient, version, autoCreateProjects, synchronous) : testConnectionLegacy(apiClient);
+                return version.isNewerThanOrEqualTo(new VersionNumber("4.4.0")) ? checkTeamPermissions(apiClient, version, autoCreateProjects, synchronous, updateProjectProperties) : testConnectionLegacy(apiClient);
             } catch (ApiClientException e) {
                 return FormValidation.error(e, Messages.Publisher_ConnectionTest_Error(e.getMessage()));
             }
@@ -277,9 +278,9 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
         return result.startsWith("Dependency-Track v") ? FormValidation.ok(Messages.Publisher_ConnectionTest_Success(result)) : FormValidation.error(Messages.Publisher_ConnectionTest_Error(result));
     }
 
-    private FormValidation checkTeamPermissions(final ApiClient apiClient, final VersionNumber version, final boolean autoCreateProjects, final boolean synchronous) throws ApiClientException {
+    private FormValidation checkTeamPermissions(final ApiClient apiClient, final VersionNumber version, final boolean autoCreateProjects, final boolean synchronous, final boolean projectProperties) throws ApiClientException {
         final Set<String> requiredPermissions = Stream.of(BOM_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS).map(Enum::toString).collect(Collectors.toSet());
-        final Set<String> optionalPermissions = Stream.of(PORTFOLIO_MANAGEMENT).map(Enum::toString).collect(Collectors.toSet());
+        final Set<String> optionalPermissions = new HashSet<>();
 
         if (autoCreateProjects) {
             requiredPermissions.add(PROJECT_CREATION_UPLOAD.toString());
@@ -290,6 +291,11 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
             requiredPermissions.add(VIEW_VULNERABILITY.toString());
         } else {
             optionalPermissions.add(VIEW_VULNERABILITY.toString());
+        }
+        if (projectProperties) {
+            requiredPermissions.add(PORTFOLIO_MANAGEMENT.toString());
+        } else {
+            optionalPermissions.add(PORTFOLIO_MANAGEMENT.toString());
         }
 
         final Team team = apiClient.getTeamPermissions();
