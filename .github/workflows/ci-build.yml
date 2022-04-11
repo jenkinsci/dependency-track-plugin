@@ -39,7 +39,7 @@ jobs:
       - name: Build with Maven
         if: matrix.java == '11' && ( github.repository != 'jenkinsci/dependency-track-plugin' || startsWith(github.head_ref, 'dependabot/') )
         run: mvn -B clean test verify package
-      - uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v3
         if: success()
         with:
           path: target/dependency-track.hpi
