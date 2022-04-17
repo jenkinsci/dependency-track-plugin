@@ -31,7 +31,7 @@ import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
 @UtilityClass
 class FindingParser {
 
-    List<Finding> parse(String jsonResponse) {
+    List<Finding> parse(final String jsonResponse) {
         final JSONArray jsonArray = JSONArray.fromObject(jsonResponse);
 		return jsonArray.stream()
                 .map(o -> parseFinding((JSONObject) o))

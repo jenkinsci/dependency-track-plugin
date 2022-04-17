@@ -169,7 +169,7 @@ public class ApiClient {
     }
 
     @NonNull
-    private List<Project> getProjectsPaged(int page) throws ApiClientException {
+    private List<Project> getProjectsPaged(final int page) throws ApiClientException {
         try {
             final HttpURLConnection conn = createConnection(PROJECT_URL + "?limit=500&excludeInactive=true&page=" + page);
             conn.setDoOutput(true);
@@ -399,7 +399,7 @@ public class ApiClient {
         }
     }
 
-    private String getResponseBody(InputStream in) {
+    private String getResponseBody(final InputStream in) {
         BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
         return reader.lines().collect(Collectors.joining());
     }

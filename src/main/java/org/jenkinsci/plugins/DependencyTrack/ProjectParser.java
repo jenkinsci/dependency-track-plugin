@@ -29,7 +29,7 @@ import org.jenkinsci.plugins.DependencyTrack.model.Project;
 @UtilityClass
 class ProjectParser {
 
-    Project parse(JSONObject json) {
+    Project parse(final JSONObject json) {
         final String lastInheritedRiskScoreStr = getKeyOrNull(json, "lastInheritedRiskScore");
         final String activeStr = getKeyOrNull(json, "active");
         return Project.builder()

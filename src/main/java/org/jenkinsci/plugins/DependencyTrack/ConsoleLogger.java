@@ -37,7 +37,7 @@ public class ConsoleLogger extends LineTransformationOutputStream {
      *
      * @param message The message to log
      */
-    protected void log(String message) {
+    protected void log(final String message) {
         logger.println(PREFIX + message.replace("\n", "\n" + PREFIX));
     }
 
@@ -49,7 +49,7 @@ public class ConsoleLogger extends LineTransformationOutputStream {
      * @throws java.io.IOException
      */
     @Override
-    protected void eol(byte[] b, int len) throws IOException {
+    protected void eol(final byte[] b, final int len) throws IOException {
         logger.append(PREFIX);
         logger.write(b, 0, len);
     }

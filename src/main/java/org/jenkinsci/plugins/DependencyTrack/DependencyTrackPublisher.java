@@ -209,7 +209,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         this(artifact, synchronous, ApiClient::new);
     }
 
-    DependencyTrackPublisher(String artifact, boolean synchronous, @lombok.NonNull ApiClientFactory clientFactory) {
+    DependencyTrackPublisher(final String artifact, final boolean synchronous, @lombok.NonNull final ApiClientFactory clientFactory) {
         this.artifact = artifact;
         this.synchronous = synchronous;
         this.clientFactory = clientFactory;
@@ -228,7 +228,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      * @throws IOException if something goes wrong
      */
     @Override
-    public void perform(@NonNull Run<?, ?> run, @NonNull FilePath workspace, @NonNull EnvVars env, @NonNull Launcher launcher, @NonNull TaskListener listener) throws InterruptedException, IOException {
+    public void perform(@NonNull final Run<?, ?> run, @NonNull final FilePath workspace, @NonNull final EnvVars env, @NonNull final Launcher launcher, @NonNull final TaskListener listener) throws InterruptedException, IOException {
         final ConsoleLogger logger = new ConsoleLogger(listener.getLogger());
         final String effectiveProjectName = env.expand(projectName);
         final String effectiveProjectVersion = env.expand(projectVersion);
@@ -280,7 +280,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         }
     }
 
-    private void publishAnalysisResult(ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build, final String effectiveProjectName, final String effectiveProjectVersion) throws InterruptedException, ApiClientException, AbortException {
+    private void publishAnalysisResult(final ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build, final String effectiveProjectName, final String effectiveProjectVersion) throws InterruptedException, ApiClientException, AbortException {
         final long timeout = System.currentTimeMillis() + (60000L * descriptor.getDependencyTrackPollingTimeout());
         final long interval = 1000L * descriptor.getDependencyTrackPollingInterval();
         logger.log(Messages.Builder_Polling());
@@ -414,7 +414,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      * @return effective api-key
      */
     @NonNull
-    private String getEffectiveApiKey(@NonNull Run<?, ?> run) {
+    private String getEffectiveApiKey(final @NonNull Run<?, ?> run) {
         final String credId = Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElseGet(descriptor::getDependencyTrackApiKey);
         if (credId != null) {
             StringCredentials cred = CredentialsProvider.findCredentialById(credId, StringCredentials.class, run);
@@ -469,7 +469,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         return thresholds;
     }
     
-    private void updateProjectProperties(ConsoleLogger logger, final ApiClient apiClient, final String effectiveProjectName, final String effectiveProjectVersion) throws ApiClientException {
+    private void updateProjectProperties(final ConsoleLogger logger, final ApiClient apiClient, final String effectiveProjectName, final String effectiveProjectVersion) throws ApiClientException {
         if (projectProperties != null) {
             logger.log(Messages.Builder_Project_Update());
             if (StringUtils.isBlank(projectId)) {

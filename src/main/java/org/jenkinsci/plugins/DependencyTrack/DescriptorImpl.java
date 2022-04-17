@@ -161,7 +161,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
      * @return ListBoxModel
      */
     @POST
-    public ListBoxModel doFillProjectIdItems(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable Item item) {
+    public ListBoxModel doFillProjectIdItems(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable final Item item) {
         final ListBoxModel projects = new ListBoxModel();
         try {
             // url may come from instance-config. if empty, then take it from global config (this)
@@ -182,7 +182,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
     }
 
     @POST
-    public ListBoxModel doFillDependencyTrackApiKeyItems(@QueryParameter String credentialsId, @AncestorInPath Item item) {
+    public ListBoxModel doFillDependencyTrackApiKeyItems(@QueryParameter final String credentialsId, @AncestorInPath final Item item) {
         StandardListBoxModel result = new StandardListBoxModel();
         if (item == null) {
             if (!Jenkins.get().hasPermission(Jenkins.ADMINISTER)) {
@@ -207,7 +207,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
      * @return a FormValidation object
      */
     @POST
-    public FormValidation doCheckDependencyTrackUrl(@QueryParameter String value, @AncestorInPath @Nullable Item item) {
+    public FormValidation doCheckDependencyTrackUrl(@QueryParameter final String value, @AncestorInPath @Nullable final Item item) {
         if (item == null) {
             Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         } else {
@@ -224,7 +224,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
      * @return a FormValidation object
      */
     @POST
-    public FormValidation doCheckDependencyTrackFrontendUrl(@QueryParameter String value, @AncestorInPath @Nullable Item item) {
+    public FormValidation doCheckDependencyTrackFrontendUrl(@QueryParameter final String value, @AncestorInPath @Nullable final Item item) {
         return doCheckDependencyTrackUrl(value, item);
     }
 
@@ -340,7 +340,7 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
      * @throws FormException an exception validating form input
      */
     @Override
-    public boolean configure(StaplerRequest req, JSONObject formData) throws Descriptor.FormException {
+    public boolean configure(final StaplerRequest req, final JSONObject formData) throws Descriptor.FormException {
         req.bindJSON(this, formData);
         save();
         return super.configure(req, formData);

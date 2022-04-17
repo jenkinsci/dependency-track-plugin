@@ -28,7 +28,7 @@ import org.jenkinsci.plugins.DependencyTrack.model.Team;
 @UtilityClass
 class TeamParser {
 
-    Team parse(JSONObject json) {
+    Team parse(final JSONObject json) {
         final Set<String> permissions = json.getJSONArray("permissions").stream()
                 .map(JSONObject.class::cast)
                 .map(o -> o.getString("name"))
