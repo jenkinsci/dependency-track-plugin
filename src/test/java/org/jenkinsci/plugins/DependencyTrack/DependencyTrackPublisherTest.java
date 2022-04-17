@@ -240,9 +240,11 @@ public class DependencyTrackPublisherTest {
         when(client.lookupProject("name-1", "version-1")).thenReturn(Project.builder().uuid("uuid-1").build());
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
+        assertThat(uut.getProjectId()).isNullOrEmpty();
         verify(client, times(2)).isTokenBeingProcessed("token-1");
         verify(client).getFindings("uuid-1");
         verify(client).updateProjectProperties(eq("uuid-1"), any(ProjectProperties.class));
+        verify(client).lookupProject("name-1", "version-1");
     }
 
     @Test

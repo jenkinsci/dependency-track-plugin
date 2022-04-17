@@ -202,6 +202,10 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     private transient DescriptorImpl descriptor;
 
     private transient boolean overrideGlobals;
+    
+    @Getter(AccessLevel.NONE)
+    @Setter(AccessLevel.NONE)
+    private transient String projectIdCache;
 
     // Fields in config.jelly must match the parameter names
     @DataBoundConstructor
@@ -215,7 +219,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         this.clientFactory = clientFactory;
         descriptor = getDescriptor();
     }
-
+    
     /**
      * This method is called whenever the build step is executed.
      *
@@ -234,6 +238,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         final String effectiveProjectVersion = env.expand(projectVersion);
         final String effectiveArtifact = env.expand(artifact);
         final boolean effectiveAutocreate = isEffectiveAutoCreateProjects();
+        projectIdCache = null;
 
         if (StringUtils.isBlank(effectiveArtifact)) {
             logger.log(Messages.Builder_Artifact_Unspecified());
@@ -293,22 +298,18 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
                 throw new AbortException(Messages.Builder_Polling_Timeout_Exceeded());
             }
         }
-        if (StringUtils.isBlank(projectId)) {
-            // project was auto-created. Fetch it's new uuid so that we can look up the results
-            logger.log(Messages.Builder_Project_Lookup(effectiveProjectName, effectiveProjectVersion));
-            projectId = apiClient.lookupProject(effectiveProjectName, effectiveProjectVersion).getUuid();
-        }
+        final String effectiveProjectId = lookupProjectId(logger, apiClient, effectiveProjectName, effectiveProjectVersion);
         logger.log(Messages.Builder_Findings_Processing());
-        final List<Finding> findings = apiClient.getFindings(projectId);
+        final List<Finding> findings = apiClient.getFindings(effectiveProjectId);
         final SeverityDistribution severityDistribution = new SeverityDistribution(build.getNumber());
         findings.stream().map(Finding::getVulnerability).map(Vulnerability::getSeverity).forEach(severityDistribution::add);
         final ResultAction projectAction = new ResultAction(findings, severityDistribution);
         projectAction.setDependencyTrackUrl(getEffectiveFrontendUrl());
-        projectAction.setProjectId(projectId);
+        projectAction.setProjectId(effectiveProjectId);
         build.addOrReplaceAction(projectAction);
 
         // update ResultLinkAction with one that surely contains a projectId
-        final ResultLinkAction linkAction = new ResultLinkAction(getEffectiveFrontendUrl(), projectId);
+        final ResultLinkAction linkAction = new ResultLinkAction(getEffectiveFrontendUrl(), effectiveProjectId);
         linkAction.setProjectName(effectiveProjectName);
         linkAction.setProjectVersion(effectiveProjectVersion);
         build.addOrReplaceAction(linkAction);
@@ -472,12 +473,20 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     private void updateProjectProperties(final ConsoleLogger logger, final ApiClient apiClient, final String effectiveProjectName, final String effectiveProjectVersion) throws ApiClientException {
         if (projectProperties != null) {
             logger.log(Messages.Builder_Project_Update());
-            if (StringUtils.isBlank(projectId)) {
-                // project was auto-created. Fetch it's new uuid so that we can update its properties
-                logger.log(Messages.Builder_Project_Lookup(effectiveProjectName, effectiveProjectVersion));
-                projectId = apiClient.lookupProject(effectiveProjectName, effectiveProjectVersion).getUuid();
-            }
-            apiClient.updateProjectProperties(projectId, projectProperties);
+            final String id = lookupProjectId(logger, apiClient, effectiveProjectName, effectiveProjectVersion);
+            apiClient.updateProjectProperties(id, projectProperties);
         }
+    }
+    
+    private String lookupProjectId(final ConsoleLogger logger, final ApiClient apiClient, final String effectiveProjectName, final String effectiveProjectVersion) throws ApiClientException {
+        if (StringUtils.isBlank(projectId)) {
+            if (StringUtils.isBlank(projectIdCache)) {
+                logger.log(Messages.Builder_Project_Lookup(effectiveProjectName, effectiveProjectVersion));
+                projectIdCache = apiClient.lookupProject(effectiveProjectName, effectiveProjectVersion).getUuid();
+            }
+        } else {
+            projectIdCache = projectId;
+        }
+        return projectIdCache;
     }
 }
