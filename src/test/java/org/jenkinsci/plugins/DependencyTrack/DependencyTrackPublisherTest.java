@@ -211,11 +211,11 @@ public class DependencyTrackPublisherTest {
         when(buildWithResultAction.getAction(ResultAction.class)).thenReturn(new ResultAction(Collections.emptyList(), new SeverityDistribution(42)));
         Run buildWithNoResultAction = mock(Run.class);
         when(buildWithNoResultAction.getResult()).thenReturn(Result.SUCCESS);
-        when(buildWithNoResultAction.getPreviousBuiltBuild()).thenReturn(buildWithResultAction);
+        when(buildWithNoResultAction.getPreviousSuccessfulBuild()).thenReturn(buildWithResultAction);
         Run abortedBuild = mock(Run.class);
         when(abortedBuild.getResult()).thenReturn(Result.NOT_BUILT);
-        when(abortedBuild.getPreviousBuiltBuild()).thenReturn(buildWithNoResultAction);
-        when(build.getPreviousBuiltBuild()).thenReturn(abortedBuild);
+        when(abortedBuild.getPreviousSuccessfulBuild()).thenReturn(buildWithNoResultAction);
+        when(build.getPreviousSuccessfulBuild()).thenReturn(abortedBuild);
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
         verify(client, times(2)).isTokenBeingProcessed("token-1");
