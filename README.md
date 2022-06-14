@@ -74,7 +74,7 @@ When Synchronous mode is enabled, thresholds can be defined which can optionally
 
 **Total Findings:** Sets the threshold for the total number of critical, high, medium, or low severity findings allowed. If the number of findings equals or is greater than the threshold for any one of the severities, the job status will be changed to UNSTABLE or FAILURE.
 
-**New Findings:** Sets the threshold for the number of new critical, high, medium, or low severity findings allowed. If the number of new findings equals or is greater than the previous builds finding for any one of the severities, the job status will be changed to UNSTABLE or FAILURE. The previous build is the one that is not aborted and has an analysis result of Dependency-Track, which does not necessarily have to be the immediately previous build.
+**New Findings:** Sets the threshold for the number of new critical, high, medium, or low severity findings allowed. If the number of new findings equals or is greater than the previous builds finding for any one of the severities, the job status will be changed to UNSTABLE or FAILURE. The previous build is the one that is successful and has an analysis result of Dependency-Track, which does not necessarily have to be the immediately previous build.
 
 ## Examples
 ### Declarative Pipeline

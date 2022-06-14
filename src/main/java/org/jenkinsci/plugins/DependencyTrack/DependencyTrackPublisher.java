@@ -440,9 +440,9 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      */
     @Nullable
     private Run<?, ?> getPreviousBuildWithAnalysisResult(final @NonNull Run<?, ?> run) {
-        Run<?, ?> r = run.getPreviousBuiltBuild();
+        Run<?, ?> r = run.getPreviousSuccessfulBuild();
         while (r != null && (r.getResult() == null || r.getResult() == Result.NOT_BUILT || r.getAction(ResultAction.class) == null)) {
-            r = r.getPreviousBuiltBuild();
+            r = r.getPreviousSuccessfulBuild();
         }
         return r;
     }
