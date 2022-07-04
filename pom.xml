@@ -7,6 +7,7 @@
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
         <version>4.31</version>
+        <relativePath/>
     </parent>
 
     <artifactId>dependency-track</artifactId>
@@ -93,7 +94,7 @@
                                 </goals>
                                 <phase>initialize</phase>
                                 <configuration>
-                                    <nodeVersion>v14.17.3</nodeVersion>
+                                    <nodeVersion>v16.15.1</nodeVersion>
                                     <nodeDownloadRoot>https://repo.jenkins-ci.org/nodejs-dist/</nodeDownloadRoot>
                                     <npmRegistryURL>https://repo.jenkins-ci.org/api/npm/npm/</npmRegistryURL>
                                     <installDirectory>${project.build.directory}</installDirectory>
