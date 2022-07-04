@@ -3,6 +3,11 @@
 ## Unreleased
 ### ⚠ Breaking
 ### ⭐ New Features
+### 🐞 Bugs Fixed
+
+## v4.2.0 - 2022-07-04
+### ⚠ Breaking
+### ⭐ New Features
 - The connection test will also check server-side permissions for Dependency-Track v4.4 and newer (fixes [#13](https://github.com/jenkinsci/dependency-track-plugin/issues/13))
 
 ### 🐞 Bugs Fixed
