@@ -23,10 +23,10 @@ public class Component implements Serializable {
 
     private static final long serialVersionUID = -4825926766668357091L;
 
-    private final String uuid;
-    private final String name;
-    private final String group;
-    private final String version;
-    private final String purl;
+    String uuid;
+    String name;
+    String group;
+    String version;
+    String purl;
 
 }

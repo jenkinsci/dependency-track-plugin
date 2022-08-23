@@ -26,6 +26,6 @@ import lombok.Value;
 @Value
 @Builder
 public class Team {
-    private String name;
-    private Set<String> permissions;
+    String name;
+    Set<String> permissions;
 }

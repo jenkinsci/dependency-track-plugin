@@ -20,8 +20,8 @@ import lombok.Value;
 @Value
 public class UploadResult {
 
-	private final boolean success;
-	private final String token;
+	boolean success;
+	String token;
 
 	public UploadResult(boolean success) {
 		this(success, null);

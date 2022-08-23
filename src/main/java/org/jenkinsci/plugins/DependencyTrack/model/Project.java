@@ -12,15 +12,15 @@ public class Project implements Serializable {
 
     private static final long serialVersionUID = 5615023685011011641L;
 	
-    private String name;
-    private String description;
-    private String version;
-    private String uuid;
-    private Collection<String> tags;
-    private LocalDateTime lastBomImport;
-    private String lastBomImportFormat;
-    private Double lastInheritedRiskScore;
-    private Boolean active;
-    private String swidTagId;
-    private String group;
+    String name;
+    String description;
+    String version;
+    String uuid;
+    Collection<String> tags;
+    LocalDateTime lastBomImport;
+    String lastBomImportFormat;
+    Double lastInheritedRiskScore;
+    Boolean active;
+    String swidTagId;
+    String group;
 }
