@@ -43,10 +43,7 @@ import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
-import org.jenkinsci.plugins.DependencyTrack.model.Finding;
-import org.jenkinsci.plugins.DependencyTrack.model.Project;
-import org.jenkinsci.plugins.DependencyTrack.model.Team;
-import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
+import org.jenkinsci.plugins.DependencyTrack.model.*;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
@@ -62,7 +59,8 @@ public class ApiClient {
     private static final String API_URL = "/api/v1";
     private static final int MS_TO_S_FACTOR = 1000;
     static final String API_KEY_HEADER = "X-Api-Key";
-    static final String PROJECT_FINDINGS_URL = API_URL + "/finding/project";
+    static final String PROJECT_FINDINGS_URL = API_URL + "/finding/project/%s";
+    static final String PROJECT_POLICY_VIOLATION_URL = API_URL + "/violation/project/%s";
     static final String BOM_URL = API_URL + "/bom";
     static final String BOM_TOKEN_URL = BOM_URL + "/token";
     static final String PROJECT_URL = API_URL + "/project";
@@ -223,7 +221,12 @@ public class ApiClient {
     @NonNull
     public List<Finding> getFindings(@NonNull final String projectUuid) throws ApiClientException {
         try {
-            final HttpURLConnection conn = createConnection(PROJECT_FINDINGS_URL + "/" + URLEncoder.encode(projectUuid, StandardCharsets.UTF_8.name()));
+            final HttpURLConnection conn =
+                    createConnection(
+                            String.format(
+                                    PROJECT_FINDINGS_URL,
+                                    URLEncoder.encode(projectUuid, StandardCharsets.UTF_8.name())));
+
             conn.setDoOutput(true);
             conn.connect();
             // Checks the server response
@@ -239,6 +242,33 @@ public class ApiClient {
             throw e;
         } catch (IOException e) {
             throw new ApiClientException(Messages.ApiClient_Error_RetrieveFindings(StringUtils.EMPTY, StringUtils.EMPTY), e);
+        }
+    }
+
+    @NonNull
+    public List<PolicyViolation> getPolicyViolation(@NonNull final String projectUuid) throws ApiClientException {
+        try {
+            final HttpURLConnection conn =
+                    createConnection(
+                            String.format(
+                                    PROJECT_POLICY_VIOLATION_URL,
+                                    URLEncoder.encode(projectUuid, StandardCharsets.UTF_8.name())));
+
+            conn.setDoOutput(true);
+            conn.connect();
+            // Checks the server response
+            if (conn.getResponseCode() == HTTP_OK) {
+                try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
+                    return PolicyViolationsParser.parse(getResponseBody(in));
+                }
+            } else {
+                logHttpError(conn);
+                throw new ApiClientException(Messages.ApiClient_Error_RetrievePolicyViolations(conn.getResponseCode(), conn.getResponseMessage()));
+            }
+        } catch (ApiClientException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new ApiClientException(Messages.ApiClient_Error_RetrievePolicyViolations(StringUtils.EMPTY, StringUtils.EMPTY), e);
         }
     }
 

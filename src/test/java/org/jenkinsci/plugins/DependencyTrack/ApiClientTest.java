@@ -203,7 +203,7 @@ public class ApiClientTest {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
-                .route(routes -> routes.get(ApiClient.PROJECT_FINDINGS_URL + "/{uuid}", (request, response) -> {
+                .route(routes -> routes.get(String.format(ApiClient.PROJECT_FINDINGS_URL, "{uuid}"), (request, response) -> {
                     assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
                     assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
                     assertThat(request.param("uuid")).isNotEmpty();

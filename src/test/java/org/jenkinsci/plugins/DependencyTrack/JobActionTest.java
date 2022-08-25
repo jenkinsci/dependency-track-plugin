@@ -32,6 +32,7 @@ import net.sf.json.JSONArray;
 import org.assertj.core.api.Assertions;
 import org.jenkinsci.plugins.DependencyTrack.model.Severity;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
+import org.jenkinsci.plugins.DependencyTrack.model.ViolationDistribution;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
@@ -55,7 +56,14 @@ public class JobActionTest {
     public void isTrendVisible() {
         Job job = mock(Job.class);
         Run run = mock(Run.class);
-        when(run.getAction(ResultAction.class)).thenReturn(new ResultAction(Collections.emptyList(), new SeverityDistribution(1)));
+        when(run.getAction(ResultAction.class))
+                .thenReturn(
+                        new ResultAction(
+                                Collections.emptyList(),
+                                new SeverityDistribution(1),
+                                Collections.emptyList(),
+                                new ViolationDistribution(1)));
+
         when(job.getBuilds())
                 .thenReturn(RunList.fromRuns(Collections.emptyList()))
                 .thenReturn(RunList.fromRuns(Collections.singletonList(run)));

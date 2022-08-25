@@ -38,12 +38,7 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
-import org.jenkinsci.plugins.DependencyTrack.model.Finding;
-import org.jenkinsci.plugins.DependencyTrack.model.RiskGate;
-import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
-import org.jenkinsci.plugins.DependencyTrack.model.Thresholds;
-import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
-import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
+import org.jenkinsci.plugins.DependencyTrack.model.*;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -285,7 +280,13 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         }
     }
 
-    private void publishAnalysisResult(final ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build, final String effectiveProjectName, final String effectiveProjectVersion) throws InterruptedException, ApiClientException, AbortException {
+    private void publishAnalysisResult(final ConsoleLogger logger,
+                                       final ApiClient apiClient,
+                                       final String token,
+                                       final Run<?, ?> build,
+                                       final String effectiveProjectName,
+                                       final String effectiveProjectVersion) throws InterruptedException, ApiClientException, AbortException
+    {
         final long timeout = System.currentTimeMillis() + (60000L * descriptor.getDependencyTrackPollingTimeout());
         final long interval = 1000L * descriptor.getDependencyTrackPollingInterval();
         logger.log(Messages.Builder_Polling());
@@ -299,13 +300,35 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
             }
         }
         final String effectiveProjectId = lookupProjectId(logger, apiClient, effectiveProjectName, effectiveProjectVersion);
+
         logger.log(Messages.Builder_Findings_Processing());
+
         final List<Finding> findings = apiClient.getFindings(effectiveProjectId);
         final SeverityDistribution severityDistribution = new SeverityDistribution(build.getNumber());
         findings.stream().map(Finding::getVulnerability).map(Vulnerability::getSeverity).forEach(severityDistribution::add);
-        final ResultAction projectAction = new ResultAction(findings, severityDistribution);
+
+        logger.log(Messages.Builder_PolicyViolations_Processing());
+
+        final List<PolicyViolation> policyViolations = apiClient.getPolicyViolation(effectiveProjectId);
+        final ViolationDistribution violationDistribution = new ViolationDistribution(build.getNumber());
+
+        policyViolations
+                .stream()
+                .map(PolicyViolation::getPolicyCondition)
+                .map(PolicyCondition::getPolicy)
+                .map(Policy::getViolationState)
+                .forEach(violationDistribution::add);
+
+        final ResultAction projectAction =
+                new ResultAction(
+                        findings,
+                        severityDistribution,
+                        policyViolations,
+                        violationDistribution);
+
         projectAction.setDependencyTrackUrl(getEffectiveFrontendUrl());
         projectAction.setProjectId(effectiveProjectId);
+
         build.addOrReplaceAction(projectAction);
 
         // update ResultLinkAction with one that surely contains a projectId
@@ -314,25 +337,57 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         linkAction.setProjectVersion(effectiveProjectVersion);
         build.addOrReplaceAction(linkAction);
 
-        // Get previous results and evaluate to thresholds
-        final SeverityDistribution previousSeverityDistribution = Optional.ofNullable(getPreviousBuildWithAnalysisResult(build))
-                .map(previousBuild -> previousBuild.getAction(ResultAction.class))
-                .map(ResultAction::getSeverityDistribution)
-                .orElseGet(() -> new SeverityDistribution(0));
+        final Optional<ResultAction> resultAction =
+                Optional.ofNullable(getPreviousBuildWithAnalysisResult(build))
+                        .map(previousBuild -> previousBuild.getAction(ResultAction.class));
 
-        evaluateRiskGates(build, logger, severityDistribution, previousSeverityDistribution);
+        // Get previous results and evaluate to thresholds
+        final SeverityDistribution previousSeverityDistribution =
+                resultAction
+                        .map(ResultAction::getSeverityDistribution)
+                        .orElseGet(() -> new SeverityDistribution(0));
+
+        final ViolationDistribution previousViolationDistribution =
+                resultAction
+                        .map(ResultAction::getViolationDistribution)
+                        .orElseGet(() -> new ViolationDistribution(0));
+
+        evaluateRiskGates(
+                build,
+                logger,
+                severityDistribution,
+                previousSeverityDistribution,
+                violationDistribution,
+                previousViolationDistribution);
     }
 
-    private void evaluateRiskGates(final Run<?, ?> build, final ConsoleLogger logger, final SeverityDistribution currentDistribution, final SeverityDistribution previousDistribution) throws AbortException {
+    private void evaluateRiskGates(final Run<?, ?> build,
+                                   final ConsoleLogger logger,
+                                   final SeverityDistribution currentDistribution,
+                                   final SeverityDistribution previousDistribution,
+                                   final ViolationDistribution currentViolationDistribution,
+                                   final ViolationDistribution previousViolationDistribution) throws AbortException
+    {
         logger.log(Messages.Builder_Threshold_ComparingTo(previousDistribution.getBuildNumber()));
+
         final RiskGate riskGate = new RiskGate(getThresholds());
-        final Result result = riskGate.evaluate(currentDistribution, previousDistribution);
-        if (result.isWorseOrEqualTo(Result.UNSTABLE) && result.isCompleteBuild()) {
+        final Result result =
+                riskGate
+                        .evaluate(
+                                currentDistribution,
+                                previousDistribution,
+                                currentViolationDistribution,
+                                previousViolationDistribution);
+
+        if (result.isWorseOrEqualTo(Result.UNSTABLE) && result.isCompleteBuild())
+        {
             logger.log(Messages.Builder_Threshold_Exceed());
             // allow build to proceed, but mark overall build unstable
             build.setResult(result);
         }
-        if (result.isWorseThan(Result.UNSTABLE) && result.isCompleteBuild()) {
+
+        if (result.isWorseThan(Result.UNSTABLE) && result.isCompleteBuild())
+        {
             // attempt to halt the build
             throw new AbortException(Messages.Builder_Threshold_Exceed());
         }

@@ -278,7 +278,12 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
         return result.startsWith("Dependency-Track v") ? FormValidation.ok(Messages.Publisher_ConnectionTest_Success(result)) : FormValidation.error(Messages.Publisher_ConnectionTest_Error(result));
     }
 
-    private FormValidation checkTeamPermissions(final ApiClient apiClient, final VersionNumber version, final boolean autoCreateProjects, final boolean synchronous, final boolean projectProperties) throws ApiClientException {
+    private FormValidation checkTeamPermissions(final ApiClient apiClient,
+                                                final VersionNumber version,
+                                                final boolean autoCreateProjects,
+                                                final boolean synchronous,
+                                                final boolean projectProperties) throws ApiClientException
+    {
         final Set<String> requiredPermissions = Stream.of(BOM_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS).map(Enum::toString).collect(Collectors.toSet());
         final Set<String> optionalPermissions = new HashSet<>();
 
@@ -292,6 +297,9 @@ public final class DescriptorImpl extends BuildStepDescriptor<Publisher> impleme
         } else {
             optionalPermissions.add(VIEW_VULNERABILITY.toString());
         }
+
+        optionalPermissions.add(VIEW_POLICY_VIOLATION.toString());
+
         if (projectProperties) {
             requiredPermissions.add(PORTFOLIO_MANAGEMENT.toString());
         } else {

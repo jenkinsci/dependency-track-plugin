@@ -35,13 +35,12 @@ public class RiskGate implements Serializable {
 
     /**
      * Evaluates if the current results meet or exceed the defined threshold.
-     *
-     * @param currentDistribution currentDistribution
-     * @param previousDistribution previousDistribution
-     * @return a Result
-     */
-    public Result evaluate(@NonNull final SeverityDistribution currentDistribution, @NonNull final SeverityDistribution previousDistribution) {
-
+     **/
+    public Result evaluate(@NonNull final SeverityDistribution currentDistribution,
+                           @NonNull final SeverityDistribution previousDistribution,
+                           @NonNull final ViolationDistribution currentViolationDistribution,
+                           @NonNull final ViolationDistribution previousViolationDistribution)
+    {
         Result result = Result.SUCCESS;
         if ((thresholds.totalFindings.failedCritical != null && currentDistribution.getCritical() > 0 && currentDistribution.getCritical() >= thresholds.totalFindings.failedCritical)
                 || (thresholds.totalFindings.failedHigh != null && currentDistribution.getHigh() > 0 && currentDistribution.getHigh() >= thresholds.totalFindings.failedHigh)
@@ -69,6 +68,36 @@ public class RiskGate implements Serializable {
                 || (thresholds.newFindings.unstableHigh != null && currentDistribution.getHigh() > 0 && currentDistribution.getHigh() >= previousDistribution.getHigh() + thresholds.newFindings.unstableHigh)
                 || (thresholds.newFindings.unstableMedium != null && currentDistribution.getMedium() > 0 && currentDistribution.getMedium() >= previousDistribution.getMedium() + thresholds.newFindings.unstableMedium)
                 || (thresholds.newFindings.unstableLow != null && currentDistribution.getLow() > 0 && currentDistribution.getLow() >= previousDistribution.getLow() + thresholds.newFindings.unstableLow)) {
+
+            result = Result.UNSTABLE;
+        }
+
+        if ((thresholds.totalFindings.failedCritical != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= thresholds.totalFindings.failedCritical)
+                || (thresholds.totalFindings.failedHigh != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= thresholds.totalFindings.failedHigh)
+                || (thresholds.totalFindings.failedMedium != null && currentViolationDistribution.getWarn() > 0 && currentViolationDistribution.getWarn() >= thresholds.totalFindings.failedMedium)
+                || (thresholds.totalFindings.failedLow != null && currentViolationDistribution.getInfo() > 0 && currentViolationDistribution.getInfo() >= thresholds.totalFindings.failedLow)) {
+
+            return Result.FAILURE;
+        }
+        if ((thresholds.totalFindings.unstableCritical != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= thresholds.totalFindings.unstableCritical)
+                || (thresholds.totalFindings.unstableHigh != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= thresholds.totalFindings.unstableHigh)
+                || (thresholds.totalFindings.unstableMedium != null && currentViolationDistribution.getWarn() > 0 && currentViolationDistribution.getWarn() >= thresholds.totalFindings.unstableMedium)
+                || (thresholds.totalFindings.unstableLow != null && currentViolationDistribution.getInfo() > 0 && currentViolationDistribution.getInfo() >= thresholds.totalFindings.unstableLow)) {
+
+            result = Result.UNSTABLE;
+        }
+
+        if ((thresholds.newFindings.failedCritical != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= previousViolationDistribution.getFail() + thresholds.newFindings.failedCritical)
+                || (thresholds.newFindings.failedHigh != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= previousViolationDistribution.getFail() + thresholds.newFindings.failedHigh)
+                || (thresholds.newFindings.failedMedium != null && currentViolationDistribution.getWarn() > 0 && currentViolationDistribution.getWarn() >= previousViolationDistribution.getWarn() + thresholds.newFindings.failedMedium)
+                || (thresholds.newFindings.failedLow != null && currentViolationDistribution.getInfo() > 0 && currentViolationDistribution.getInfo() >= previousViolationDistribution.getInfo() + thresholds.newFindings.failedLow)) {
+
+            return Result.FAILURE;
+        }
+        if ((thresholds.newFindings.unstableCritical != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= previousViolationDistribution.getFail() + thresholds.newFindings.unstableCritical)
+                || (thresholds.newFindings.unstableHigh != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= previousViolationDistribution.getFail() + thresholds.newFindings.unstableHigh)
+                || (thresholds.newFindings.unstableMedium != null && currentViolationDistribution.getWarn() > 0 && currentViolationDistribution.getWarn() >= previousViolationDistribution.getWarn() + thresholds.newFindings.unstableMedium)
+                || (thresholds.newFindings.unstableLow != null && currentViolationDistribution.getInfo() > 0 && currentViolationDistribution.getInfo() >= previousViolationDistribution.getInfo() + thresholds.newFindings.unstableLow)) {
 
             result = Result.UNSTABLE;
         }

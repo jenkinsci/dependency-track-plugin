@@ -30,33 +30,23 @@ import org.jenkinsci.plugins.DependencyTrack.model.Project;
 class ProjectParser {
 
     Project parse(final JSONObject json) {
-        final String lastInheritedRiskScoreStr = getKeyOrNull(json, "lastInheritedRiskScore");
-        final String activeStr = getKeyOrNull(json, "active");
+        final String lastInheritedRiskScoreStr = ParserUtil.getKeyOrNull(json, "lastInheritedRiskScore");
+        final String activeStr = ParserUtil.getKeyOrNull(json, "active");
         return Project.builder()
-                .name(getKeyOrNull(json, "name"))
-                .description(getKeyOrNull(json, "description"))
-                .version(getKeyOrNull(json, "version"))
-                .uuid(getKeyOrNull(json, "uuid"))
+                .name(ParserUtil.getKeyOrNull(json, "name"))
+                .description(ParserUtil.getKeyOrNull(json, "description"))
+                .version(ParserUtil.getKeyOrNull(json, "version"))
+                .uuid(ParserUtil.getKeyOrNull(json, "uuid"))
                 .tags(json.has("tags") ? parseTags(json.getJSONArray("tags")) : Collections.emptyList())
-                .lastBomImport(parseDateTime(getKeyOrNull(json, "lastBomImportStr")))
-                .lastBomImportFormat(getKeyOrNull(json, "lastBomImportFormat"))
+                .lastBomImport(parseDateTime(ParserUtil.getKeyOrNull(json, "lastBomImportStr")))
+                .lastBomImportFormat(ParserUtil.getKeyOrNull(json, "lastBomImportFormat"))
                 .lastInheritedRiskScore(lastInheritedRiskScoreStr != null ? Double.parseDouble(lastInheritedRiskScoreStr) : null)
                 .active(activeStr != null ? Boolean.parseBoolean(activeStr) : null)
-                .swidTagId(getKeyOrNull(json, "swidTagId"))
-                .group(getKeyOrNull(json, "group"))
+                .swidTagId(ParserUtil.getKeyOrNull(json, "swidTagId"))
+                .group(ParserUtil.getKeyOrNull(json, "group"))
                 .build();
     }
-
-    private String getKeyOrNull(JSONObject json, String key) {
-        // key can be null. but it may also be JSONNull!
-        // optString and getString do not check if v is JSONNull. instead they return just v.toString() which will be "null"!
-        Object v = json.opt(key);
-        if (v instanceof JSONNull) {
-            v = null;
-        }
-        return v == null ? null : StringUtils.trimToNull(v.toString());
-    }
-
+    
     private LocalDateTime parseDateTime(String dateTime) {
         if (dateTime == null) {
             return null;
@@ -67,7 +57,7 @@ class ProjectParser {
 
     private List<String> parseTags(JSONArray tagArray) {
         return tagArray.stream()
-                .map(o -> getKeyOrNull((JSONObject) o, "name"))
+                .map(o -> ParserUtil.getKeyOrNull((JSONObject) o, "name"))
                 .filter(StringUtils::isNotBlank)
                 .collect(Collectors.toList());
     }

@@ -29,7 +29,8 @@ import org.jenkinsci.plugins.DependencyTrack.model.Severity;
 import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
 
 @UtilityClass
-class FindingParser {
+class FindingParser
+{
 
     List<Finding> parse(final String jsonResponse) {
         final JSONArray jsonArray = JSONArray.fromObject(jsonResponse);
@@ -39,20 +40,11 @@ class FindingParser {
     }
 
     private Finding parseFinding(JSONObject json) {
-        final Component component = parseComponent(json.getJSONObject("component"));
+        final Component component = ParserUtil.parseComponent(json.getJSONObject("component"));
         final Vulnerability vulnerability = parseVulnerability(json.getJSONObject("vulnerability"));
         final Analysis analysis = parseAnalysis(json.optJSONObject("analysis"));
         final String matrix = getKeyOrNull(json, "matrix");
         return new Finding(component, vulnerability, analysis, matrix);
-    }
-
-    private Component parseComponent(JSONObject json) {
-        final String uuid = getKeyOrNull(json, "uuid");
-        final String name = getKeyOrNull(json, "name");
-        final String group = getKeyOrNull(json, "group");
-        final String version = getKeyOrNull(json, "version");
-        final String purl = getKeyOrNull(json, "purl");
-        return new Component(uuid, name, group, version, purl);
     }
 
     private Vulnerability parseVulnerability(JSONObject json) {
