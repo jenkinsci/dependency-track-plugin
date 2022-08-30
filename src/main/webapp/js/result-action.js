@@ -52,6 +52,13 @@
         this.countBySeverity.UNASSIGNED = items.filter(finding => finding.vulnerability.severity === 'UNASSIGNED').length;
     }
 
+    function updateViolationsCounter(items) {
+        this.countByViolations.FAIL = items.filter(violation => violation.policyCondition.policy.violationState === 'FAIL').length;
+        this.countByViolations.WARN = items.filter(violation => violation.policyCondition.policy.violationState === 'WARN').length;
+        this.countByViolations.INFO = items.filter(violation => violation.policyCondition.policy.violationState === 'INFO').length;
+        this.countByViolations.UNASSIGNED = items.filter(violation => violation.policyCondition.policy.violationState === 'UNASSIGNED').length;
+    }
+
     /**
      * Trigger pagination to update the number of buttons/pages due to filtering
      * 
@@ -142,6 +149,86 @@
         },
     });
 
+    const appViolations = new Vue({
+        el: '#appViolations',
+        data: {
+            rows: 0,
+            perPage: 10,
+            currentPage: 1,
+            isBusy: false,
+            sortBy: 'policyCondition.policy.violationStateRank',
+            sortDesc: false,
+            filter: null,
+            filterOn: [],
+            fields: [
+                { key: 'component.name', label: 'Name', sortable: true },
+                { key: 'component.version', label: 'Version', sortable: true },
+                { key: 'component.group', label: 'Group', sortable: true },
+                { key: 'type', label: 'Type', sortable: true },
+                { key: 'policyCondition.policy.violationStateRank', label: 'Violation', sortable: true },
+            ],
+            countByViolations: {
+                FAIL: 0,
+                WARN: 0,
+                INFO: 0,
+                UNASSIGNED: 0
+            }
+        },
+        methods: {
+            items(ctx, callback) {
+                return window.fetch(`${actionUrl.href}/getPolicyViolationsJson`, {
+                    method: 'POST',
+                    mode: 'same-origin',
+                    credentials: 'same-origin',
+                    cache: 'default',
+                    body: '[]',
+                    headers: fetchHeaders,
+                })
+                .then(response => {
+                    if (response.ok) {
+                        return response.json().then(data => Array.isArray(data) ? data : []);
+                    } else {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                }).then(items => {
+                    updatePaging.call(this, items);
+                    updateViolationsCounter.call(this, items);
+                    return items;
+                });
+            },
+            onFiltered(filteredItems) {
+                updatePaging.call(this, filteredItems);
+                updateViolationsCounter.call(this, filteredItems);
+            },
+            matchesFilter(item, term) {
+                const keys = this.filterOn.length ? this.filterOn : this.fields.map(field => field.key);
+
+                const accessPaths = { };
+                keys.forEach(key => {
+                    const parts = key.split('.');
+                    if (accessPaths[parts[0]] === undefined) {
+                        accessPaths[parts[0]] = [parts[1]];
+                    } else {
+                        accessPaths[parts[0]].push(parts[1]);
+                    }
+                });
+
+                const searchValues = [];
+                Object.entries(accessPaths).forEach(p1 => {
+                    p1[1].forEach(p2 => {
+                        if (p1[0] === 'policyCondition' && p2 === 'violationStateRank') {
+                            searchValues.push(item.policyCondition.policy.violationState.toLowerCase());
+                        } else {
+                            searchValues.push(item[p1[0]][p2].toString().toLowerCase());
+                        }
+                    });
+                });
+
+                return searchValues.some(value => value.includes(term.trim().toLowerCase()));
+            }
+        },
+    });
+
     window.fetch(`${document.head.dataset.rooturl}/i18n/resourceBundle/?baseName=org.jenkinsci.plugins.DependencyTrack.ResultAction.index`, {
         mode: 'same-origin',
         credentials: 'same-origin',
@@ -160,5 +247,11 @@
         app.fields.find(field => field.key === 'vulnerability.vulnId').label = i18n['filter.value.vuln'];
         app.fields.find(field => field.key === 'vulnerability.severityRank').label = i18n['filter.value.severity'];
         app.fields.find(field => field.key === 'vulnerability.cweId').label = i18n['filter.value.cwe'];
+
+        appViolations.fields.find(field => field.key === 'component.name').label = i18n['filter.violations.value.name'];
+        appViolations.fields.find(field => field.key === 'component.version').label = i18n['filter.violations.value.version'];
+        appViolations.fields.find(field => field.key === 'component.group').label = i18n['filter.violations.value.group'];
+        appViolations.fields.find(field => field.key === 'type').label = i18n['filter.violations.value.vuln'];
+        appViolations.fields.find(field => field.key === 'policyCondition.policy.violationStateRank').label = i18n['filter.violations.value.violationStateRank'];
     });
 })();

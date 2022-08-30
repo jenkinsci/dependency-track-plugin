@@ -15,12 +15,12 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.model;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Value;
 
 import java.io.Serializable;
-
-@AllArgsConstructor(staticName = "of")
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Value
 public class Policy implements Serializable
 {
@@ -30,4 +30,12 @@ public class Policy implements Serializable
   String name;
 
   ViolationState violationState;
+  int violationStateRank;
+
+  public static Policy of (final String uuid,
+                           final String name,
+                           final ViolationState violationState)
+  {
+    return new Policy(uuid, name, violationState, violationState.getRank());
+  }
 }

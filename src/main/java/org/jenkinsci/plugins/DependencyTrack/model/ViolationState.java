@@ -17,7 +17,19 @@ package org.jenkinsci.plugins.DependencyTrack.model;
 
 public enum ViolationState
 {
-  INFO,
-  WARN,
-  FAIL
+  INFO(2),
+  WARN(1),
+  FAIL(0);
+
+  private final int rank;
+
+  ViolationState(final int _rank)
+  {
+    rank = _rank;
+  }
+
+  public int getRank()
+  {
+    return rank;
+  }
 }
