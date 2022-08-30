@@ -26,6 +26,8 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.sf.json.JSONArray;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
+import org.jenkinsci.plugins.DependencyTrack.model.TrendDistribution;
+import org.jenkinsci.plugins.DependencyTrack.model.ViolationDistribution;
 import org.kohsuke.stapler.WebApp;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 
@@ -59,14 +61,34 @@ public class JobAction extends InvisibleAction {
      * @return the UI model as JSON
      */
     @JavaScriptMethod
-    public JSONArray getSeverityDistributionTrend() {
+    public JSONArray getTrendDistribution() {
         project.checkPermission(hudson.model.Item.READ);
-        final List<SeverityDistribution> severityDistributions = project.getBuilds().stream()
+
+        final List<TrendDistribution> trendDistributions = project.getBuilds().stream()
                 .sorted(Comparator.naturalOrder())
                 .map(run -> run.getAction(ResultAction.class)).filter(Objects::nonNull)
-                .map(ResultAction::getSeverityDistribution)
+                .map(_resultAction ->
+                        {
+                            final SeverityDistribution severityDistribution = _resultAction.getSeverityDistribution();
+                            final ViolationDistribution violationDistribution = _resultAction.getViolationDistribution();
+
+                            return
+                                    TrendDistribution.of(severityDistribution.getBuildNumber())
+                                            .addInfo(severityDistribution.getInfo())
+                                            .addInfo(violationDistribution.getInfo())
+                                            .addUnassigned(severityDistribution.getUnassigned())
+                                            .addUnassigned(violationDistribution.getUnassigned())
+                                            .addCritical(severityDistribution.getCritical())
+                                            .addHigh(severityDistribution.getHigh())
+                                            .addMedium(severityDistribution.getMedium())
+                                            .addLow(severityDistribution.getLow())
+                                            .addFail(violationDistribution.getFail())
+                                            .addWarn(violationDistribution.getWarn());
+                        }
+                )
                 .collect(Collectors.toList());
-        return JSONArray.fromObject(severityDistributions);
+
+        return JSONArray.fromObject(trendDistributions);
     }
 
     public String getBindUrl() {

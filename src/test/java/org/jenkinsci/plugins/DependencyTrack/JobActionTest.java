@@ -30,9 +30,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import net.sf.json.JSONArray;
 import org.assertj.core.api.Assertions;
-import org.jenkinsci.plugins.DependencyTrack.model.Severity;
-import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
-import org.jenkinsci.plugins.DependencyTrack.model.ViolationDistribution;
+import org.jenkinsci.plugins.DependencyTrack.model.*;
 import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
@@ -73,7 +71,7 @@ public class JobActionTest {
     }
 
     @Test
-    public void getSeverityDistributionTrendPermissionTest() throws IOException {
+    public void getTrendDistributionPermissionTest() throws IOException {
         final MockAuthorizationStrategy mockAuthorizationStrategy = new MockAuthorizationStrategy();
         j.jenkins.setAuthorizationStrategy(mockAuthorizationStrategy);
         j.jenkins.setSecurityRealm(j.createDummySecurityRealm());
@@ -82,26 +80,38 @@ public class JobActionTest {
         final User anonymous = User.getOrCreateByIdOrFullName(ACL.ANONYMOUS_USERNAME);
         // without propper permissions
         try (ACLContext ignored = ACL.as(anonymous)) {
-            assertThatThrownBy(() -> uut.getSeverityDistributionTrend()).isInstanceOf(AccessDeniedException3.class);
+            assertThatThrownBy(() -> uut.getTrendDistribution()).isInstanceOf(AccessDeniedException3.class);
         }
         // with propper permissions
         try (ACLContext ignored = ACL.as(anonymous)) {
             mockAuthorizationStrategy.grant(Job.READ).onItems(project).to(anonymous);
-            assertThatCode(() -> uut.getSeverityDistributionTrend()).doesNotThrowAnyException();
+            assertThatCode(() -> uut.getTrendDistribution()).doesNotThrowAnyException();
         }
     }
 
     @Test
     public void getSeverityDistribution() throws IOException {
         final FreeStyleProject project = j.createFreeStyleProject();
+
         final SeverityDistribution sd1 = new SeverityDistribution(1);
         sd1.add(Severity.MEDIUM);
         final SeverityDistribution sd2 = new SeverityDistribution(2);
         sd2.add(Severity.HIGH);
+        sd2.add(Severity.INFO);
+
+        final ViolationDistribution violationDistribution1 = new ViolationDistribution(1);
+        violationDistribution1.add(ViolationState.FAIL);
+        final ViolationDistribution violationDistribution2 = new ViolationDistribution(2);
+        violationDistribution2.add(ViolationState.INFO);
+
         final ResultAction ra1 = mock(ResultAction.class);
         final ResultAction ra2 = mock(ResultAction.class);
+
         when(ra1.getSeverityDistribution()).thenReturn(sd1);
         when(ra2.getSeverityDistribution()).thenReturn(sd2);
+        when(ra1.getViolationDistribution()).thenReturn(violationDistribution1);
+        when(ra2.getViolationDistribution()).thenReturn(violationDistribution2);
+
         final FreeStyleBuild b1 = new FreeStyleBuild(project);
         b1.addAction(ra1);
         final FreeStyleBuild b2 = new FreeStyleBuild(project);
@@ -110,7 +120,10 @@ public class JobActionTest {
         project._getRuns().put(2, b2);
 
         final JobAction uut = new JobAction(project);
-        Assertions.<JSONArray>assertThat(uut.getSeverityDistributionTrend()).isEqualTo(JSONArray.fromObject(Arrays.asList(sd1, sd2)));
+        Assertions.<JSONArray>assertThat(uut.getTrendDistribution()).isEqualTo(JSONArray.fromObject(
+                Arrays.asList(
+                        TrendDistribution.of(1).addMedium(1).addFail(1),
+                        TrendDistribution.of(2).addHigh(1).addInfo(2))));
     }
 
 }

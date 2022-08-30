@@ -26,7 +26,7 @@ const currentScript = document.currentScript || document.querySelector('script[t
             trigger: 'axis',
             axisPointer: {
                 label: {
-                    formatter: 'Vulnerabilities of Build #{value}',
+                    formatter: 'Vulnerabilities/Violations of Build #{value}',
                 },
             },
         },
@@ -57,8 +57,8 @@ const currentScript = document.currentScript || document.querySelector('script[t
         },
         yAxis: [
             {
-                id: 'Vulnerabilities',
-                name: 'Vulnerabilities',
+                id: 'Issues',
+                name: 'Issues',
                 nameLocation: 'center',
                 boundaryGap: false,
                 nameGap: 30,
@@ -66,7 +66,7 @@ const currentScript = document.currentScript || document.querySelector('script[t
                 type: 'value'
             }
         ],
-        color: ['#dc0000', '#fd8c00', '#fdc500', '#4cae4c', '#357abd', '#c0c0c0'],
+        color: ['#dc0000', '#dc0000', '#fd8c00', '#fd8c00', '#fdc500', '#4cae4c', '#357abd', '#c0c0c0'],
         textStyle: {
             color: textColor,
             fontFamily,
@@ -82,8 +82,26 @@ const currentScript = document.currentScript || document.querySelector('script[t
                 },
             },
             {
+                id: 'Fail',
+                name: 'Fail',
+                type: 'line',
+                z: 5,
+                emphasis: {
+                    focus: 'series',
+                },
+            },
+            {
                 id: 'High',
                 name: 'High',
+                type: 'line',
+                z: 4,
+                emphasis: {
+                    focus: 'series',
+                },
+            },
+            {
+                id: 'Warn',
+                name: 'Warn',
                 type: 'line',
                 z: 4,
                 emphasis: {
@@ -161,7 +179,9 @@ const currentScript = document.currentScript || document.querySelector('script[t
             ],
             series: [
                 { id: 'Critical', name: i18n['seriesTitle.critical'] },
+                { id: 'Fail', name: i18n['seriesTitle.fail'] },
                 { id: 'High', name: i18n['seriesTitle.high'] },
+                { id: 'Warn', name: i18n['seriesTitle.warn'] },
                 { id: 'Medium', name: i18n['seriesTitle.medium'] },
                 { id: 'Low', name: i18n['seriesTitle.low'] },
                 { id: 'Info', name: i18n['seriesTitle.info'] },
@@ -170,7 +190,7 @@ const currentScript = document.currentScript || document.querySelector('script[t
         });
     });
     
-    window.fetch(`${actionUrl.href}/getSeverityDistributionTrend`, {
+    window.fetch(`${actionUrl.href}/getTrendDistribution`, {
         method: 'POST',
         mode: 'same-origin',
         credentials: 'same-origin',
@@ -197,8 +217,16 @@ const currentScript = document.currentScript || document.querySelector('script[t
                         data: data.map(run => run.critical)
                     },
                     {
+                        id: 'Fail',
+                        data: data.map(run => run.fail)
+                    },
+                    {
                         id: 'High',
                         data: data.map(run => run.high)
+                    },
+                    {
+                        id: 'Warn',
+                        data: data.map(run => run.warn)
                     },
                     {
                         id: 'Medium',
