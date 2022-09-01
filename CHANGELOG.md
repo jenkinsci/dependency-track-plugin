@@ -5,11 +5,17 @@
 ### ⭐ New Features
 ### 🐞 Bugs Fixed
 
+## v4.2.1 - 2022-09-01
+### ⚠ Breaking
+### ⭐ New Features
+- Added Policy Violations to the plugin, so that they now act as vulnerabilities - that's they can make a build fail, if a policy is violated. Also added charts etc., so that it follow the looks of the rest of the plugin.
+
+### 🐞 Bugs Fixed
+
 ## v4.2.0 - 2022-07-04
 ### ⚠ Breaking
 ### ⭐ New Features
 - The connection test will also check server-side permissions for Dependency-Track v4.4 and newer (fixes [#13](https://github.com/jenkinsci/dependency-track-plugin/issues/13))
-- Added Policy Violations to the plugin, so that they now act as vulnerabilities - that's they can make a build fail, if a policy is violated. Also added charts etc., so that it follow the looks of the rest of the plugin.
 
 ### 🐞 Bugs Fixed
 - classic jobs with sync mode and no project ID used the looked-up ID in future runs, although they should not (fixes [#98](https://github.com/jenkinsci/dependency-track-plugin/issues/98))
