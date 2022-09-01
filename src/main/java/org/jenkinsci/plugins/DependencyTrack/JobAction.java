@@ -70,7 +70,9 @@ public class JobAction extends InvisibleAction {
                 .map(_resultAction ->
                         {
                             final SeverityDistribution severityDistribution = _resultAction.getSeverityDistribution();
-                            final ViolationDistribution violationDistribution = _resultAction.getViolationDistribution();
+
+                            final ViolationDistribution violationDistribution = _resultAction.getViolationDistribution() != null ?
+                                    _resultAction.getViolationDistribution() : new ViolationDistribution(severityDistribution.getBuildNumber());
 
                             return
                                     TrendDistribution.of(severityDistribution.getBuildNumber())
