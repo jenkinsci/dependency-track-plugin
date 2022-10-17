@@ -39,7 +39,7 @@
     <properties>
         <jenkins.version>2.289.2</jenkins.version>
         <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
-        <configuration-as-code.version>1.55.1</configuration-as-code.version>
+        <configuration-as-code.version>1559.v38a_b_2e3b_6b_b_7</configuration-as-code.version>
         <java.level>8</java.level>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
