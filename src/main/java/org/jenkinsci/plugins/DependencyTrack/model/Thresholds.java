@@ -22,13 +22,16 @@ import lombok.ToString;
 @EqualsAndHashCode
 @ToString
 public class Thresholds implements Serializable {
-
+    private static final long serialVersionUID = 4436355058848964587L;
     public final TotalFindings totalFindings = new TotalFindings();
     public final NewFindings newFindings = new NewFindings();
+    public final TotalViolations totalViolations = new TotalViolations();
+    public final NewViolations newViolations = new NewViolations();
 
     @EqualsAndHashCode
     @ToString
     public static class TotalFindings implements Serializable {
+        private static final long serialVersionUID = 9090012675204711616L;
         public Integer unstableCritical;
         public Integer unstableHigh;
         public Integer unstableMedium;
@@ -42,6 +45,7 @@ public class Thresholds implements Serializable {
     @EqualsAndHashCode
     @ToString
     public static class NewFindings implements Serializable {
+        private static final long serialVersionUID = -8053746187421628780L;
         public Integer unstableCritical;
         public Integer unstableHigh;
         public Integer unstableMedium;
@@ -50,5 +54,29 @@ public class Thresholds implements Serializable {
         public Integer failedHigh;
         public Integer failedMedium;
         public Integer failedLow;
+    }
+
+    @EqualsAndHashCode
+    @ToString
+    public static class TotalViolations implements Serializable {
+        private static final long serialVersionUID = -7913629278653091088L;
+        public Integer unstableFail;
+        public Integer unstableWarn;
+        public Integer unstableInfo;
+        public Integer failedFail;
+        public Integer failedWarn;
+        public Integer failedInfo;
+    }
+
+    @EqualsAndHashCode
+    @ToString
+    public static class NewViolations implements Serializable {
+        private static final long serialVersionUID = -3053747350725113641L;
+        public Integer unstableFail;
+        public Integer unstableWarn;
+        public Integer unstableInfo;
+        public Integer failedFail;
+        public Integer failedWarn;
+        public Integer failedInfo;
     }
 }

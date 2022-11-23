@@ -1,21 +1,16 @@
-thCrit,thHigh,thMedium,thLow,numFail,numWarn,numInfo,expectedResult
-# critical
-1,,,, 0,0,0, "SUCCESS"
-1,,,, 1,0,0, "FAILURE"
-1,,,, 0,1,0, "SUCCESS"
-1,,,, 0,0,1, "SUCCESS"
-# high
-,1,,, 0,0,0, "SUCCESS"
-,1,,, 1,0,0, "FAILURE"
-,1,,, 0,1,0, "SUCCESS"
-,1,,, 0,0,1, "SUCCESS"
-# medium
-,,1,, 0,0,0, "SUCCESS"
-,,1,, 1,0,0, "SUCCESS"
-,,1,, 0,1,0, "FAILURE"
-,,1,, 0,0,1, "SUCCESS"
-# low
-,,,1, 0,0,0, "SUCCESS"
-,,,1, 1,0,0, "SUCCESS"
-,,,1, 0,1,0, "SUCCESS"
-,,,1, 0,0,1, "FAILURE"
+thFail,thWarn,thInfo,numFail,numWarn,numInfo,expectedResult
+# fail
+1,,, 0,0,0, "SUCCESS"
+1,,, 1,0,0, "FAILURE"
+1,,, 0,1,0, "SUCCESS"
+1,,, 0,0,1, "SUCCESS"
+# warn
+,1,, 0,0,0, "SUCCESS"
+,1,, 1,0,0, "SUCCESS"
+,1,, 0,1,0, "FAILURE"
+,1,, 0,0,1, "SUCCESS"
+# info
+,,1, 0,0,0, "SUCCESS"
+,,1, 1,0,0, "SUCCESS"
+,,1, 0,1,0, "SUCCESS"
+,,1, 0,0,1, "FAILURE"

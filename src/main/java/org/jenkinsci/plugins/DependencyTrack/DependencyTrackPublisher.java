@@ -188,6 +188,66 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      */
     private Integer failedNewLow;
 
+    /**
+     * Threshold level for total number of fail violations for job status FAILED
+     */
+    private Integer failedTotalFail;
+
+    /**
+     * Threshold level for total number of warn violations for job status FAILED
+     */
+    private Integer failedTotalWarn;
+
+    /**
+     * Threshold level for total number of info violations for job status FAILED
+     */
+    private Integer failedTotalInfo;
+
+    /**
+     * Threshold level for total number of fail violations for job status UNSTABLE
+     */
+    private Integer unstableTotalFail;
+
+    /**
+     * Threshold level for total number of warn violations for job status UNSTABLE
+     */
+    private Integer unstableTotalWarn;
+
+    /**
+     * Threshold level for total number of info violations for job status UNSTABLE
+     */
+    private Integer unstableTotalInfo;
+
+    /**
+     * Threshold level for new number of fail violations for job status FAILED
+     */
+    private Integer failedNewFail;
+
+    /**
+     * Threshold level for new number of warn violations for job status FAILED
+     */
+    private Integer failedNewWarn;
+
+    /**
+     * Threshold level for new number of info violations for job status FAILED
+     */
+    private Integer failedNewInfo;
+
+    /**
+     * Threshold level for new number of fail violations for job status UNSTABLE
+     */
+    private Integer unstableNewFail;
+
+    /**
+     * Threshold level for new number of warn violations for job status UNSTABLE
+     */
+    private Integer unstableNewWarn;
+
+    /**
+     * Threshold level for new number of info violations for job status UNSTABLE
+     */
+    private Integer unstableNewInfo;
+
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
     private transient ApiClientFactory clientFactory;
@@ -522,6 +582,21 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         thresholds.newFindings.failedHigh = failedNewHigh;
         thresholds.newFindings.failedMedium = failedNewMedium;
         thresholds.newFindings.failedLow = failedNewLow;
+
+        thresholds.totalViolations.unstableFail = unstableTotalFail;
+        thresholds.totalViolations.unstableWarn = unstableTotalWarn;
+        thresholds.totalViolations.unstableInfo = unstableTotalInfo;
+        thresholds.totalViolations.failedFail = failedTotalFail;
+        thresholds.totalViolations.failedWarn = failedTotalWarn;
+        thresholds.totalViolations.failedInfo = failedTotalInfo;
+
+        thresholds.newViolations.unstableFail = unstableNewFail;
+        thresholds.newViolations.unstableWarn = unstableNewWarn;
+        thresholds.newViolations.unstableInfo = unstableNewInfo;
+        thresholds.newViolations.failedFail = failedNewFail;
+        thresholds.newViolations.failedWarn = failedNewWarn;
+        thresholds.newViolations.failedInfo = failedNewInfo;
+
         return thresholds;
     }
     

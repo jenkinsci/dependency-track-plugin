@@ -157,14 +157,13 @@ class RiskGateTest {
         assertThat(uut.evaluate(sd, new SeverityDistribution(0), violationDistribution, violationDistribution)).isEqualTo(expectedResult);
     }
 
-    @ParameterizedTest(name = "expect result={7} given total failed thresholds[critical={0},high={1},medium={2},low={3}] and having violations[fail={4},warn={5},info={6}]")
+    @ParameterizedTest(name = "expect result={7} given total failed thresholds[fail={0},warn={1},info={2}] and having violations[fail={3},warn={4},info={5}]")
     @CsvFileSource(resources = "/failedTotalViolations.csv", numLinesToSkip = 1)
-    void failedTotalViolationsOnly(Integer thCrit, Integer thHigh, Integer thMedium, Integer thLow, int numFail, int numWarn, int numInfo, Result expectedResult) {
+    void failedTotalViolationsOnly(Integer thFail, Integer thWarn, Integer thInfo, int numFail, int numWarn, int numInfo, Result expectedResult) {
         final Thresholds th = new Thresholds();
-        th.totalFindings.failedCritical = thCrit;
-        th.totalFindings.failedHigh = thHigh;
-        th.totalFindings.failedMedium = thMedium;
-        th.totalFindings.failedLow = thLow;
+        th.totalViolations.failedFail = thFail;
+        th.totalViolations.failedWarn = thWarn;
+        th.totalViolations.failedInfo = thInfo;
 
         final SeverityDistribution severityDistribution = new SeverityDistribution(0);
         final ViolationDistribution violationDistribution = new ViolationDistribution(0);
@@ -178,14 +177,13 @@ class RiskGateTest {
         assertThat(uut.evaluate(severityDistribution, severityDistribution, violationDistribution, new ViolationDistribution(0))).isEqualTo(expectedResult);
     }
 
-    @ParameterizedTest(name = "expect result={7} given total unstable thresholds[critical={0},high={1},medium={2},low={3}] and having violations[fail={4},warn={5},info={6}]")
+    @ParameterizedTest(name = "expect result={7} given total failed thresholds[fail={0},warn={1},info={2}] and having violations[fail={3},warn={4},info={5}]")
     @CsvFileSource(resources = "/unstableTotalViolations.csv", numLinesToSkip = 1)
-    void unstableTotalViolationsOnly(Integer thCrit, Integer thHigh, Integer thMedium, Integer thLow, int numFail, int numWarn, int numInfo, Result expectedResult) {
+    void unstableTotalViolationsOnly(Integer thFail, Integer thWarn, Integer thInfo, int numFail, int numWarn, int numInfo, Result expectedResult) {
         final Thresholds th = new Thresholds();
-        th.totalFindings.unstableCritical = thCrit;
-        th.totalFindings.unstableHigh = thHigh;
-        th.totalFindings.unstableMedium = thMedium;
-        th.totalFindings.unstableLow = thLow;
+        th.totalViolations.unstableFail = thFail;
+        th.totalViolations.unstableWarn = thWarn;
+        th.totalViolations.unstableInfo = thInfo;
 
         final SeverityDistribution severityDistribution = new SeverityDistribution(0);
         final ViolationDistribution violationDistribution = new ViolationDistribution(0);
@@ -199,14 +197,13 @@ class RiskGateTest {
         assertThat(uut.evaluate(severityDistribution, severityDistribution, violationDistribution, new ViolationDistribution(0))).isEqualTo(expectedResult);
     }
 
-    @ParameterizedTest(name = "expect result={7} given total thresholds[critical={0},high={1},medium={2},low={3}] for both and having violations[fail={4},warn={5},info={6}]")
+    @ParameterizedTest(name = "expect result={7} given total failed thresholds[fail={0},warn={1},info={2}] and having violations[fail={3},warn={4},info={5}]")
     @CsvFileSource(resources = "/failedTotalViolations.csv", numLinesToSkip = 1)
-    void totalViolations(Integer thCrit, Integer thHigh, Integer thMedium, Integer thLow, int numFail, int numWarn, int numInfo, Result expectedResult) {
+    void totalViolations(Integer thFail, Integer thWarn, Integer thInfo, int numFail, int numWarn, int numInfo, Result expectedResult) {
         final Thresholds th = new Thresholds();
-        th.totalFindings.failedCritical = th.totalFindings.unstableCritical = thCrit;
-        th.totalFindings.failedHigh = th.totalFindings.unstableHigh = thHigh;
-        th.totalFindings.failedMedium = th.totalFindings.unstableMedium = thMedium;
-        th.totalFindings.failedLow = th.totalFindings.unstableLow = thLow;
+        th.totalViolations.failedFail = th.totalViolations.unstableFail = thFail;
+        th.totalViolations.failedWarn = th.totalViolations.unstableWarn = thWarn;
+        th.totalViolations.failedInfo = th.totalViolations.unstableInfo = thInfo;
 
         final SeverityDistribution severityDistribution = new SeverityDistribution(0);
         final ViolationDistribution violationDistribution = new ViolationDistribution(0);
@@ -220,14 +217,13 @@ class RiskGateTest {
         assertThat(uut.evaluate(severityDistribution, severityDistribution, violationDistribution, new ViolationDistribution(0))).isEqualTo(expectedResult);
     }
 
-    @ParameterizedTest(name = "expect result={7} given new failed thresholds[critical={0},high={1},medium={2},low={3}] and having violations[fail={4},warn={5},info={6}]")
+    @ParameterizedTest(name = "expect result={7} given total failed thresholds[fail={0},warn={1},info={2}] and having violations[fail={3},warn={4},info={5}]")
     @CsvFileSource(resources = "/failedTotalViolations.csv", numLinesToSkip = 1)
-    void failedNewViolationsOnly(Integer thCrit, Integer thHigh, Integer thMedium, Integer thLow, int numFail, int numWarn, int numInfo, Result expectedResult) {
+    void failedNewViolationsOnly(Integer thFail, Integer thWarn, Integer thInfo, int numFail, int numWarn, int numInfo, Result expectedResult) {
         final Thresholds th = new Thresholds();
-        th.newFindings.failedCritical = thCrit;
-        th.newFindings.failedHigh = thHigh;
-        th.newFindings.failedMedium = thMedium;
-        th.newFindings.failedLow = thLow;
+        th.newViolations.failedFail = thFail;
+        th.newViolations.failedWarn = thWarn;
+        th.newViolations.failedInfo = thInfo;
 
         final SeverityDistribution severityDistribution = new SeverityDistribution(0);
         final ViolationDistribution violationDistribution = new ViolationDistribution(0);
@@ -241,14 +237,13 @@ class RiskGateTest {
         assertThat(uut.evaluate(severityDistribution, severityDistribution, violationDistribution, new ViolationDistribution(0))).isEqualTo(expectedResult);
     }
 
-    @ParameterizedTest(name = "expect result={7} given new unstable thresholds[critical={0},high={1},medium={2},low={3}] and having violations[fail={4},warn={5},info={6}]")
+    @ParameterizedTest(name = "expect result={7} given total failed thresholds[fail={0},warn={1},info={2}] and having violations[fail={3},warn={4},info={5}]")
     @CsvFileSource(resources = "/unstableTotalViolations.csv", numLinesToSkip = 1)
-    void unstableNewViolationsOnly(Integer thCrit, Integer thHigh, Integer thMedium, Integer thLow, int numFail, int numWarn, int numInfo, Result expectedResult) {
+    void unstableNewViolationsOnly(Integer thFail, Integer thWarn, Integer thInfo, int numFail, int numWarn, int numInfo, Result expectedResult) {
         final Thresholds th = new Thresholds();
-        th.newFindings.unstableCritical = thCrit;
-        th.newFindings.unstableHigh = thHigh;
-        th.newFindings.unstableMedium = thMedium;
-        th.newFindings.unstableLow = thLow;
+        th.newViolations.unstableFail = thFail;
+        th.newViolations.unstableWarn = thWarn;
+        th.newViolations.unstableInfo = thInfo;
 
         final SeverityDistribution severityDistribution = new SeverityDistribution(0);
         final ViolationDistribution violationDistribution = new ViolationDistribution(0);
@@ -262,14 +257,13 @@ class RiskGateTest {
         assertThat(uut.evaluate(severityDistribution, severityDistribution, violationDistribution, new ViolationDistribution(0))).isEqualTo(expectedResult);
     }
 
-    @ParameterizedTest(name = "expect result={7} given new thresholds[critical={0},high={1},medium={2},low={3}] for both and having violations[fail={4},warn={5},info={6}]")
+    @ParameterizedTest(name = "expect result={7} given total failed thresholds[fail={0},warn={1},info={2}] and having violations[fail={3},warn={4},info={5}]")
     @CsvFileSource(resources = "/failedTotalViolations.csv", numLinesToSkip = 1)
-    void newViolations(Integer thCrit, Integer thHigh, Integer thMedium, Integer thLow, int numFail, int numWarn, int numInfo, Result expectedResult) {
+    void newViolations(Integer thFail, Integer thWarn, Integer thInfo, int numFail, int numWarn, int numInfo, Result expectedResult) {
         final Thresholds th = new Thresholds();
-        th.newFindings.failedCritical = th.newFindings.unstableCritical = thCrit;
-        th.newFindings.failedHigh = th.newFindings.unstableHigh = thHigh;
-        th.newFindings.failedMedium = th.newFindings.unstableMedium = thMedium;
-        th.newFindings.failedLow = th.newFindings.unstableLow = thLow;
+        th.newViolations.failedFail = th.newViolations.unstableFail = thFail;
+        th.newViolations.failedWarn = th.newViolations.unstableWarn = thWarn;
+        th.newViolations.failedInfo = th.newViolations.unstableInfo = thInfo;
 
         final SeverityDistribution severityDistribution = new SeverityDistribution(0);
         final ViolationDistribution violationDistribution = new ViolationDistribution(0);

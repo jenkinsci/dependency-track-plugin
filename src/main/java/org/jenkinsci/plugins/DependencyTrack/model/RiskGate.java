@@ -72,32 +72,28 @@ public class RiskGate implements Serializable {
             result = Result.UNSTABLE;
         }
 
-        if ((thresholds.totalFindings.failedCritical != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= thresholds.totalFindings.failedCritical)
-                || (thresholds.totalFindings.failedHigh != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= thresholds.totalFindings.failedHigh)
-                || (thresholds.totalFindings.failedMedium != null && currentViolationDistribution.getWarn() > 0 && currentViolationDistribution.getWarn() >= thresholds.totalFindings.failedMedium)
-                || (thresholds.totalFindings.failedLow != null && currentViolationDistribution.getInfo() > 0 && currentViolationDistribution.getInfo() >= thresholds.totalFindings.failedLow)) {
+        if ((thresholds.totalViolations.failedFail != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= thresholds.totalViolations.failedFail)
+                || (thresholds.totalViolations.failedWarn != null && currentViolationDistribution.getWarn() > 0 && currentViolationDistribution.getWarn() >= thresholds.totalViolations.failedWarn)
+                || (thresholds.totalViolations.failedInfo != null && currentViolationDistribution.getInfo() > 0 && currentViolationDistribution.getInfo() >= thresholds.totalViolations.failedInfo)) {
 
             return Result.FAILURE;
         }
-        if ((thresholds.totalFindings.unstableCritical != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= thresholds.totalFindings.unstableCritical)
-                || (thresholds.totalFindings.unstableHigh != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= thresholds.totalFindings.unstableHigh)
-                || (thresholds.totalFindings.unstableMedium != null && currentViolationDistribution.getWarn() > 0 && currentViolationDistribution.getWarn() >= thresholds.totalFindings.unstableMedium)
-                || (thresholds.totalFindings.unstableLow != null && currentViolationDistribution.getInfo() > 0 && currentViolationDistribution.getInfo() >= thresholds.totalFindings.unstableLow)) {
+        if ((thresholds.totalViolations.unstableFail != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= thresholds.totalViolations.unstableFail)
+                || (thresholds.totalViolations.unstableWarn != null && currentViolationDistribution.getWarn() > 0 && currentViolationDistribution.getWarn() >= thresholds.totalViolations.unstableWarn)
+                || (thresholds.totalViolations.unstableInfo != null && currentViolationDistribution.getInfo() > 0 && currentViolationDistribution.getInfo() >= thresholds.totalViolations.unstableInfo)) {
 
             result = Result.UNSTABLE;
         }
 
-        if ((thresholds.newFindings.failedCritical != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= previousViolationDistribution.getFail() + thresholds.newFindings.failedCritical)
-                || (thresholds.newFindings.failedHigh != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= previousViolationDistribution.getFail() + thresholds.newFindings.failedHigh)
-                || (thresholds.newFindings.failedMedium != null && currentViolationDistribution.getWarn() > 0 && currentViolationDistribution.getWarn() >= previousViolationDistribution.getWarn() + thresholds.newFindings.failedMedium)
-                || (thresholds.newFindings.failedLow != null && currentViolationDistribution.getInfo() > 0 && currentViolationDistribution.getInfo() >= previousViolationDistribution.getInfo() + thresholds.newFindings.failedLow)) {
+        if ((thresholds.newViolations.failedFail != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= previousViolationDistribution.getFail() + thresholds.newViolations.failedFail)
+                || (thresholds.newViolations.failedWarn != null && currentViolationDistribution.getWarn() > 0 && currentViolationDistribution.getWarn() >= previousViolationDistribution.getWarn() + thresholds.newViolations.failedWarn)
+                || (thresholds.newViolations.failedInfo != null && currentViolationDistribution.getInfo() > 0 && currentViolationDistribution.getInfo() >= previousViolationDistribution.getInfo() + thresholds.newViolations.failedInfo)) {
 
             return Result.FAILURE;
         }
-        if ((thresholds.newFindings.unstableCritical != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= previousViolationDistribution.getFail() + thresholds.newFindings.unstableCritical)
-                || (thresholds.newFindings.unstableHigh != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= previousViolationDistribution.getFail() + thresholds.newFindings.unstableHigh)
-                || (thresholds.newFindings.unstableMedium != null && currentViolationDistribution.getWarn() > 0 && currentViolationDistribution.getWarn() >= previousViolationDistribution.getWarn() + thresholds.newFindings.unstableMedium)
-                || (thresholds.newFindings.unstableLow != null && currentViolationDistribution.getInfo() > 0 && currentViolationDistribution.getInfo() >= previousViolationDistribution.getInfo() + thresholds.newFindings.unstableLow)) {
+        if ((thresholds.newViolations.unstableFail != null && currentViolationDistribution.getFail() > 0 && currentViolationDistribution.getFail() >= previousViolationDistribution.getFail() + thresholds.newViolations.unstableFail)
+                || (thresholds.newViolations.unstableWarn != null && currentViolationDistribution.getWarn() > 0 && currentViolationDistribution.getWarn() >= previousViolationDistribution.getWarn() + thresholds.newViolations.unstableWarn)
+                || (thresholds.newViolations.unstableInfo != null && currentViolationDistribution.getInfo() > 0 && currentViolationDistribution.getInfo() >= previousViolationDistribution.getInfo() + thresholds.newViolations.unstableInfo)) {
 
             result = Result.UNSTABLE;
         }
