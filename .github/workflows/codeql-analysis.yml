@@ -45,6 +45,14 @@ jobs:
         java-version: ${{ matrix.java }}
         distribution: 'temurin'
 
+    - name: Cache Maven packages
+      uses: actions/cache@v3
+      if: matrix.language == 'java'
+      with:
+        path: ~/.m2
+        key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+        restore-keys: ${{ runner.os }}-m2
+
     # Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v2
