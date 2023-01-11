@@ -4,6 +4,7 @@
 ### ⚠ Breaking
 ### ⭐ New Features
 ### 🐞 Bugs Fixed
+- Searching on the result page was partially broken due to [a bug in bootstrap-vue 2.22+](https://github.com/bootstrap-vue/bootstrap-vue/issues/6967)
 
 ## v4.2.0 - 2022-07-04
 ### ⚠ Breaking
