@@ -30,7 +30,7 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
       - name: Echo info
-        run: echo Echoing info base ref ${{ github.base_ref }} head ref ${{ github.head_ref }} repository ${{ github.repository }}
+        run: echo Echoing info base-ref ${{ github.base_ref }} head-ref ${{ github.head_ref }} repository ${{ github.repository }} ref ${{ github.ref }} event-name ${{ github.event_name }} workflow ${{ github.workflow }}
       - name: Build with Maven and Sonar
         if: matrix.java == '11' && github.repository == 'jenkinsci/dependency-track-plugin' && !startsWith(github.head_ref, 'dependabot/')
         env:
