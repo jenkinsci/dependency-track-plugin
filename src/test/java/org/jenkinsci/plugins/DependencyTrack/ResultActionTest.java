@@ -22,7 +22,6 @@ import hudson.model.User;
 import hudson.security.ACL;
 import hudson.security.ACLContext;
 import hudson.security.AccessDeniedException3;
-import io.jenkins.plugins.casc.misc.JenkinsConfiguredRule;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -35,6 +34,7 @@ import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.junit.Rule;
 import org.junit.Test;
+import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,7 +48,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 public class ResultActionTest {
 
     @Rule
-    public JenkinsConfiguredRule j = new JenkinsConfiguredRule();
+    public JenkinsRule j = new JenkinsRule();
 
     private List<Finding> getTestFindings() {
         File findings = new File("src/test/resources/findings.json");

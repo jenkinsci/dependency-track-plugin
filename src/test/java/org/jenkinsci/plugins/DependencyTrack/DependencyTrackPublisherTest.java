@@ -27,7 +27,6 @@ import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.util.Secret;
-import io.jenkins.plugins.casc.misc.JenkinsConfiguredRule;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -44,6 +43,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
+import org.jvnet.hudson.test.JenkinsRule;
 import org.mockito.Mock;
 import org.mockito.junit.MockitoJUnitRunner.StrictStubs;
 
@@ -70,7 +70,7 @@ public class DependencyTrackPublisherTest {
     public TemporaryFolder tmpDir = new TemporaryFolder();
 
     @Rule
-    public JenkinsConfiguredRule r = new JenkinsConfiguredRule();
+    public JenkinsRule r = new JenkinsRule();
 
     @Mock
     private Run build;
