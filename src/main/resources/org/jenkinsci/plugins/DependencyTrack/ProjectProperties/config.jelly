@@ -28,5 +28,8 @@ limitations under the License.
     <f:entry field="description" title="${%description}">
         <f:textbox id="description" />
     </f:entry>
+    <f:entry field="parentId" title="${%parentId}">
+        <f:select id="parentId"/>
+    </f:entry>
 
 </j:jelly>

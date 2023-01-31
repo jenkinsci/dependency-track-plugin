@@ -23,4 +23,5 @@ public class Project implements Serializable {
     private Boolean active;
     private String swidTagId;
     private String group;
+    private Project parent;
 }

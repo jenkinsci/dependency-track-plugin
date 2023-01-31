@@ -3,6 +3,8 @@
 ## Unreleased
 ### ⚠ Breaking
 ### ⭐ New Features
+- Added support for parent-child-relationships of projects with Dependency-Track v4.7 and newer (fixes [#139](https://github.com/jenkinsci/dependency-track-plugin/issues/139))
+
 ### 🐞 Bugs Fixed
 - Searching on the result page was partially broken due to [a bug in bootstrap-vue 2.22+](https://github.com/bootstrap-vue/bootstrap-vue/issues/6967)
 

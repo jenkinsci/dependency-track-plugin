@@ -69,7 +69,7 @@ import static org.jenkinsci.plugins.DependencyTrack.model.Permissions.*;
  */
 @Extension
 @Symbol("dependencyTrackPublisher") // This indicates to Jenkins that this is an implementation of an extension point.
-public final class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Serializable {
+public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Serializable {
 
     private static final long serialVersionUID = -2018722914973282748L;
 
