@@ -29,15 +29,24 @@ jobs:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
-      - name: Build with Maven and Sonar
-        if: matrix.java == '11' && github.repository == 'jenkinsci/dependency-track-plugin' && !startsWith(github.head_ref, 'dependabot/')
+      - name: check Sonar pre-conditions
+        id: check_sonar
+        continue-on-error: true
+        env:
+          SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
+          SONAR_ORGANIZATION: ${{ secrets.SONARCLOUD_ORGANIZATION }}
+        run: test "${SONAR_ORGANIZATION}" -a "${SONAR_TOKEN}"
+        shell: bash
+      - name: Build with Sonar
+        id: build_sonar
+        if: matrix.java == '11' && steps.check_sonar.outcome == 'success' && !startsWith(github.head_ref, 'dependabot/')
         env:
           SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
           SONAR_ORGANIZATION: ${{ secrets.SONARCLOUD_ORGANIZATION }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: mvn -B clean test verify package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.projectKey=org.jenkins-ci.plugins:dependency-track -Dsonar.organization=$SONAR_ORGANIZATION -Dsonar.login=$SONAR_TOKEN
-      - name: Build with Maven
-        if: matrix.java == '11' && ( github.repository != 'jenkinsci/dependency-track-plugin' || startsWith(github.head_ref, 'dependabot/') )
+      - name: Build without Sonar
+        if: steps.build_sonar.conclusion == 'skipped'
         run: mvn -B clean test verify package
       - uses: actions/upload-artifact@v3
         if: success()
