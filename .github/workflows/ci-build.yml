@@ -22,7 +22,7 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '16'
+          node-version: 'lts/Hydrogen'
       - name: Cache Maven packages
         uses: actions/cache@v3
         with:
