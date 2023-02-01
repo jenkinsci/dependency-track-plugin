@@ -327,6 +327,11 @@ public class ApiClient {
         rawProject.elementOpt("group", properties.getGroup());
         // overwrite description only if it is set (means not null)
         rawProject.elementOpt("description", properties.getDescription());
+        // set new parent project if it is set (means not null)
+        if (properties.getParentId() != null) {
+            JSONObject newParent = new JSONObject().elementOpt("uuid", properties.getParentId());
+            rawProject.element("parent", newParent);
+        }
         // 3. update project
         updateProject(projectUuid, rawProject);
     }

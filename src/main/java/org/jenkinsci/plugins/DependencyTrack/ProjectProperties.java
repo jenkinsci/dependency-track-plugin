@@ -16,19 +16,27 @@
 package org.jenkinsci.plugins.DependencyTrack;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
+import hudson.RelativePath;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
+import hudson.model.Item;
+import hudson.util.ListBoxModel;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jenkins.model.Jenkins;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import org.apache.commons.lang.StringUtils;
+import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
+import org.kohsuke.stapler.QueryParameter;
+import org.kohsuke.stapler.verb.POST;
 
 import static org.jenkinsci.plugins.DependencyTrack.PluginUtil.areAllElementsOfType;
 
@@ -46,22 +54,32 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
     /**
      * Tags to set for the project
      */
+    @Nullable
     private List<String> tags;
 
     /**
      * SWID Tag ID for the project
      */
+    @Nullable
     private String swidTagId;
     
     /**
      * Group to set for the project
      */
+    @Nullable
     private String group;
     
     /**
      * Description to set for the project
      */
+    @Nullable
     private String description;
+    
+    /**
+     * UUID of the parent project
+     */
+    @Nullable
+    private String parentId;
 
     @NonNull
     public List<String> getTags() {
@@ -111,6 +129,11 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
         this.description = StringUtils.trimToNull(description);
     }
 
+    @DataBoundSetter
+    public void setParentId(final String parentId) {
+        this.parentId = StringUtils.trimToNull(parentId);
+    }
+
     @NonNull
     public String getTagsAsText() {
         return StringUtils.join(getTags(), System.lineSeparator());
@@ -129,5 +152,19 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
 
     @Extension
     public static class DescriptorImpl extends Descriptor<ProjectProperties> {
+
+        /**
+         * Retrieve the projects to populate the dropdown.
+         *
+         * @param dependencyTrackUrl the base URL to Dependency-Track
+         * @param dependencyTrackApiKey the API key to use for authentication
+         * @param item used to lookup credentials in job config
+         * @return ListBoxModel
+         */
+        @POST
+        public ListBoxModel doFillParentIdItems(@RelativePath("..") @QueryParameter final String dependencyTrackUrl, @RelativePath("..") @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable final Item item) {
+            org.jenkinsci.plugins.DependencyTrack.DescriptorImpl pluginDescriptor = Jenkins.get().getDescriptorByType(org.jenkinsci.plugins.DependencyTrack.DescriptorImpl.class);
+            return pluginDescriptor.doFillProjectIdItems(dependencyTrackUrl, dependencyTrackApiKey, item);
+        }
     }
 }

@@ -44,6 +44,7 @@ class ProjectParser {
                 .active(activeStr != null ? Boolean.parseBoolean(activeStr) : null)
                 .swidTagId(getKeyOrNull(json, "swidTagId"))
                 .group(getKeyOrNull(json, "group"))
+                .parent(json.has("parent") ? ProjectParser.parse(json.getJSONObject("parent")) : null)
                 .build();
     }
 
