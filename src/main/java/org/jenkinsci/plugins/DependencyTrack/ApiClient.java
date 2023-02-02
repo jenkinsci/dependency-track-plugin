@@ -332,6 +332,8 @@ public class ApiClient {
             JSONObject newParent = new JSONObject().elementOpt("uuid", properties.getParentId());
             rawProject.element("parent", newParent);
         }
+        // remove parentUuid wich may be present but can not be consumed by Dependency-Track (https://github.com/DependencyTrack/dependency-track/issues/2439)
+        rawProject.remove("parentUuid");
         // 3. update project
         updateProject(projectUuid, rawProject);
     }

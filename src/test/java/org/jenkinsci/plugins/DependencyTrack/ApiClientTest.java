@@ -359,7 +359,7 @@ public class ApiClientTest {
                     .get(ApiClient.PROJECT_URL + "/uuid-3", (request, response) -> {
                         assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
                         assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-                        return response.sendString(Mono.just("{\"name\":\"test-project\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\",\"tags\":[{\"name\":\"tag1\"},{\"name\":\"tag2\"}],\"parent\":{\"uuid\":\"old-parent\"}}"));
+                        return response.sendString(Mono.just("{\"name\":\"test-project\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\",\"tags\":[{\"name\":\"tag1\"},{\"name\":\"tag2\"}],\"parent\":{\"uuid\":\"old-parent\"},\"parentUuid\":\"old-parent\"}"));
                     })
                     .post(ApiClient.PROJECT_URL, (request, response) -> {
                         assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
@@ -384,12 +384,14 @@ public class ApiClientTest {
 
         assertThatCode(() -> uut.updateProjectProperties("uuid-3", props)).doesNotThrowAnyException();
         completionSignal.await(5, TimeUnit.SECONDS);
-        final Project project = ProjectParser.parse(JSONObject.fromObject(requestBody.get()));
+        final JSONObject updatedProject = JSONObject.fromObject(requestBody.get());
+        final Project project = ProjectParser.parse(updatedProject);
         assertThat(project.getTags()).containsExactlyInAnyOrder("tag1", "tag2", "tag4");
         assertThat(project.getSwidTagId()).isEqualTo(props.getSwidTagId());
         assertThat(project.getGroup()).isEqualTo(props.getGroup());
         assertThat(project.getDescription()).isEqualTo(props.getDescription());
         assertThat(project.getParent()).hasFieldOrPropertyWithValue("uuid", props.getParentId());
+        assertThat(updatedProject.has("parentUuid")).isFalse();
     }
 
     @Test
