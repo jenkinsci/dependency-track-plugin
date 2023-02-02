@@ -24,7 +24,6 @@ import hudson.security.ACL;
 import hudson.security.ACLContext;
 import hudson.security.AccessDeniedException3;
 import hudson.util.RunList;
-import io.jenkins.plugins.casc.misc.JenkinsConfiguredRule;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -33,6 +32,7 @@ import org.assertj.core.api.Assertions;
 import org.jenkinsci.plugins.DependencyTrack.model.*;
 import org.junit.Rule;
 import org.junit.Test;
+import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -48,7 +48,7 @@ import static org.mockito.Mockito.when;
 public class JobActionTest {
 
     @Rule
-    public JenkinsConfiguredRule j = new JenkinsConfiguredRule();
+    public JenkinsRule j = new JenkinsRule();
 
     @Test
     public void isTrendVisible() {

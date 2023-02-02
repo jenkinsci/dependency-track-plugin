@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import net.sf.json.JSONArray;
-import net.sf.json.JSONNull;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
@@ -44,6 +43,7 @@ class ProjectParser {
                 .active(activeStr != null ? Boolean.parseBoolean(activeStr) : null)
                 .swidTagId(ParserUtil.getKeyOrNull(json, "swidTagId"))
                 .group(ParserUtil.getKeyOrNull(json, "group"))
+                .parent(json.has("parent") ? ProjectParser.parse(json.getJSONObject("parent")) : null)
                 .build();
     }
     

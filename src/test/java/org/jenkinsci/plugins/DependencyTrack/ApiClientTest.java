@@ -359,7 +359,7 @@ public class ApiClientTest {
                     .get(ApiClient.PROJECT_URL + "/uuid-3", (request, response) -> {
                         assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
                         assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-                        return response.sendString(Mono.just("{\"name\":\"test-project\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\",\"tags\":[{\"name\":\"tag1\"},{\"name\":\"tag2\"}]}"));
+                        return response.sendString(Mono.just("{\"name\":\"test-project\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\",\"tags\":[{\"name\":\"tag1\"},{\"name\":\"tag2\"}],\"parent\":{\"uuid\":\"old-parent\"}}"));
                     })
                     .post(ApiClient.PROJECT_URL, (request, response) -> {
                         assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
@@ -380,6 +380,7 @@ public class ApiClientTest {
         props.setSwidTagId("my swid tag id");
         props.setGroup("my group");
         props.setDescription("my description");
+        props.setParentId("parent-uuid");
 
         assertThatCode(() -> uut.updateProjectProperties("uuid-3", props)).doesNotThrowAnyException();
         completionSignal.await(5, TimeUnit.SECONDS);
@@ -388,6 +389,7 @@ public class ApiClientTest {
         assertThat(project.getSwidTagId()).isEqualTo(props.getSwidTagId());
         assertThat(project.getGroup()).isEqualTo(props.getGroup());
         assertThat(project.getDescription()).isEqualTo(props.getDescription());
+        assertThat(project.getParent()).hasFieldOrPropertyWithValue("uuid", props.getParentId());
     }
 
     @Test

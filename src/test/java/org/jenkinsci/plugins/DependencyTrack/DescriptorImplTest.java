@@ -29,7 +29,6 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import hudson.util.VersionNumber;
-import io.jenkins.plugins.casc.misc.JenkinsConfiguredRule;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +42,7 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
 import org.kohsuke.stapler.StaplerRequest;
 import org.mockito.Mock;
@@ -65,7 +65,7 @@ import static org.mockito.Mockito.when;
 public class DescriptorImplTest {
 
     @Rule
-    public JenkinsConfiguredRule r = new JenkinsConfiguredRule();
+    public JenkinsRule r = new JenkinsRule();
 
     @Mock
     private ApiClient client;

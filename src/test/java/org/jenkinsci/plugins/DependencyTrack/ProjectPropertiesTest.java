@@ -15,15 +15,22 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
+import hudson.util.ReflectionUtils;
+import java.lang.reflect.Field;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import jenkins.model.Jenkins;
+import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  *
@@ -70,8 +77,32 @@ class ProjectPropertiesTest {
         uut.setDescription("");
         uut.setGroup("\t");
         uut.setSwidTagId(System.lineSeparator());
+        uut.setParentId("       ");
         assertThat(uut.getDescription()).isNull();
         assertThat(uut.getGroup()).isNull();
         assertThat(uut.getSwidTagId()).isNull();
+        assertThat(uut.getParentId()).isNull();
+    }
+
+    @Nested
+    class DescriptorImplTest {
+
+        @Test
+        void doFillParentIdItemsTest() throws Exception {
+            Field instanceField = ReflectionUtils.findField(Jenkins.class, "theInstance", Jenkins.class);
+            ReflectionUtils.makeAccessible(instanceField);
+            Jenkins origJenkins = (Jenkins) instanceField.get(null);
+            Jenkins mockJenkins = mock(Jenkins.class);
+            ReflectionUtils.setField(instanceField, null, mockJenkins);
+            org.jenkinsci.plugins.DependencyTrack.DescriptorImpl descriptorMock = mock(org.jenkinsci.plugins.DependencyTrack.DescriptorImpl.class);
+            when(mockJenkins.getDescriptorByType(org.jenkinsci.plugins.DependencyTrack.DescriptorImpl.class)).thenReturn(descriptorMock);
+            ProjectProperties.DescriptorImpl uut = new ProjectProperties.DescriptorImpl();
+
+            uut.doFillParentIdItems("url", "key", null);
+
+            ReflectionUtils.setField(instanceField, null, origJenkins);
+            verify(mockJenkins).getDescriptorByType(org.jenkinsci.plugins.DependencyTrack.DescriptorImpl.class);
+            verify(descriptorMock).doFillProjectIdItems("url", "key", null);
+        }
     }
 }
