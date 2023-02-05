@@ -63,6 +63,7 @@ Once configured with a valid URL and API key, simply configure a job to publish 
 - SWID tag ID
 - group/vendor
 - description
+- ID of parent project (for Dependency-Track v4.7 and newer)
 
 **Override global settings**: Allows to override global settings for "Auto Create Projects", "Dependency-Track URL", "Dependency-Track Frontend URL" and "API key".
 
@@ -87,7 +88,7 @@ pipeline {
         stage('dependencyTrackPublisher') {
             steps {
                 withCredentials([string(credentialsId: '506ed685-4e2b-4d31-a44f-8ba8e67b6341', variable: 'API_KEY')]) {
-                    dependencyTrackPublisher artifact: 'target/bom.xml', projectName: 'my-project', projectVersion: 'my-version', synchronous: true, dependencyTrackApiKey: API_KEY, projectProperties: [tags: ['tag1', 'tag2'], swidTagId: 'my swid tag', group: 'my group']
+                    dependencyTrackPublisher artifact: 'target/bom.xml', projectName: 'my-project', projectVersion: 'my-version', synchronous: true, dependencyTrackApiKey: API_KEY, projectProperties: [tags: ['tag1', 'tag2'], swidTagId: 'my swid tag', group: 'my group', parentId: 'parent-uuid']
                 }
             }
         }
