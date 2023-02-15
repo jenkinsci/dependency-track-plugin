@@ -15,28 +15,13 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
-import com.cloudbees.plugins.credentials.CredentialsProvider;
-import hudson.AbortException;
-import hudson.FilePath;
-import hudson.Launcher;
-import hudson.model.Result;
-import hudson.model.Run;
-import hudson.model.TaskListener;
-import hudson.tasks.BuildStepMonitor;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.io.Serializable;
 import java.util.List;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
-import hudson.EnvVars;
-import hudson.tasks.Recorder;
-import hudson.util.Secret;
 import java.util.Optional;
-import jenkins.tasks.SimpleBuildStep;
-import lombok.AccessLevel;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.RiskGate;
@@ -47,6 +32,26 @@ import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
+
+import com.cloudbees.plugins.credentials.CredentialsProvider;
+
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
+import hudson.AbortException;
+import hudson.EnvVars;
+import hudson.FilePath;
+import hudson.Launcher;
+import hudson.model.Result;
+import hudson.model.Run;
+import hudson.model.TaskListener;
+import hudson.tasks.BuildStepMonitor;
+import hudson.tasks.Recorder;
+import hudson.util.Secret;
+import jenkins.tasks.SimpleBuildStep;
+import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
+import lombok.Getter;
+import lombok.Setter;
 
 @Getter
 @Setter(onMethod_ = {@DataBoundSetter})
@@ -313,6 +318,11 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         linkAction.setProjectName(effectiveProjectName);
         linkAction.setProjectVersion(effectiveProjectVersion);
         build.addOrReplaceAction(linkAction);
+        
+        // create PDF report
+        ByteArrayOutputStream baos=new ByteArrayOutputStream();
+        final PrintStream p=new PrintStream(baos);
+        findings.stream().map(Finding::getVulnerability).forEach(p::println);
 
         // Get previous results and evaluate to thresholds
         final SeverityDistribution previousSeverityDistribution = Optional.ofNullable(getPreviousBuildWithAnalysisResult(build))

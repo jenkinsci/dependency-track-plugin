@@ -33,12 +33,22 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
+
+import org.jenkinsci.plugins.DependencyTrack.model.Analysis;
+import org.jenkinsci.plugins.DependencyTrack.model.Component;
+import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
+import org.jenkinsci.plugins.DependencyTrack.model.Severity;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
+import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -88,7 +98,7 @@ public class DependencyTrackPublisherTest {
 
     @Mock
     private ApiClient client;
-
+    
     private final ApiClientFactory clientFactory = (url, apiKey, logger, connTimeout, readTimeout) -> client;
     private final String apikeyId = "api-key-id";
     private final String apikey = "api-key";
@@ -108,6 +118,51 @@ public class DependencyTrackPublisherTest {
         when(build.getNumber()).thenReturn(1);
     }
 
+    @Test
+    public void testPerform1() throws IOException {
+        File tmp = tmpDir.newFile();
+        final String projectId="p-uuid-1";
+        final String projectName="pname";
+        final String projectVersion="pversion";
+        final String token="token-1";
+        final List<Finding> findings=new ArrayList<Finding>(Arrays.asList(
+        	new Finding(new Component("cuuid1", "cname", "cgroup", "cversion", "purl1"),
+        		new Vulnerability("vuuid1", "source", "vulnid1", "title", "subtitle", "description", "recommendation", Severity.CRITICAL, 1, 432, "cweName"),
+        		new Analysis("state", false),
+        		apikey),
+        	new Finding(new Component("cuuid2", "cname2", "cgroup2", "cversion2", "purl2"),
+            		new Vulnerability("vuuid2", "source2", "vulnid2", "title2", "subtitle2", "description2", "recommendation2", Severity.CRITICAL, 1, 433, "cweName2"),
+            		new Analysis("state", false),
+            		apikey)
+        ));
+        
+        FilePath workDir = new FilePath(tmpDir.getRoot());
+        DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
+        uut.setProjectId(projectId);
+        uut.setProjectName(projectName);
+        uut.setProjectVersion(projectVersion);
+        uut.setDependencyTrackApiKey(apikeyId);
+
+        when(client.upload(eq(projectId), eq(projectName), eq(projectVersion), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, token));
+        when(client.isTokenBeingProcessed(token)).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
+        when(client.getFindings(projectId)).thenReturn(findings);
+        
+        Run buildWithResultAction = mock(Run.class);
+        when(buildWithResultAction.getResult()).thenReturn(Result.SUCCESS);
+        when(buildWithResultAction.getAction(ResultAction.class)).thenReturn(new ResultAction(findings, new SeverityDistribution(42)));
+//        Run buildWithNoResultAction = mock(Run.class);
+//        when(buildWithNoResultAction.getResult()).thenReturn(Result.SUCCESS);
+//        when(buildWithNoResultAction.getPreviousSuccessfulBuild()).thenReturn(buildWithResultAction);
+//        Run abortedBuild = mock(Run.class);
+//        when(abortedBuild.getResult()).thenReturn(Result.NOT_BUILT);
+//        when(abortedBuild.getPreviousSuccessfulBuild()).thenReturn(buildWithNoResultAction);
+        when(build.getPreviousSuccessfulBuild()).thenReturn(buildWithResultAction);
+
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
+        verify(client, times(2)).isTokenBeingProcessed(token);
+        verify(client).getFindings(projectId);
+        verify(buildWithResultAction, times(2)).getAction(ResultAction.class);
+    }
     @Test
     public void testPerformPrechecks() throws IOException {
         when(listener.getLogger()).thenReturn(System.err);

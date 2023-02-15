@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>4.31</version>
+        <version>4.52</version>
         <relativePath />
     </parent>
 
@@ -37,10 +37,10 @@
     </licenses>
 
     <properties>
-        <jenkins.version>2.289.2</jenkins.version>
+        <jenkins.version>2.361.4</jenkins.version>
         <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
         <configuration-as-code.version>1.55.1</configuration-as-code.version>
-        <java.level>8</java.level>
+        <java.level>11</java.level>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <junit-jupiter.version>[5.8.0,5.8.99)</junit-jupiter.version>
@@ -253,6 +253,9 @@
                             </includes>
                         </resource>
                     </webResources>
+                    <contextXml>
+                      ${project.basedir}/src/test/resources/jetty_test_config.xml
+                    </contextXml>
                 </configuration>
             </plugin>
             <plugin>
@@ -361,6 +364,11 @@
             <version>${junit-jupiter.version}</version>
             <scope>test</scope>
         </dependency>
+        <!--<dependency>
+          <groupId>org.jenkins-ci.plugins.workflow</groupId>
+          <artifactId>workflow-aggregator</artifactId>
+          <version>590.v6a_d052e5a_a_b_5</version>
+        </dependency>-->
     </dependencies>
 
     <scm>

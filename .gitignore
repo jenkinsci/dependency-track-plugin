@@ -1,6 +1,9 @@
 /.idea/
 /target/
 /work/
+/work-new/
+/work-orig/
+/work-old/
 /nbproject/
 /node_modules/
 /nbactions.xml
@@ -13,3 +16,5 @@
 /src/main/webapp/js/libs/echarts.common.min.js
 /src/main/webapp/js/libs/echarts.esm.min.js
 /src/main/webapp/js/libs/vue.min.js
+/m2local/
+*.log
