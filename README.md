@@ -43,6 +43,16 @@ To setup, navigate to Jenkins > System Configuration and complete the Dependency
 
 **Response Timeout**: Defines the maximum number of seconds to wait for Dependency-Track to respond.
 
+### Permission Overview
+Permission | Required | Usage
+-----------| -------- | -----
+BOM_UPLOAD | :ballot_box_with_check: | needed for BOM upload
+VIEW_PORTFOLIO | :ballot_box_with_check: | needed to retrieve list of projects
+VULNERABILITY_ANALYSIS | :ballot_box_with_check: | needed to perform dependency analysis
+PROJECT_CREATION_UPLOAD | :grey_question: | needed to create non-existing projects during BOM upload
+VIEW_VULNERABILITY | :grey_question: | needed in synchronous publishing mode to retrieve analysis results
+PORTFOLIO_MANAGEMENT | :grey_question: | needed for updating project properties such as tags
+
 ## Job Configuration
 Once configured with a valid URL and API key, simply configure a job to publish the artifact.
 
