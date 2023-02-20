@@ -13,7 +13,7 @@
     <artifactId>dependency-track</artifactId>
 
     <name>OWASP Dependency-Track Plugin</name>
-    <version>4.2.1-SNAPSHOT</version>
+    <version>4.3.0-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <inceptionYear>2018</inceptionYear>
     <organization>
@@ -94,7 +94,7 @@
                                 </goals>
                                 <phase>initialize</phase>
                                 <configuration>
-                                    <nodeVersion>v16.15.1</nodeVersion>
+                                    <nodeVersion>v16.19.1</nodeVersion>
                                     <nodeDownloadRoot>https://repo.jenkins-ci.org/nodejs-dist/</nodeDownloadRoot>
                                     <npmRegistryURL>https://repo.jenkins-ci.org/api/npm/npm/</npmRegistryURL>
                                     <installDirectory>${project.build.directory}</installDirectory>
@@ -174,6 +174,7 @@
                     <pushChanges>false</pushChanges>
                     <localCheckout>true</localCheckout>
                     <tagNameFormat>v@{project.version}</tagNameFormat>
+                    <preparationGoals>clean sync-packagejson-version:sync verify</preparationGoals>
                 </configuration>
             </plugin>
             <plugin>
@@ -192,6 +193,11 @@
                         </fileset>
                     </filesets>
                 </configuration>
+            </plugin>
+            <plugin>
+                <groupId>de.ingogriebsch.maven</groupId>
+                <artifactId>sync-packagejson-version-maven-plugin</artifactId>
+                <version>1.3.0</version>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
