@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>4.52</version>
+        <version>4.51</version>
         <relativePath />
     </parent>
 
@@ -37,16 +37,17 @@
     </licenses>
 
     <properties>
-        <jenkins.version>2.361.4</jenkins.version>
+        <jenkins.version>2.332.2</jenkins.version>
         <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
         <configuration-as-code.version>1.55.1</configuration-as-code.version>
-        <java.level>11</java.level>
+        <java.level>8</java.level>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <junit-jupiter.version>[5.8.0,5.8.99)</junit-jupiter.version>
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <npm.path>npm</npm.path>
         <npm.suffix />
+        <hpi-plugin.version>3.20</hpi-plugin.version>
     </properties>
     
     <profiles>
@@ -215,6 +216,7 @@
                 <groupId>org.jenkins-ci.tools</groupId>
                 <artifactId>maven-hpi-plugin</artifactId>
                 <configuration>
+					<minimumJavaVersion>1.8</minimumJavaVersion>
                     <webResources>
                         <resource>
                             <directory>node_modules/bootstrap-vue/dist</directory>
@@ -401,4 +403,13 @@
         </pluginRepository>
     </pluginRepositories>
 
+    <dependencyManagement>
+    	<dependencies>
+    		<dependency>
+    			<groupId>org.jenkins-ci</groupId>
+    			<artifactId>symbol-annotation</artifactId>
+    			<version>1.23</version>
+    		</dependency>
+    	</dependencies>
+    </dependencyManagement>
 </project>
