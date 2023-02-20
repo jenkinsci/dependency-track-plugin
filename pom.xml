@@ -174,7 +174,8 @@
                     <pushChanges>false</pushChanges>
                     <localCheckout>true</localCheckout>
                     <tagNameFormat>v@{project.version}</tagNameFormat>
-                    <preparationGoals>clean sync-packagejson-version:sync verify</preparationGoals>
+                    <preparationGoals>clean sync-packagejson-version:sync scm:checkin verify</preparationGoals>
+                    <completionGoals>sync-packagejson-version:sync scm:checkin</completionGoals>
                 </configuration>
             </plugin>
             <plugin>
@@ -198,6 +199,16 @@
                 <groupId>de.ingogriebsch.maven</groupId>
                 <artifactId>sync-packagejson-version-maven-plugin</artifactId>
                 <version>1.3.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-scm-plugin</artifactId>
+                <version>2.0.0-M3</version>
+                <configuration>
+                    <pushChanges>false</pushChanges>
+                    <message>[maven-scm-plugin] updating package.json</message>
+                    <includes>package.json</includes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
