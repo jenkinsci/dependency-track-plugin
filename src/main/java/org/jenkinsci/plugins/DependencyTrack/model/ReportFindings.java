@@ -1,8 +1,10 @@
 package org.jenkinsci.plugins.DependencyTrack.model;
 
+import lombok.Builder;
 import lombok.Value;
 
 @Value
+@Builder
 public class ReportFindings {
 	
 	private String componentName;

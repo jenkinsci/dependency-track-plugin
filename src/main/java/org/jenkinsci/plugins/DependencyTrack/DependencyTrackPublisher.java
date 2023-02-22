@@ -97,6 +97,11 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      * config item.
      */
     private final String artifact;
+    
+    /**
+     * Define the subtitle for the Dependency Track Summary report
+     */
+    private String reportSubTitle;
 
     /**
      * Retrieves whether synchronous mode is enabled or not. This is a per-build
@@ -254,6 +259,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         final String effectiveProjectName = env.expand(projectName);
         final String effectiveProjectVersion = env.expand(projectVersion);
         final String effectiveArtifact = env.expand(artifact);
+        final String effectiveReportSubTitle = env.expand(reportSubTitle);
         final boolean effectiveAutocreate = isEffectiveAutoCreateProjects();
         projectIdCache = null;
 
@@ -297,11 +303,11 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         updateProjectProperties(logger, apiClient, effectiveProjectName, effectiveProjectVersion);
 
         if (synchronous && StringUtils.isNotBlank(uploadResult.getToken())) {
-            publishAnalysisResult(logger, apiClient, uploadResult.getToken(), run, effectiveProjectName, effectiveProjectVersion);
+            publishAnalysisResult(logger, apiClient, uploadResult.getToken(), run, effectiveProjectName, effectiveProjectVersion, effectiveReportSubTitle);
         }
     }
 
-    private void publishAnalysisResult(final ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build, final String effectiveProjectName, final String effectiveProjectVersion) throws InterruptedException, IOException {
+    private void publishAnalysisResult(final ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build, final String effectiveProjectName, final String effectiveProjectVersion, String effectiveReportSubTitle) throws InterruptedException, IOException {
         final long timeout = System.currentTimeMillis() + (60000L * descriptor.getDependencyTrackPollingTimeout());
         final long interval = 1000L * descriptor.getDependencyTrackPollingInterval();
         logger.log(Messages.Builder_Polling());
@@ -320,6 +326,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         final SeverityDistribution severityDistribution = new SeverityDistribution(build.getNumber());
         findings.stream().map(Finding::getVulnerability).map(Vulnerability::getSeverity).forEach(severityDistribution::add);
         final ResultAction projectAction = new ResultAction(findings, severityDistribution);
+        projectAction.setReportSubTitle(effectiveReportSubTitle);
         projectAction.setDependencyTrackUrl(getEffectiveFrontendUrl());
         projectAction.setProjectId(effectiveProjectId);
         build.addOrReplaceAction(projectAction);

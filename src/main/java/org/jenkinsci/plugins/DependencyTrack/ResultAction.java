@@ -19,10 +19,12 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.Serializable;
-import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import javax.servlet.ServletException;
@@ -37,7 +39,6 @@ import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.WebApp;
 import org.kohsuke.stapler.WebMethod;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
-import org.springframework.util.MimeType;
 import org.springframework.util.MimeTypeUtils;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
@@ -52,6 +53,13 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperCompileManager;
+import net.sf.jasperreports.engine.JasperExportManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import net.sf.json.JSONArray;
 
 @Getter
@@ -71,6 +79,12 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
      */
     @Setter
     private String dependencyTrackUrl;
+    
+    /**
+     * the subtitle of the report on the report header
+     */
+    @Setter
+    private String reportSubTitle;
 
     /**
      * the ID of the project to which these results are belonging to
@@ -140,25 +154,41 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
     public String getCrumb() {
         return WebApp.getCurrent().getCrumbIssuer().issueCrumb();
     }
+    
+    /**
+     * Set default if subtitle is not specified
+     * @param aReportSubTitle
+     */
+    public void setReportSubTitle(String aReportSubTitle) {
+    	 this.reportSubTitle = Optional.ofNullable(aReportSubTitle).orElse("summary report");
+    	
+	}
 
     @WebMethod(name="summarydtreport.txt")
-    public HttpResponse doSummaryReport() throws IOException {
+    public HttpResponse doSummaryReport() throws IOException, JRException {
         // create PDF report
-        final ByteArrayOutputStream baos=new ByteArrayOutputStream();
-        final PrintStream p=new PrintStream(baos);
-        findings.stream().map(Finding::getVulnerability).forEach(p::println);
-        baos.close();
+		final byte[] jasperPdf = createPdfReport(reportSubTitle);
         return new HttpResponse() {
 
 			@Override
 			public void generateResponse(StaplerRequest req, StaplerResponse rsp, Object node)
 					throws IOException, ServletException {
 				rsp.setContentType(MimeTypeUtils.TEXT_PLAIN_VALUE);
-				rsp.getOutputStream().write(baos.toByteArray());
+				rsp.getOutputStream().write(jasperPdf);
 			}
         	
         };
     }
+
+	protected byte[] createPdfReport(String aReportSubTitle) throws JRException {
+		JasperReport jr=JasperCompileManager.compileReport("report/Dependency_Track_Summary.jrxml");
+		final Map<String, Object> reportParameters=new HashMap<String, Object>();
+		reportParameters.put("REPORT_TITLE", "Dependency-Track");
+		reportParameters.put("REPORT_SUBTITLE", aReportSubTitle);
+		JasperPrint jp=JasperFillManager.fillReport(jr, reportParameters, new JRBeanCollectionDataSource(ReportFindingsFactory.getReportFindings(findings)));
+		final byte[] jasperPdf=JasperExportManager.exportReportToPdf(jp);
+		return jasperPdf;
+	}
 	
 
 }

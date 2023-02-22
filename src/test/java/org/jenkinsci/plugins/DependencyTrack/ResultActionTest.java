@@ -23,10 +23,13 @@ import hudson.security.ACL;
 import hudson.security.ACLContext;
 import hudson.security.AccessDeniedException3;
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.List;
+
+import net.sf.jasperreports.engine.JRException;
 import net.sf.json.JSONArray;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.util.Files;
@@ -36,6 +39,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
+import org.kohsuke.stapler.HttpResponse;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -99,5 +103,18 @@ public class ResultActionTest {
         assertThat(new ResultAction(null, new SeverityDistribution(1)).hasFindings()).isFalse();
         assertThat(new ResultAction(Collections.emptyList(), new SeverityDistribution(1)).hasFindings()).isFalse();
         assertThat(new ResultAction(getTestFindings(), new SeverityDistribution(1)).hasFindings()).isTrue();
+    }
+    
+    @Test
+    public void createPdfReportTest() throws IOException, JRException {
+    	
+        final ResultAction uut = new ResultAction(getTestFindings(), new SeverityDistribution(1));
+        byte[] result = uut.createPdfReport("mary had a little lamb");
+        File pdfFile=File.createTempFile("jasperreport", ".pdf");
+        try (FileOutputStream os = new FileOutputStream(pdfFile)) {
+        	os.write(result);
+        }
+        System.out.println("Output file: "+pdfFile.getAbsolutePath());
+        
     }
 }
