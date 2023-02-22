@@ -3,6 +3,11 @@
 ## Unreleased
 ### ⚠ Breaking
 ### ⭐ New Features
+### 🐞 Bugs Fixed
+
+## v4.3.0 - 2022-02-20
+### ⚠ Breaking
+### ⭐ New Features
 - Added support for parent-child-relationships of projects with Dependency-Track v4.7 and newer (fixes [#139](https://github.com/jenkinsci/dependency-track-plugin/issues/139))
 
 ### 🐞 Bugs Fixed
