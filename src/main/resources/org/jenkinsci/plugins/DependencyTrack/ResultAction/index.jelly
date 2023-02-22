@@ -9,19 +9,22 @@
             <st:include page="sidepanel.jelly" it="${it.run}" optional="true" />
         </l:side-panel>
 
-        <l:header>
-            <link rel="preload" as="style" onload="this.rel='stylesheet'" href="${resURL}/plugin/dependency-track/css/bootstrap.min.css?v=${it.versionHash}" />
-            <link rel="preload" as="style" onload="this.rel='stylesheet'" href="${resURL}/plugin/dependency-track/css/bootstrap-vue.min.css?v=${it.versionHash}" />
-            <link rel="preload" as="style" onload="this.rel='stylesheet'" href="${resURL}/plugin/dependency-track/css/result-action.css?v=${it.versionHash}" />
+        <l:main-panel>
+            <div>
+              <l:icon class="icon-save icon-md" />
+      
+              <a href="summarydtreport.txt">Download <tt>Summary Dependency-Track</tt> report file</a>
+            </div>
+            <l:css src="plugin/dependency-track/css/bootstrap.min.css?v=${it.versionHash}" />
+            <l:css src="plugin/dependency-track/css/bootstrap-vue.min.css?v=${it.versionHash}" />
+            <l:css src="plugin/dependency-track/css/result-action.css?v=${it.versionHash}" />
 
             <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/libs/vue.min.js?v=${it.versionHash}" defer="defer"></script>
             <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/libs/bootstrap-vue.min.js?v=${it.versionHash}" defer="defer"></script>
             <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/libs/bootstrap-vue-icons.min.js?v=${it.versionHash}" defer="defer"></script>
 
             <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/result-action.js?v=${it.versionHash}" defer="defer" data-action-url="${it.bindUrl}" data-crumb-value="${it.crumb}"></script>
-        </l:header>
 
-        <l:main-panel>
             <h1>${%page.title(it.displayName, it.run.parent.displayName, it.run.displayName)}</h1>
             <div class="alert alert-warning" role="alert">
                 ${%page.globalwarning.1} <j:if test="${it.dependencyTrackUrl != null and !it.dependencyTrackUrl.isEmpty()}">${%page.globalwarning.2(it.dependencyTrackUrl + '/project/?uuid=' + it.projectId, 'alert-link')}</j:if>

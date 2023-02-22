@@ -377,6 +377,11 @@
           <artifactId>workflow-aggregator</artifactId>
           <version>590.v6a_d052e5a_a_b_5</version>
         </dependency>-->
+        <dependency>
+          <groupId>net.sf.jasperreports</groupId>
+          <artifactId>jasperreports</artifactId>
+          <version>6.4.0</version>
+        </dependency>
     </dependencies>
 
     <scm>

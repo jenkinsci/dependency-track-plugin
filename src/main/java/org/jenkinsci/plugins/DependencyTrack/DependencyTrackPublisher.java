@@ -15,16 +15,21 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.DependencyTrack.model.Analysis;
+import org.jenkinsci.plugins.DependencyTrack.model.Component;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.RiskGate;
+import org.jenkinsci.plugins.DependencyTrack.model.Severity;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.jenkinsci.plugins.DependencyTrack.model.Thresholds;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
@@ -52,6 +57,13 @@ import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import net.sf.jasperreports.engine.JRException;
+import net.sf.jasperreports.engine.JasperCompileManager;
+import net.sf.jasperreports.engine.JasperExportManager;
+import net.sf.jasperreports.engine.JasperFillManager;
+import net.sf.jasperreports.engine.JasperPrint;
+import net.sf.jasperreports.engine.JasperReport;
+import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 
 @Getter
 @Setter(onMethod_ = {@DataBoundSetter})
@@ -280,7 +292,6 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         linkAction.setProjectName(effectiveProjectName);
         linkAction.setProjectVersion(effectiveProjectVersion);
         run.addOrReplaceAction(linkAction);
-
         logger.log(Messages.Builder_Success(String.format("%s/projects/%s", getEffectiveFrontendUrl(), StringUtils.isNotBlank(projectId) ? projectId : StringUtils.EMPTY)));
         
         updateProjectProperties(logger, apiClient, effectiveProjectName, effectiveProjectVersion);
@@ -290,7 +301,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         }
     }
 
-    private void publishAnalysisResult(final ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build, final String effectiveProjectName, final String effectiveProjectVersion) throws InterruptedException, ApiClientException, AbortException {
+    private void publishAnalysisResult(final ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build, final String effectiveProjectName, final String effectiveProjectVersion) throws InterruptedException, IOException {
         final long timeout = System.currentTimeMillis() + (60000L * descriptor.getDependencyTrackPollingTimeout());
         final long interval = 1000L * descriptor.getDependencyTrackPollingInterval();
         logger.log(Messages.Builder_Polling());
@@ -319,11 +330,6 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         linkAction.setProjectVersion(effectiveProjectVersion);
         build.addOrReplaceAction(linkAction);
         
-        // create PDF report
-        ByteArrayOutputStream baos=new ByteArrayOutputStream();
-        final PrintStream p=new PrintStream(baos);
-        findings.stream().map(Finding::getVulnerability).forEach(p::println);
-
         // Get previous results and evaluate to thresholds
         final SeverityDistribution previousSeverityDistribution = Optional.ofNullable(getPreviousBuildWithAnalysisResult(build))
                 .map(previousBuild -> previousBuild.getAction(ResultAction.class))
@@ -499,4 +505,32 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         }
         return projectIdCache;
     }
+    public static void main(String[] args) {
+    	String apikey="-apikey-";
+        final List<Finding> findings=new ArrayList<Finding>(Arrays.asList(
+            	new Finding(new Component("cuuid1", "cname", "cgroup", "cversion", "purl1"),
+            		new Vulnerability("vuuid1", "source", "vulnid1", "title", "subtitle", "description", "recommendation", Severity.CRITICAL, 1, 432, "cweName"),
+            		new Analysis("state", false),
+            		apikey),
+            	new Finding(new Component("cuuid2", "cname2", "cgroup2", "cversion2", "purl2"),
+                		new Vulnerability("vuuid2", "source2", "vulnid2", "title2", "subtitle2", "description2", "recommendation2", Severity.CRITICAL, 1, 433, "cweName2"),
+                		new Analysis("state", false),
+                		apikey)
+           ));
+		JasperReport jasperReport;
+		JasperPrint jasperPrint;
+		try {
+			Map<String, Object> parameters=new HashMap<String, Object>();
+			parameters.put("REPORT_TITLE", "Dependency-Track");
+			parameters.put("REPORT_SUBTITLE", "testpipeline: summary report");
+			jasperReport = JasperCompileManager.compileReport("C:/radws/workspace/jr/JasperReport/Dependency_Track_Summary.jrxml");
+			jasperPrint = JasperFillManager.fillReport(jasperReport, parameters, new JRBeanCollectionDataSource(findings));
+			JasperExportManager.exportReportToPdfFile(jasperPrint, "target/Dependency_Track_Summary.pdf");
+			
+		} catch (JRException e) {
+			e.printStackTrace();
+		}
+
+
+	}
 }

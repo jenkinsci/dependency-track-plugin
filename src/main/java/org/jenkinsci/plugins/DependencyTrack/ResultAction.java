@@ -15,16 +15,36 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.PrintStream;
+import java.io.Serializable;
+import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+
+import javax.servlet.ServletException;
+
+import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.DependencyTrack.model.Finding;
+import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
+import org.kohsuke.stapler.HttpResponse;
+import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerResponse;
+import org.kohsuke.stapler.WebApp;
+import org.kohsuke.stapler.WebMethod;
+import org.kohsuke.stapler.bind.JavaScriptMethod;
+import org.springframework.util.MimeType;
+import org.springframework.util.MimeTypeUtils;
+
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Plugin;
 import hudson.PluginWrapper;
 import hudson.model.Action;
 import hudson.model.Run;
-import java.io.Serializable;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
-import java.util.Optional;
 import jenkins.model.Jenkins;
 import jenkins.model.RunAction2;
 import jenkins.tasks.SimpleBuildStep;
@@ -33,12 +53,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import net.sf.json.JSONArray;
-import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang.StringUtils;
-import org.jenkinsci.plugins.DependencyTrack.model.Finding;
-import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
-import org.kohsuke.stapler.WebApp;
-import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 @Getter
 @EqualsAndHashCode
@@ -126,5 +140,25 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
     public String getCrumb() {
         return WebApp.getCurrent().getCrumbIssuer().issueCrumb();
     }
+
+    @WebMethod(name="summarydtreport.txt")
+    public HttpResponse doSummaryReport() throws IOException {
+        // create PDF report
+        final ByteArrayOutputStream baos=new ByteArrayOutputStream();
+        final PrintStream p=new PrintStream(baos);
+        findings.stream().map(Finding::getVulnerability).forEach(p::println);
+        baos.close();
+        return new HttpResponse() {
+
+			@Override
+			public void generateResponse(StaplerRequest req, StaplerResponse rsp, Object node)
+					throws IOException, ServletException {
+				rsp.setContentType(MimeTypeUtils.TEXT_PLAIN_VALUE);
+				rsp.getOutputStream().write(baos.toByteArray());
+			}
+        	
+        };
+    }
+	
 
 }
