@@ -5,7 +5,7 @@ import lombok.Value;
 
 @Value
 @Builder
-public class ReportFindings {
+public class ReportFindings implements Comparable<ReportFindings> {
 	
 	private String componentName;
 	private String componentGroup;
@@ -15,5 +15,9 @@ public class ReportFindings {
 	private String cwe;
 	private Boolean isSuppressed;
 	private Integer severityRank;
+	@Override
+	public int compareTo(ReportFindings o) {
+		return this.severityRank.compareTo(o.getSeverityRank());
+	}
 	
 }
