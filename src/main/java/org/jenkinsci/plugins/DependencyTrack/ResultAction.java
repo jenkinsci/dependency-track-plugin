@@ -182,7 +182,7 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
 		reportParameters.put("REPORT_TITLE", "Dependency-Track");
 		reportParameters.put("REPORT_SUBTITLE", aReportSubTitle);
 		reportParameters.put("SEVERITY_DISTRIBUTION", severityDistribution.toString());
-		JasperPrint jp=JasperFillManager.fillReport(jr, reportParameters, new JRBeanCollectionDataSource(ReportFindingsFactory.getReportFindings(findings)));
+		JasperPrint jp=JasperFillManager.fillReport(jr, reportParameters, new JRBeanCollectionDataSource(ReportFindingsFactory.getSortedReportFindings(findings)));
 		final byte[] jasperPdfBytes=JasperExportManager.exportReportToPdf(jp);
 		return jasperPdfBytes;
 	}
