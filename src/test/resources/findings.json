@@ -15,8 +15,8 @@
 			"subtitle": "subtitle-1",
 			"description": "description-1",
 			"recommendation": "recommendation-1",
-			"severity": "CRITICAL",
-			"severityRank": 0,
+			"severity": "LOW",
+			"severityRank": 3,
 			"cweId": 2,
 			"cweName": "cweName-1"
 		},
@@ -25,5 +25,59 @@
 			"isSuppressed": false
 		},
 		"matrix": "matrix-1"
-	}
+	},
+    {
+        "component": {
+            "uuid": "uuid-2",
+            "name": "name-2",
+            "group": "group-2",
+            "version": "version-2",
+            "purl": "purl-2"
+        },
+        "vulnerability": {
+            "uuid": "uuid-2",
+            "source": "NVD",
+            "vulnId": "CVE-2022-34332",
+            "title": "title-2",
+            "subtitle": "subtitle-2",
+            "description": "description-2",
+            "recommendation": "recommendation-2",
+            "severity": "CRITICAL",
+            "severityRank": 0,
+            "cweId": 3,
+            "cweName": "cweName-2"
+        },
+        "analysis": {
+            "state": "state-2",
+            "isSuppressed": false
+        },
+        "matrix": "matrix-2"
+    },
+    {
+        "component": {
+            "uuid": "uuid-3",
+            "name": "name-3",
+            "group": "group-3",
+            "version": "version-3",
+            "purl": "purl-3"
+        },
+        "vulnerability": {
+            "uuid": "uuid-3",
+            "source": "NVD",
+            "vulnId": "CVE-2016-1000027",
+            "title": "title-3",
+            "subtitle": "subtitle-3",
+            "description": "description-3",
+            "recommendation": "recommendation-3",
+            "severity": "CRITICAL",
+            "severityRank": 0,
+            "cweId": 4,
+            "cweName": "cweName-3"
+        },
+        "analysis": {
+            "state": "state-3",
+            "isSuppressed": false
+        },
+        "matrix": "matrix-3"
+    }
 ]

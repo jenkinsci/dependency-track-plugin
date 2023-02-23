@@ -15,34 +15,31 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
+import java.io.File;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
+import static org.jenkinsci.plugins.DependencyTrack.JasperReports.*;
 
-import javax.servlet.ServletException;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.kohsuke.stapler.HttpResponse;
-import org.kohsuke.stapler.StaplerRequest;
-import org.kohsuke.stapler.StaplerResponse;
 import org.kohsuke.stapler.WebApp;
 import org.kohsuke.stapler.WebMethod;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
-import org.springframework.util.MimeTypeUtils;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Plugin;
 import hudson.PluginWrapper;
 import hudson.model.Action;
 import hudson.model.Run;
+import hudson.util.HttpResponses;
 import jenkins.model.Jenkins;
 import jenkins.model.RunAction2;
 import jenkins.tasks.SimpleBuildStep;
@@ -51,12 +48,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import net.sf.jasperreports.engine.JRException;
-import net.sf.jasperreports.engine.JasperCompileManager;
-import net.sf.jasperreports.engine.JasperExportManager;
-import net.sf.jasperreports.engine.JasperFillManager;
-import net.sf.jasperreports.engine.JasperPrint;
-import net.sf.jasperreports.engine.JasperReport;
-import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
 import net.sf.json.JSONArray;
 
 @Getter
@@ -160,32 +151,16 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
     	
 	}
 
-    @WebMethod(name="summarydtreport.pdf")
-    public HttpResponse doSummaryReport() throws IOException, JRException {
-        // create PDF report
-		final byte[] jasperPdf = createPdfReport(reportSubTitle, severityDistribution);
-        return new HttpResponse() {
-
-			@Override
-			public void generateResponse(StaplerRequest req, StaplerResponse rsp, Object node)
-					throws IOException, ServletException {
-				rsp.setContentType(MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE);
-				rsp.getOutputStream().write(jasperPdf);
-			}
-        	
-        };
+    @WebMethod(name="dt_summary.pdf")
+    public HttpResponse doSummaryReportPdf() throws IOException, JRException {
+        // return PDF report
+		return HttpResponses.staticResource(new File(run.getRootDir(), PDF_REPORT_FILENAME));
     }
 
-	protected byte[] createPdfReport(String aReportSubTitle, SeverityDistribution severityDistribution) throws JRException {
-		JasperReport jr=JasperCompileManager.compileReport("report/Dependency_Track_Summary.jrxml");
-		final Map<String, Object> reportParameters=new HashMap<String, Object>();
-		reportParameters.put("REPORT_TITLE", "Dependency-Track");
-		reportParameters.put("REPORT_SUBTITLE", aReportSubTitle);
-		reportParameters.put("SEVERITY_DISTRIBUTION", severityDistribution.toString());
-		JasperPrint jp=JasperFillManager.fillReport(jr, reportParameters, new JRBeanCollectionDataSource(ReportFindingsFactory.getSortedReportFindings(findings)));
-		final byte[] jasperPdfBytes=JasperExportManager.exportReportToPdf(jp);
-		return jasperPdfBytes;
-	}
-	
+    @WebMethod(name="dt_summary.xlsx")
+    public HttpResponse doSummaryReportExcel() throws IOException, JRException {
+        // return CSV report
+		return HttpResponses.staticResource(new File(run.getRootDir(), XLSX_REPORT_FILENAME));
+    }
 
 }

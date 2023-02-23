@@ -19,9 +19,9 @@ public class ReportFindingsFactory {
 					.componentName(f.getComponent().getName())
 					.componentGroup(f.getComponent().getGroup())
 					.componentVersion(f.getComponent().getVersion())
-					.vulnerabilityID(f.getVulnerability().getSource() + ":" + f.getVulnerability().getVulnId())
+					.vulnerabilityID(f.getVulnerability().getSource() + ": " + f.getVulnerability().getVulnId())
 					.severity(f.getVulnerability().getSeverity().name())
-					.cwe(f.getVulnerability().getCweId() + " " + f.getVulnerability().getCweName())
+					.cwe("CWE-"+f.getVulnerability().getCweId() + " " + f.getVulnerability().getCweName())
 					.isSuppressed(f.getAnalysis().isSuppressed())
 					.severityRank(f.getVulnerability().getSeverityRank()).build())
 			.collect(Collectors.toList());

@@ -15,6 +15,12 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
+import static org.jenkinsci.plugins.DependencyTrack.JasperReports.PDF_REPORT_FILENAME;
+import static org.jenkinsci.plugins.DependencyTrack.JasperReports.XLSX_REPORT_FILENAME;
+import static org.jenkinsci.plugins.DependencyTrack.JasperReports.createSummaryReport;
+
+import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -25,6 +31,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.DependencyTrack.JasperReports.REPORT_FORMAT;
 import org.jenkinsci.plugins.DependencyTrack.model.Analysis;
 import org.jenkinsci.plugins.DependencyTrack.model.Component;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
@@ -329,6 +336,12 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         projectAction.setReportSubTitle(effectiveReportSubTitle);
         projectAction.setDependencyTrackUrl(getEffectiveFrontendUrl());
         projectAction.setProjectId(effectiveProjectId);
+        try (FileOutputStream fos=new FileOutputStream(new File(build.getRootDir(), PDF_REPORT_FILENAME))) {
+            fos.write(createSummaryReport(effectiveReportSubTitle,severityDistribution, findings, REPORT_FORMAT.pdf));
+        };
+        try (FileOutputStream fos=new FileOutputStream(new File(build.getRootDir(), XLSX_REPORT_FILENAME))) {
+            fos.write(createSummaryReport(effectiveReportSubTitle,severityDistribution, findings, REPORT_FORMAT.xlsx));
+        };
         build.addOrReplaceAction(projectAction);
 
         // update ResultLinkAction with one that surely contains a projectId

@@ -13,7 +13,12 @@
             <div>
               <l:icon class="icon-save icon-md" />
       
-              <a href="summarydtreport.pdf">Download <tt>Summary Dependency-Track</tt> report file</a>
+              <a href="dt_summary.pdf">Download <tt>Summary Dependency-Track</tt> PDF report file</a>
+            </div>
+            <div>
+              <img src="${resURL}/plugin/dependency-track/icons/microsoft_office_excel_logo_icon_145720.svg" width="24" height="24"/>
+      
+              <a href="dt_summary.xlsx">Download <tt>Summary Dependency-Track</tt> Excel report file</a>
             </div>
             <l:css src="plugin/dependency-track/css/bootstrap.min.css?v=${it.versionHash}" />
             <l:css src="plugin/dependency-track/css/bootstrap-vue.min.css?v=${it.versionHash}" />

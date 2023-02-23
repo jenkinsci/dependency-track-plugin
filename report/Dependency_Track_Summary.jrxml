@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Created with Jaspersoft Studio version 6.13.0.final using JasperReports Library version 6.13.0-46ada4d1be8f3c5985fd0b6146f3ed44caed6f05  -->
+<!-- Created with Jaspersoft Studio version 6.20.0.final using JasperReports Library version 6.20.0-2bc7ab61c56f459e8176eb05c7705e145cd400ad  -->
 <jasperReport xmlns="http://jasperreports.sourceforge.net/jasperreports" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://jasperreports.sourceforge.net/jasperreports http://jasperreports.sourceforge.net/xsd/jasperreport.xsd" name="Cherry_Landscape" pageWidth="842" pageHeight="595" orientation="Landscape" columnWidth="802" leftMargin="20" rightMargin="20" topMargin="20" bottomMargin="20" uuid="7a5c9b49-9dc5-422a-ac69-e92cf61ef530">
 	<property name="com.jaspersoft.studio.data.defaultdataadapter" value="CSV Test Findings"/>
 	<style name="Title" forecolor="#FFFFFF" fontName="Times New Roman" fontSize="50" isBold="false"/>
@@ -163,7 +163,7 @@
 				<textElement>
 					<font isBold="false"/>
 				</textElement>
-				<text><![CDATA[CWE]]></text>
+				<text><![CDATA[Common Weakness Enumeration]]></text>
 			</staticText>
 			<staticText>
 				<reportElement style="Column header" x="720" y="0" width="82" height="36" forecolor="#000000" uuid="be59babd-531f-430d-b0d1-c91ff7f619ba">
@@ -195,8 +195,8 @@
 						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="575ba224-7d76-4aea-819b-e98c33c3ea21"/>
 						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
-					<textElement>
-						<font size="12"/>
+					<textElement verticalAlignment="Middle">
+						<font size="10"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{componentGroup}]]></textFieldExpression>
 				</textField>
@@ -205,8 +205,8 @@
 						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="a0c67f21-c2d5-45a3-814c-90f923a78c3b"/>
 						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
-					<textElement>
-						<font size="12"/>
+					<textElement verticalAlignment="Middle">
+						<font size="10"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{componentName}]]></textFieldExpression>
 				</textField>
@@ -215,8 +215,8 @@
 						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="0cf5bb28-f9c0-46a6-bc50-f482f4163177"/>
 						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
-					<textElement>
-						<font size="12"/>
+					<textElement verticalAlignment="Middle">
+						<font size="10"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{componentVersion}]]></textFieldExpression>
 				</textField>
@@ -225,8 +225,8 @@
 						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="0cf5bb28-f9c0-46a6-bc50-f482f4163177"/>
 						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
-					<textElement>
-						<font size="12"/>
+					<textElement verticalAlignment="Middle">
+						<font size="10"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{vulnerabilityID}]]></textFieldExpression>
 				</textField>
@@ -245,8 +245,8 @@
 						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="bda68048-df67-4e62-bc4b-3b6bfca1266e"/>
 						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
-					<textElement>
-						<font size="12"/>
+					<textElement verticalAlignment="Middle">
+						<font size="10"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{cwe}]]></textFieldExpression>
 				</textField>
@@ -255,8 +255,8 @@
 						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="f9e03fea-5e62-48b5-84d5-9849e1fe5567"/>
 						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
-					<textElement textAlignment="Center">
-						<font size="12"/>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font size="10"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{isSuppressed}]]></textFieldExpression>
 				</textField>

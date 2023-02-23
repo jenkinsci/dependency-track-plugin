@@ -382,6 +382,11 @@
           <artifactId>jasperreports</artifactId>
           <version>6.20.0</version>
         </dependency>
+        <dependency>
+          <groupId>org.apache.poi</groupId>
+          <artifactId>poi</artifactId>
+          <version>5.2.3</version>
+        </dependency>
     </dependencies>
 
     <scm>
@@ -420,6 +425,11 @@
     			<groupId>org.jenkins-ci</groupId>
     			<artifactId>symbol-annotation</artifactId>
     			<version>1.23</version>
+    		</dependency>
+    		<dependency>
+    		  <groupId>org.apache.commons</groupId>
+    		  <artifactId>commons-collections4</artifactId>
+    		  <version>4.4</version>
     		</dependency>
     	</dependencies>
     </dependencyManagement>

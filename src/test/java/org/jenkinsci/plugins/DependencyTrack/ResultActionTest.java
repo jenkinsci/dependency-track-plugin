@@ -106,23 +106,4 @@ public class ResultActionTest {
         assertThat(new ResultAction(getTestFindings(), new SeverityDistribution(1)).hasFindings()).isTrue();
     }
     
-    @Test
-    public void createPdfReportTest() throws IOException, JRException {
-    	final SeverityDistribution severityDistribution=new SeverityDistribution(1);
-    	severityDistribution.add(Severity.CRITICAL);
-    	severityDistribution.add(Severity.CRITICAL);
-    	severityDistribution.add(Severity.CRITICAL);
-    	severityDistribution.add(Severity.HIGH);
-    	severityDistribution.add(Severity.HIGH);
-    	severityDistribution.add(Severity.LOW);
-    	severityDistribution.add(Severity.MEDIUM);
-    	severityDistribution.add(Severity.MEDIUM);
-    	
-        final ResultAction uut = new ResultAction(getTestFindings(), severityDistribution);
-        byte[] result = uut.createPdfReport("mary had a little lamb", uut.getSeverityDistribution());
-        File pdfFile=new File("target/Dependency_Track_Summary.pdf");
-        try (FileOutputStream os = new FileOutputStream(pdfFile)) {
-        	os.write(result);
-        }
-    }
 }
