@@ -13,7 +13,7 @@
             <div>
               <l:icon class="icon-save icon-md" />
       
-              <a href="summarydtreport.txt">Download <tt>Summary Dependency-Track</tt> report file</a>
+              <a href="summarydtreport.pdf">Download <tt>Summary Dependency-Track</tt> report file</a>
             </div>
             <l:css src="plugin/dependency-track/css/bootstrap.min.css?v=${it.versionHash}" />
             <l:css src="plugin/dependency-track/css/bootstrap-vue.min.css?v=${it.versionHash}" />

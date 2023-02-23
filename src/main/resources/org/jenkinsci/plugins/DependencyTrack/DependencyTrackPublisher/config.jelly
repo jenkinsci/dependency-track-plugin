@@ -35,6 +35,10 @@ limitations under the License.
             <f:textbox id="artifact"/>
         </f:entry>
 
+        <f:entry title="${%reportSubTitle}" field="reportSubTitle">
+            <f:textbox id="reportSubTitle"/>
+        </f:entry>
+
         <f:entry title="${%enable.synchronous}" field="synchronous">
             <f:checkbox name="synchronous" checked="${instance.isSynchronous()}"/>
         </f:entry>

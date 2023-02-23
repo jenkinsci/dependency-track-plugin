@@ -34,6 +34,7 @@ import net.sf.json.JSONArray;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.util.Files;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
+import org.jenkinsci.plugins.DependencyTrack.model.Severity;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.junit.Rule;
 import org.junit.Test;
@@ -107,14 +108,21 @@ public class ResultActionTest {
     
     @Test
     public void createPdfReportTest() throws IOException, JRException {
+    	final SeverityDistribution severityDistribution=new SeverityDistribution(1);
+    	severityDistribution.add(Severity.CRITICAL);
+    	severityDistribution.add(Severity.CRITICAL);
+    	severityDistribution.add(Severity.CRITICAL);
+    	severityDistribution.add(Severity.HIGH);
+    	severityDistribution.add(Severity.HIGH);
+    	severityDistribution.add(Severity.LOW);
+    	severityDistribution.add(Severity.MEDIUM);
+    	severityDistribution.add(Severity.MEDIUM);
     	
-        final ResultAction uut = new ResultAction(getTestFindings(), new SeverityDistribution(1));
-        byte[] result = uut.createPdfReport("mary had a little lamb");
-        File pdfFile=File.createTempFile("jasperreport", ".pdf");
+        final ResultAction uut = new ResultAction(getTestFindings(), severityDistribution);
+        byte[] result = uut.createPdfReport("mary had a little lamb", uut.getSeverityDistribution());
+        File pdfFile=new File("target/Dependency_Track_Summary.pdf");
         try (FileOutputStream os = new FileOutputStream(pdfFile)) {
         	os.write(result);
         }
-        System.out.println("Output file: "+pdfFile.getAbsolutePath());
-        
     }
 }

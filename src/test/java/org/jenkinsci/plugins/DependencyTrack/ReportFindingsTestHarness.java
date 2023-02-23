@@ -11,6 +11,9 @@ import org.jenkinsci.plugins.DependencyTrack.model.ReportFindings;
 import org.jenkinsci.plugins.DependencyTrack.model.Severity;
 import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
 
+import net.sf.jasperreports.engine.JRDataSource;
+import net.sf.jasperreports.engine.data.JRBeanCollectionDataSource;
+
 public class ReportFindingsTestHarness {
 	static String apikey="-apikey-";
     
@@ -29,5 +32,9 @@ public class ReportFindingsTestHarness {
     public static void main(String[] args) {
 		System.out.println(getReportFindings());
 	}
+    
+    static public JRDataSource getDS() {
+    	return new JRBeanCollectionDataSource(getReportFindings());
+    }
 
 }

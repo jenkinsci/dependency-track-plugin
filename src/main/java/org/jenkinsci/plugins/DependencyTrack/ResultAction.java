@@ -15,11 +15,8 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.PrintStream;
 import java.io.Serializable;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -83,7 +80,6 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
     /**
      * the subtitle of the report on the report header
      */
-    @Setter
     private String reportSubTitle;
 
     /**
@@ -164,30 +160,31 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
     	
 	}
 
-    @WebMethod(name="summarydtreport.txt")
+    @WebMethod(name="summarydtreport.pdf")
     public HttpResponse doSummaryReport() throws IOException, JRException {
         // create PDF report
-		final byte[] jasperPdf = createPdfReport(reportSubTitle);
+		final byte[] jasperPdf = createPdfReport(reportSubTitle, severityDistribution);
         return new HttpResponse() {
 
 			@Override
 			public void generateResponse(StaplerRequest req, StaplerResponse rsp, Object node)
 					throws IOException, ServletException {
-				rsp.setContentType(MimeTypeUtils.TEXT_PLAIN_VALUE);
+				rsp.setContentType(MimeTypeUtils.APPLICATION_OCTET_STREAM_VALUE);
 				rsp.getOutputStream().write(jasperPdf);
 			}
         	
         };
     }
 
-	protected byte[] createPdfReport(String aReportSubTitle) throws JRException {
+	protected byte[] createPdfReport(String aReportSubTitle, SeverityDistribution severityDistribution) throws JRException {
 		JasperReport jr=JasperCompileManager.compileReport("report/Dependency_Track_Summary.jrxml");
 		final Map<String, Object> reportParameters=new HashMap<String, Object>();
 		reportParameters.put("REPORT_TITLE", "Dependency-Track");
 		reportParameters.put("REPORT_SUBTITLE", aReportSubTitle);
+		reportParameters.put("SEVERITY_DISTRIBUTION", severityDistribution.toString());
 		JasperPrint jp=JasperFillManager.fillReport(jr, reportParameters, new JRBeanCollectionDataSource(ReportFindingsFactory.getReportFindings(findings)));
-		final byte[] jasperPdf=JasperExportManager.exportReportToPdf(jp);
-		return jasperPdf;
+		final byte[] jasperPdfBytes=JasperExportManager.exportReportToPdf(jp);
+		return jasperPdfBytes;
 	}
 	
 

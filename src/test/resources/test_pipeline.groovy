@@ -37,7 +37,7 @@ pipeline {
         script {
           bat "echo RELEASE_VERSION_PARAMETERS=%RELEASE_VERSION_PARAMETERS% BRANCH_NAME=%BRANCH_NAME%"
           bat "mvn -DschemaVersion=1.1 ${env.RELEASE_VERSION_PARAMETERS} org.cyclonedx:cyclonedx-maven-plugin:2.1.0:makeAggregateBom ${env.MAVEN_PARAMS} "
-          dependencyTrackPublisher artifact: 'target/bom.xml', projectName: env.JOB_NAME, synchronous: true, projectVersion: env.BRANCH_NAME
+          dependencyTrackPublisher artifact: 'target/bom.xml', projectName: env.JOB_NAME, synchronous: true, projectVersion: env.BRANCH_NAME, reportSubTitle: "${env.JOB_NAME}: Vulnerability Report"
         }
       }
     }
