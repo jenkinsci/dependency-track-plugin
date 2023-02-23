@@ -12,6 +12,16 @@
 			<style mode="Opaque" backcolor="#F0EFEF"/>
 		</conditionalStyle>
 	</style>
+	<style name="StyleCritical">
+		<conditionalStyle>
+			<conditionExpression><![CDATA[$F{severity}.equalsIgnoreCase( "critical" )]]></conditionExpression>
+			<style forecolor="#FF0400"/>
+		</conditionalStyle>
+		<conditionalStyle>
+			<conditionExpression><![CDATA[!$F{severity}.equalsIgnoreCase( "critical" )]]></conditionExpression>
+			<style forecolor="#000000"/>
+		</conditionalStyle>
+	</style>
 	<parameter name="REPORT_TITLE" class="java.lang.String"/>
 	<parameter name="REPORT_SUBTITLE" class="java.lang.String"/>
 	<parameter name="SEVERITY_DISTRIBUTION" class="java.lang.String"/>
@@ -174,69 +184,79 @@
 		</band>
 	</columnHeader>
 	<detail>
-		<band height="18" splitType="Stretch">
+		<band height="15" splitType="Stretch">
+			<property name="com.jaspersoft.studio.unit.height" value="px"/>
 			<frame>
-				<reportElement style="Row" mode="Opaque" x="0" y="0" width="802" height="18" uuid="34a2ae4b-4055-476b-8676-d499f6af510b"/>
+				<reportElement style="Row" mode="Opaque" x="0" y="0" width="802" height="15" uuid="34a2ae4b-4055-476b-8676-d499f6af510b">
+					<property name="com.jaspersoft.studio.unit.height" value="px"/>
+				</reportElement>
 				<textField textAdjust="StretchHeight">
-					<reportElement style="Detail" positionType="Float" x="0" y="0" width="110" height="18" uuid="84cff223-5606-468c-8ede-a06d838961c3">
+					<reportElement style="Detail" positionType="Float" x="0" y="0" width="110" height="15" uuid="84cff223-5606-468c-8ede-a06d838961c3">
 						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="575ba224-7d76-4aea-819b-e98c33c3ea21"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
 					<textElement>
-						<font size="14"/>
+						<font size="12"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{componentGroup}]]></textFieldExpression>
 				</textField>
 				<textField textAdjust="StretchHeight">
-					<reportElement style="Detail" positionType="Float" x="111" y="0" width="132" height="18" uuid="ca6119b2-50a5-43f9-b4cd-c98b7cb398a0">
+					<reportElement style="Detail" positionType="Float" x="111" y="0" width="132" height="15" uuid="ca6119b2-50a5-43f9-b4cd-c98b7cb398a0">
 						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="a0c67f21-c2d5-45a3-814c-90f923a78c3b"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
 					<textElement>
-						<font size="14"/>
+						<font size="12"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{componentName}]]></textFieldExpression>
 				</textField>
 				<textField textAdjust="StretchHeight">
-					<reportElement style="Detail" positionType="Float" x="244" y="0" width="96" height="18" uuid="9db3e914-8c52-4073-bca1-f2b08a7b8636">
+					<reportElement style="Detail" positionType="Float" x="244" y="0" width="96" height="15" uuid="9db3e914-8c52-4073-bca1-f2b08a7b8636">
 						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="0cf5bb28-f9c0-46a6-bc50-f482f4163177"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
 					<textElement>
-						<font size="14"/>
+						<font size="12"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{componentVersion}]]></textFieldExpression>
 				</textField>
 				<textField textAdjust="StretchHeight">
-					<reportElement style="Detail" positionType="Float" x="340" y="0" width="116" height="18" uuid="374eadd5-c8da-4e77-ab00-fa4eca81cb78">
+					<reportElement style="Detail" positionType="Float" x="340" y="0" width="116" height="15" uuid="374eadd5-c8da-4e77-ab00-fa4eca81cb78">
 						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="0cf5bb28-f9c0-46a6-bc50-f482f4163177"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
 					<textElement>
-						<font size="14"/>
+						<font size="12"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{vulnerabilityID}]]></textFieldExpression>
 				</textField>
 				<textField textAdjust="StretchHeight">
-					<reportElement style="Detail" positionType="Float" x="456" y="0" width="54" height="18" uuid="9ad7a678-047a-4a3e-a8ee-83c980e0d9b1">
+					<reportElement style="StyleCritical" positionType="Float" x="456" y="0" width="54" height="15" uuid="9ad7a678-047a-4a3e-a8ee-83c980e0d9b1">
 						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="fc33fd7e-8bf4-4cf4-874a-131bc0984c6a"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
-					<textElement textAlignment="Center">
-						<font size="14"/>
+					<textElement textAlignment="Center" verticalAlignment="Middle">
+						<font size="10"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{severity}]]></textFieldExpression>
 				</textField>
 				<textField textAdjust="StretchHeight">
-					<reportElement style="Detail" positionType="Float" x="510" y="0" width="210" height="18" uuid="a72152e1-7639-4b08-9d5a-8deb95c9c696">
+					<reportElement style="Detail" positionType="Float" x="510" y="0" width="210" height="15" uuid="a72152e1-7639-4b08-9d5a-8deb95c9c696">
 						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="bda68048-df67-4e62-bc4b-3b6bfca1266e"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
 					<textElement>
-						<font size="14"/>
+						<font size="12"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{cwe}]]></textFieldExpression>
 				</textField>
 				<textField textAdjust="StretchHeight">
-					<reportElement style="Detail" positionType="Float" x="720" y="0" width="82" height="18" uuid="3bdf2633-1b80-4935-93c1-267cf284fe88">
+					<reportElement style="Detail" positionType="Float" x="720" y="0" width="82" height="15" uuid="3bdf2633-1b80-4935-93c1-267cf284fe88">
 						<property name="com.jaspersoft.studio.spreadsheet.connectionID" value="f9e03fea-5e62-48b5-84d5-9849e1fe5567"/>
+						<property name="com.jaspersoft.studio.unit.height" value="px"/>
 					</reportElement>
 					<textElement textAlignment="Center">
-						<font size="14"/>
+						<font size="12"/>
 					</textElement>
 					<textFieldExpression><![CDATA[$F{isSuppressed}]]></textFieldExpression>
 				</textField>

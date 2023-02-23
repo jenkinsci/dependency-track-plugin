@@ -16,7 +16,7 @@
 			"description": "description-1",
 			"recommendation": "recommendation-1",
 			"severity": "CRITICAL",
-			"severityRank": 1,
+			"severityRank": 0,
 			"cweId": 2,
 			"cweName": "cweName-1"
 		},
