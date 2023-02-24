@@ -1,5 +1,7 @@
 package org.jenkinsci.plugins.DependencyTrack;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -38,6 +40,8 @@ public class JasperReportsTest {
         try (FileOutputStream os = new FileOutputStream(pdfFile)) {
         	os.write(result);
         }
+        String resultPrefix="%PDF-1.5";
+        assertThat(result).withFailMessage("Excel document does not start with %s", resultPrefix).startsWith(resultPrefix.getBytes());
     }
 
     @Test
@@ -47,6 +51,8 @@ public class JasperReportsTest {
         try (FileOutputStream os = new FileOutputStream(pdfFile)) {
         	os.write(result);
         }
+        String resultPrefix="PK";
+        assertThat(result).withFailMessage("Excel document does not start with %s", resultPrefix).startsWith(resultPrefix.getBytes());
     }
 
 	private ResultAction createResultAction() {
