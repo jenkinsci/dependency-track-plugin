@@ -15,8 +15,13 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.Optional;
+
+import org.apache.commons.lang3.StringUtils;
 import org.assertj.core.util.Files;
 import org.jenkinsci.plugins.DependencyTrack.model.Analysis;
 import org.jenkinsci.plugins.DependencyTrack.model.Component;
@@ -24,8 +29,6 @@ import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.Severity;
 import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
 import org.junit.Test;
-
-import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  *
@@ -38,10 +41,24 @@ public class FindingParserTest {
         assertThat(FindingParser.parse("[]")).isEmpty();
 
         File findings = new File("src/test/resources/findings.json");
-        Component c1 = new Component("uuid-1", "name-1", "group-1", "version-1", "purl-1");
-        Vulnerability v1 = new Vulnerability("uuid-1", "source-1", "vulnId-1", "title-1", "subtitle-1", "description-1", "recommendation-1", Severity.CRITICAL, 1, 2, "cweName-1");
-        Analysis a1 = new Analysis("state-1", false);
-        Finding f1 = new Finding(c1, v1, a1, "matrix-1");
-        assertThat(FindingParser.parse(Files.contentOf(findings, StandardCharsets.UTF_8))).containsExactly(f1);
+        assertThat(FindingParser.parse(Files.contentOf(findings, StandardCharsets.UTF_8)))
+        	.contains(createFinding(1, Severity.LOW, null, 2, null)).contains(createFinding(2, Severity.CRITICAL, "CVE-2022-34332", 3, "NVD"))
+        	.contains(createFinding(3, Severity.CRITICAL, "CVE-2016-1000027", 4, "NVD")).size().isEqualTo(3);
+    }
+
+	private Finding createFinding(int n, Severity severity, String vid, int cweId, String source) {
+		Component c = new Component(generate("uuid-1", n), generate("name-1", n), generate("group-1", n),
+        		generate("version-1", n), generate("purl-1", n));
+        Vulnerability v = new Vulnerability(generate("uuid-1", n), Optional.ofNullable(source).orElse(generate("source-1", n)),
+        		Optional.ofNullable(vid).orElse(generate("vulnId-1", n)),
+        		generate("title-1", n), generate("subtitle-1", n), generate("description-1", n),
+        		generate("recommendation-1", n), severity, severity.ordinal(), cweId, generate("cweName-1", n));
+        Analysis a = new Analysis(generate("state-1", n), false);
+        Finding f = new Finding(c, v, a, generate("matrix-1", n));
+		return f;
+	}
+    
+    private static String generate(String input, int i) {
+    	return StringUtils.removeEnd(input, "-1")+"-"+Integer.valueOf(i).toString().trim();
     }
 }
