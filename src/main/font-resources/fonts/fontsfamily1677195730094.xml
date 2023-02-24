@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<fontFamilies>
+	<fontFamily name="Times New Roman">
+		<normal><![CDATA[fonts/TimesNewRoman/times.ttf]]></normal>
+		<bold><![CDATA[fonts/TimesNewRoman/timesbd.ttf]]></bold>
+		<italic><![CDATA[fonts/TimesNewRoman/timesi.ttf]]></italic>
+		<boldItalic><![CDATA[fonts/TimesNewRoman/timesbi.ttf]]></boldItalic>
+		<pdfEncoding><![CDATA[Identity-H]]></pdfEncoding>
+		<pdfEmbedded><![CDATA[true]]></pdfEmbedded>
+		<exportFonts/>
+	</fontFamily>
+	<fontSet name="DTFontSet">
+		<family familyName="Times New Roman" primary="true"/>
+	</fontSet>
+</fontFamilies>
