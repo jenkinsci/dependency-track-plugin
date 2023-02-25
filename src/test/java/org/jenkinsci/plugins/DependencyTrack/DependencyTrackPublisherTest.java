@@ -104,6 +104,7 @@ public class DependencyTrackPublisherTest {
         // needed for credential tracking
         when(job.getParent()).thenReturn(r.jenkins);
         when(job.getName()).thenReturn("u-drive-me-crazy");
+        when(job.getFullName()).thenReturn("/u-drive-me-crazy");
         when(build.getParent()).thenReturn(job);
         when(build.getNumber()).thenReturn(1);
     }
