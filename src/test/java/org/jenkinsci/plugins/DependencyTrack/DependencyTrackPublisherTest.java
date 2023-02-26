@@ -34,7 +34,7 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Path;
-import java.util.Collections;
+import java.util.List;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
@@ -64,7 +64,6 @@ import static org.mockito.Mockito.when;
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
-
 @MockitoSettings(strictness = Strictness.LENIENT)
 @WithJenkins
 class DependencyTrackPublisherTest {
@@ -207,11 +206,11 @@ class DependencyTrackPublisherTest {
 
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
-        when(client.getFindings("uuid-1")).thenReturn(Collections.emptyList());
+        when(client.getFindings("uuid-1")).thenReturn(List.of());
         
         Run buildWithResultAction = mock(Run.class);
         when(buildWithResultAction.getResult()).thenReturn(Result.SUCCESS);
-        when(buildWithResultAction.getAction(ResultAction.class)).thenReturn(new ResultAction(Collections.emptyList(), new SeverityDistribution(42)));
+        when(buildWithResultAction.getAction(ResultAction.class)).thenReturn(new ResultAction(List.of(), new SeverityDistribution(42)));
         Run buildWithNoResultAction = mock(Run.class);
         when(buildWithNoResultAction.getResult()).thenReturn(Result.SUCCESS);
         when(buildWithNoResultAction.getPreviousSuccessfulBuild()).thenReturn(buildWithResultAction);
@@ -240,7 +239,7 @@ class DependencyTrackPublisherTest {
 
         when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(true))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
-        when(client.getFindings("uuid-1")).thenReturn(Collections.emptyList());
+        when(client.getFindings("uuid-1")).thenReturn(List.of());
         when(client.lookupProject("name-1", "version-1")).thenReturn(Project.builder().uuid("uuid-1").build());
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();

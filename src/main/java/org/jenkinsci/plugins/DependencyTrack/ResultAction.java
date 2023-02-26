@@ -22,9 +22,9 @@ import hudson.model.Action;
 import hudson.model.Run;
 import java.io.Serializable;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import jenkins.model.Jenkins;
 import jenkins.model.RunAction2;
 import jenkins.tasks.SimpleBuildStep;
@@ -91,7 +91,7 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
 
     @Override
     public Collection<? extends Action> getProjectActions() {
-        return Collections.singleton(new JobAction(run.getParent()));
+        return Set.of(new JobAction(run.getParent()));
     }
 
     @NonNull

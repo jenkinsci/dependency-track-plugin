@@ -25,8 +25,7 @@ import hudson.security.ACLContext;
 import hudson.security.AccessDeniedException3;
 import hudson.util.RunList;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 import net.sf.json.JSONArray;
 import org.assertj.core.api.Assertions;
 import org.jenkinsci.plugins.DependencyTrack.model.Severity;
@@ -53,10 +52,10 @@ class JobActionTest {
     void isTrendVisible() {
         Job job = mock(Job.class);
         Run run = mock(Run.class);
-        when(run.getAction(ResultAction.class)).thenReturn(new ResultAction(Collections.emptyList(), new SeverityDistribution(1)));
+        when(run.getAction(ResultAction.class)).thenReturn(new ResultAction(List.of(), new SeverityDistribution(1)));
         when(job.getBuilds())
-                .thenReturn(RunList.fromRuns(Collections.emptyList()))
-                .thenReturn(RunList.fromRuns(Collections.singletonList(run)));
+                .thenReturn(RunList.fromRuns(List.of()))
+                .thenReturn(RunList.fromRuns(List.of(run)));
         JobAction uut = new JobAction(job);
         assertThat(uut.isTrendVisible()).isFalse();
         assertThat(uut.isTrendVisible()).isTrue();
@@ -105,7 +104,7 @@ class JobActionTest {
         project._getRuns().put(2, b2);
 
         final JobAction uut = new JobAction(project);
-        Assertions.<JSONArray>assertThat(uut.getSeverityDistributionTrend()).isEqualTo(JSONArray.fromObject(Arrays.asList(sd1, sd2)));
+        Assertions.<JSONArray>assertThat(uut.getSeverityDistributionTrend()).isEqualTo(JSONArray.fromObject(List.of(sd1, sd2)));
     }
 
 }

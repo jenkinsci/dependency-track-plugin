@@ -25,7 +25,6 @@ import hudson.security.AccessDeniedException3;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.List;
 import net.sf.json.JSONArray;
 import org.assertj.core.api.Assertions;
@@ -100,7 +99,7 @@ class ResultActionTest {
     @Test
     void hasFindingsTest() {
         assertThat(new ResultAction(null, new SeverityDistribution(1)).hasFindings()).isFalse();
-        assertThat(new ResultAction(Collections.emptyList(), new SeverityDistribution(1)).hasFindings()).isFalse();
+        assertThat(new ResultAction(List.of(), new SeverityDistribution(1)).hasFindings()).isFalse();
         assertThat(new ResultAction(getTestFindings(), new SeverityDistribution(1)).hasFindings()).isTrue();
     }
 }
