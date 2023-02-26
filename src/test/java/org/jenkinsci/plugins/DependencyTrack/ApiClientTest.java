@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.Arrays;
@@ -38,13 +39,12 @@ import net.sf.json.JSONObject;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
-import org.junit.After;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner.StrictStubs;
+import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.netty.DisposableServer;
 import reactor.netty.http.server.HttpServer;
@@ -62,11 +62,8 @@ import static org.mockito.Mockito.when;
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
-@RunWith(StrictStubs.class)
-public class ApiClientTest {
-    
-    @Rule
-    public TemporaryFolder tmpDir = new TemporaryFolder();
+@ExtendWith(MockitoExtension.class)
+class ApiClientTest {
 
     private static final String API_KEY = "api-key";
 
@@ -75,8 +72,8 @@ public class ApiClientTest {
     @Mock
     private ConsoleLogger logger;
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         if (server != null) {
             server.disposeNow();
         }
@@ -87,7 +84,7 @@ public class ApiClientTest {
     }
 
     @Test
-    public void testConnectionTest() throws ApiClientException {
+    void testConnectionTest() throws ApiClientException {
         server = HttpServer.create()
                 // no ipv6 due to https://bugs.openjdk.java.net/browse/JDK-8220663
                 .host("localhost")
@@ -105,7 +102,7 @@ public class ApiClientTest {
     }
 
     @Test
-    public void testConnectionTestUnauth() {
+    void testConnectionTestUnauth() {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
@@ -120,7 +117,7 @@ public class ApiClientTest {
     }
 
     @Test
-    public void testConnectionTestInternalError() {
+    void testConnectionTestInternalError() {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
@@ -137,7 +134,7 @@ public class ApiClientTest {
     }
 
     @Test()
-    public void getProjectsTest() throws ApiClientException {
+    void getProjectsTest() throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
@@ -175,7 +172,7 @@ public class ApiClientTest {
     }
 
     @Test
-    public void lookupProjectTest() throws ApiClientException {
+    void lookupProjectTest() throws ApiClientException {
         String projectName = "test-project";
         String projectVersion = "1.2.3";
         server = HttpServer.create()
@@ -200,7 +197,7 @@ public class ApiClientTest {
     }
 
     @Test
-    public void getFindingsTest() throws ApiClientException {
+    void getFindingsTest() throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
@@ -228,9 +225,9 @@ public class ApiClientTest {
     }
 
     @Test
-    public void uploadTestWithUuid() throws IOException, InterruptedException {
-        File bom = tmpDir.newFile();
-        Files.writeString(bom.toPath(), "<test />", Charset.defaultCharset());
+    void uploadTestWithUuid(@TempDir Path tmp) throws IOException, InterruptedException {
+        Path bom = tmp.resolve("bom.xml");
+        Files.writeString(bom, "<test />", Charset.defaultCharset());
         final AtomicReference<String> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
@@ -251,10 +248,10 @@ public class ApiClientTest {
                 .bindNow();
 
         ApiClient uut = createClient();
-        assertThat(uut.upload("uuid-1", null, null, new FilePath(bom), false)).isEqualTo(new UploadResult(true, "uuid-1"));
+        assertThat(uut.upload("uuid-1", null, null, new FilePath(bom.toFile()), false)).isEqualTo(new UploadResult(true, "uuid-1"));
         
         File mockFile = mock(File.class);
-        when(mockFile.getPath()).thenReturn(tmpDir.getRoot().getPath());
+        when(mockFile.getPath()).thenReturn(tmp.toAbsolutePath().toString());
         FilePath fileWithError = new FilePath(mockFile);
         assertThat(uut.upload(null, "p1", "v1", fileWithError, true)).isEqualTo(new UploadResult(false));
         String expectedBody = "{\"bom\":\"PHRlc3QgLz4=\",\"project\":\"uuid-1\"}";
@@ -263,9 +260,9 @@ public class ApiClientTest {
     }
 
     @Test
-    public void uploadTestWithName() throws IOException, InterruptedException {
-        File bom = tmpDir.newFile();
-        Files.writeString(bom.toPath(), "<test />", Charset.defaultCharset());
+    void uploadTestWithName(@TempDir Path tmp) throws IOException, InterruptedException {
+        Path bom = tmp.resolve("bom.xml");
+        Files.writeString(bom, "<test />", Charset.defaultCharset());
         final AtomicReference<String> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
@@ -286,43 +283,45 @@ public class ApiClientTest {
                 .bindNow();
 
         ApiClient uut = createClient();
-        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom), false)).isEqualTo(new UploadResult(true));
+        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom.toFile()), false)).isEqualTo(new UploadResult(true));
         String expectedBody = "{\"bom\":\"PHRlc3QgLz4=\",\"projectName\":\"p1\",\"projectVersion\":\"v1\",\"autoCreate\":false}";
         completionSignal.await(5, TimeUnit.SECONDS);
         assertThat(requestBody.get()).isEqualTo(expectedBody);
     }
 
     @Test
-    public void uploadTestWithErrors() throws IOException, InterruptedException {
+    void uploadTestWithErrors(@TempDir Path tmp) throws IOException, InterruptedException {
         ApiClient uut;
+        File bom = tmp.resolve("bom.xml").toFile();
+        bom.createNewFile();
         
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.BAD_REQUEST).send())).bindNow();
         uut = createClient();
-        assertThat(uut.upload(null, "p1", "v1", new FilePath(tmpDir.newFile()), true)).isEqualTo(new UploadResult(false));
+        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom), true)).isEqualTo(new UploadResult(false));
         verify(logger).log(Messages.Builder_Payload_Invalid());
         server.disposeNow();
         
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.UNAUTHORIZED).send())).bindNow();
         uut = createClient();
-        assertThat(uut.upload(null, "p1", "v1", new FilePath(tmpDir.newFile()), true)).isEqualTo(new UploadResult(false));
+        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom), true)).isEqualTo(new UploadResult(false));
         verify(logger).log(Messages.Builder_Unauthorized());
         server.disposeNow();
         
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.NOT_FOUND).send())).bindNow();
         uut = createClient();
-        assertThat(uut.upload(null, "p1", "v1", new FilePath(tmpDir.newFile()), true)).isEqualTo(new UploadResult(false));
+        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom), true)).isEqualTo(new UploadResult(false));
         verify(logger).log(Messages.Builder_Project_NotFound());
         server.disposeNow();
 
         File mockFile = mock(File.class);
-        when(mockFile.getPath()).thenReturn(tmpDir.getRoot().getPath());
+        when(mockFile.getPath()).thenReturn(tmp.toAbsolutePath().toString());
         FilePath fileWithError = new FilePath(mockFile);
         assertThat(uut.upload(null, "p1", "v1", fileWithError, true)).isEqualTo(new UploadResult(false));
-        verify(logger).log(startsWith(Messages.Builder_Error_Processing(tmpDir.getRoot().getPath(), "")));
+        verify(logger).log(startsWith(Messages.Builder_Error_Processing(tmp.toAbsolutePath().toString(), "")));
     }
 
     @Test
-    public void isTokenBeingProcessedTest() throws ApiClientException {
+    void isTokenBeingProcessedTest() throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
@@ -350,7 +349,7 @@ public class ApiClientTest {
     }
     
     @Test
-    public void updateProjectPropertiesTest() throws ApiClientException, InterruptedException {
+    void updateProjectPropertiesTest() throws ApiClientException, InterruptedException {
         final AtomicReference<String> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
@@ -396,7 +395,7 @@ public class ApiClientTest {
     }
 
     @Test
-    public void testGetTeamPermissions() throws ApiClientException {
+    void testGetTeamPermissions() throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
@@ -414,7 +413,7 @@ public class ApiClientTest {
     }
 
     @Test
-    public void testGetVersion() throws ApiClientException {
+    void testGetVersion() throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)

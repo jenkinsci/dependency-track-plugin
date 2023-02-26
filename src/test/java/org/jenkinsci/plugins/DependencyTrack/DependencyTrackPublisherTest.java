@@ -33,19 +33,20 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.file.Path;
 import java.util.Collections;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner.StrictStubs;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -63,14 +64,10 @@ import static org.mockito.Mockito.when;
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
-@RunWith(StrictStubs.class)
-public class DependencyTrackPublisherTest {
 
-    @Rule
-    public TemporaryFolder tmpDir = new TemporaryFolder();
-
-    @Rule
-    public JenkinsRule r = new JenkinsRule();
+@MockitoSettings(strictness = Strictness.LENIENT)
+@WithJenkins
+class DependencyTrackPublisherTest {
 
     @Mock
     private Run build;
@@ -93,8 +90,8 @@ public class DependencyTrackPublisherTest {
     private final String apikeyId = "api-key-id";
     private final String apikey = "api-key";
 
-    @Before
-    public void setup() throws ApiClientException, IOException {
+    @BeforeEach
+    void setup(JenkinsRule r) throws ApiClientException, IOException {
         when(listener.getLogger()).thenReturn(System.err);
 
         DescriptorImpl descriptor = r.jenkins.getDescriptorByType(DescriptorImpl.class);
@@ -110,15 +107,16 @@ public class DependencyTrackPublisherTest {
     }
 
     @Test
-    public void testPerformPrechecks() throws IOException {
+    void testPerformPrechecks(@TempDir Path tmpWork) throws IOException {
         when(listener.getLogger()).thenReturn(System.err);
-        FilePath workDir = new FilePath(tmpDir.getRoot());
+        FilePath workDir = new FilePath(tmpWork.toFile());
 
         // artifact missing
         final DependencyTrackPublisher uut1 = new DependencyTrackPublisher("", false, clientFactory);
         assertThatCode(() -> uut1.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Artifact_Unspecified());
 
-        File artifact = tmpDir.newFile();
+        File artifact = tmpWork.resolve("bom.xml").toFile();
+        artifact.createNewFile();
         // uuid and name and version missing
         final DependencyTrackPublisher uut2 = new DependencyTrackPublisher(artifact.getName(), false, clientFactory);
         assertThatCode(() -> uut2.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Result_InvalidArguments());
@@ -146,9 +144,10 @@ public class DependencyTrackPublisherTest {
     }
 
     @Test
-    public void doNotThrowNPEinGetEffectiveApiKey() throws IOException {
-        File tmp = tmpDir.newFile();
-        FilePath workDir = new FilePath(tmpDir.getRoot());
+    void doNotThrowNPEinGetEffectiveApiKey(@TempDir Path tmpWork) throws IOException {
+        File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
+        FilePath workDir = new FilePath(tmpWork.toFile());
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, clientFactory);
         uut.setProjectId("uuid-1");
 
@@ -158,9 +157,10 @@ public class DependencyTrackPublisherTest {
     }
 
     @Test
-    public void testPerformAsync() throws IOException {
-        File tmp = tmpDir.newFile();
-        FilePath workDir = new FilePath(tmpDir.getRoot());
+    void testPerformAsync(@TempDir Path tmpWork) throws IOException {
+        File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
+        FilePath workDir = new FilePath(tmpWork.toFile());
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, clientFactory);
         uut.setProjectId("uuid-1");
         uut.setDependencyTrackApiKey(apikeyId);
@@ -179,9 +179,10 @@ public class DependencyTrackPublisherTest {
     }
 
     @Test
-    public void testPerformAsyncWithoutProjectId() throws IOException {
-        File tmp = tmpDir.newFile();
-        FilePath workDir = new FilePath(tmpDir.getRoot());
+    void testPerformAsyncWithoutProjectId(@TempDir Path tmpWork) throws IOException {
+        File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
+        FilePath workDir = new FilePath(tmpWork.toFile());
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, clientFactory);
         uut.setProjectName("name-1");
         uut.setProjectVersion("${my.var}");
@@ -196,9 +197,10 @@ public class DependencyTrackPublisherTest {
     }
 
     @Test
-    public void testPerformSync() throws IOException {
-        File tmp = tmpDir.newFile();
-        FilePath workDir = new FilePath(tmpDir.getRoot());
+    void testPerformSync(@TempDir Path tmpWork) throws IOException {
+        File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
+        FilePath workDir = new FilePath(tmpWork.toFile());
         DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
         uut.setProjectId("uuid-1");
         uut.setDependencyTrackApiKey(apikeyId);
@@ -225,9 +227,10 @@ public class DependencyTrackPublisherTest {
     }
 
     @Test
-    public void testPerformSyncWithoutProjectId() throws IOException {
-        File tmp = tmpDir.newFile();
-        FilePath workDir = new FilePath(tmpDir.getRoot());
+    void testPerformSyncWithoutProjectId(@TempDir Path tmpWork) throws IOException {
+        File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
+        FilePath workDir = new FilePath(tmpWork.toFile());
         DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
         uut.setProjectName("name-1");
         uut.setProjectVersion("version-1");
@@ -249,9 +252,10 @@ public class DependencyTrackPublisherTest {
     }
 
     @Test
-    public void testUseOfOverridenProperties() throws IOException {
-        File tmp = tmpDir.newFile();
-        FilePath workDir = new FilePath(tmpDir.getRoot());
+    void testUseOfOverridenProperties(@TempDir Path tmpWork) throws IOException {
+        File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
+        FilePath workDir = new FilePath(tmpWork.toFile());
         ApiClientFactory factory = (url, apiKey, logger, connTimeout, readTimeout) -> {
             assertThat(url).isEqualTo("http://test.tld");
             assertThat(apiKey).isEqualTo(apikey);
@@ -271,8 +275,9 @@ public class DependencyTrackPublisherTest {
     }
 
     @Test
-    public void serializationTest() throws IOException, ClassNotFoundException {
-        File tmp = tmpDir.newFile();
+    void serializationTest(@TempDir Path tmpWork) throws IOException, ClassNotFoundException {
+        File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
         DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
         uut.setAutoCreateProjects(Boolean.TRUE);
         uut.setDependencyTrackUrl("foo");
@@ -297,8 +302,9 @@ public class DependencyTrackPublisherTest {
     }
 
     @Test
-    public void deserializationTest() throws IOException, ClassNotFoundException {
-        File tmp = tmpDir.newFile();
+    void deserializationTest(@TempDir Path tmpWork) throws IOException, ClassNotFoundException {
+         File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
         DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
         uut.setAutoCreateProjects(Boolean.TRUE);
         uut.setDependencyTrackUrl("foo");
