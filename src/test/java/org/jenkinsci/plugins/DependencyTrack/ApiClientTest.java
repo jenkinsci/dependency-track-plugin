@@ -23,6 +23,7 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.LocalDateTime;
@@ -229,7 +230,7 @@ public class ApiClientTest {
     @Test
     public void uploadTestWithUuid() throws IOException, InterruptedException {
         File bom = tmpDir.newFile();
-        Files.write(bom.toPath(), "<test />".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(bom.toPath(), "<test />", Charset.defaultCharset());
         final AtomicReference<String> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
@@ -264,7 +265,7 @@ public class ApiClientTest {
     @Test
     public void uploadTestWithName() throws IOException, InterruptedException {
         File bom = tmpDir.newFile();
-        Files.write(bom.toPath(), "<test />".getBytes(StandardCharsets.UTF_8));
+        Files.writeString(bom.toPath(), "<test />", Charset.defaultCharset());
         final AtomicReference<String> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()

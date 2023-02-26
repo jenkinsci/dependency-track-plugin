@@ -33,6 +33,7 @@ import java.net.URLConnection;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -41,7 +42,6 @@ import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
@@ -246,8 +246,8 @@ public class ApiClient {
     public UploadResult upload(@Nullable final String projectId, @Nullable final String projectName, @Nullable final String projectVersion, @NonNull final FilePath artifact,
             boolean autoCreateProject) throws IOException {
         final String encodedScan;
-        try {
-            encodedScan = Base64.encodeBase64String(artifact.readToString().getBytes(StandardCharsets.UTF_8));
+        try (var in = artifact.read()) {
+            encodedScan = Base64.getEncoder().encodeToString(in.readAllBytes());
         } catch (IOException | InterruptedException e) {
             logger.log(Messages.Builder_Error_Processing(artifact.getRemote(), e.getLocalizedMessage()));
             return new UploadResult(false);
