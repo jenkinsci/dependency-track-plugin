@@ -144,7 +144,7 @@ class DependencyTrackPublisherTest {
     }
 
     @Test
-    void doNotThrowNPEinGetEffectiveApiKey(@TempDir Path tmpWork) throws IOException {
+    void doNotThrowNPEinGetEffectiveApiKey(@TempDir Path tmpWork) throws IOException, InterruptedException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
@@ -157,7 +157,7 @@ class DependencyTrackPublisherTest {
     }
 
     @Test
-    void testPerformAsync(@TempDir Path tmpWork) throws IOException {
+    void testPerformAsync(@TempDir Path tmpWork) throws IOException, InterruptedException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
@@ -179,7 +179,7 @@ class DependencyTrackPublisherTest {
     }
 
     @Test
-    void testPerformAsyncWithoutProjectId(@TempDir Path tmpWork) throws IOException {
+    void testPerformAsyncWithoutProjectId(@TempDir Path tmpWork) throws IOException, InterruptedException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
@@ -197,7 +197,7 @@ class DependencyTrackPublisherTest {
     }
 
     @Test
-    void testPerformSync(@TempDir Path tmpWork) throws IOException {
+    void testPerformSync(@TempDir Path tmpWork) throws IOException, InterruptedException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
@@ -227,7 +227,7 @@ class DependencyTrackPublisherTest {
     }
 
     @Test
-    void testPerformSyncWithoutProjectId(@TempDir Path tmpWork) throws IOException {
+    void testPerformSyncWithoutProjectId(@TempDir Path tmpWork) throws IOException, InterruptedException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
@@ -252,7 +252,7 @@ class DependencyTrackPublisherTest {
     }
 
     @Test
-    void testUseOfOverridenProperties(@TempDir Path tmpWork) throws IOException {
+    void testUseOfOverridenProperties(@TempDir Path tmpWork) throws IOException, InterruptedException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
