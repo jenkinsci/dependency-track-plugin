@@ -263,18 +263,21 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
         if (doCheckDependencyTrackUrl(url, item).kind == FormValidation.Kind.OK && StringUtils.isNotBlank(apiKey)) {
             try {
                 final ApiClient apiClient = getClient(url, apiKey);
+                final var poweredBy = apiClient.testConnection();
+                if (!poweredBy.startsWith("Dependency-Track v")) {
+                    return FormValidation.error(Messages.Publisher_ConnectionTest_Error(poweredBy));
+                }
                 final VersionNumber version = apiClient.getVersion();
-                return version.isNewerThanOrEqualTo(new VersionNumber("4.4.0")) ? checkTeamPermissions(apiClient, version, autoCreateProjects, synchronous, updateProjectProperties) : testConnectionLegacy(apiClient);
+                final var requiredVersion = new VersionNumber("4.7.0");
+                if (version.isOlderThan(requiredVersion)) {
+                    return FormValidation.warning(Messages.Publisher_ConnectionTest_VersionWarning(version, requiredVersion));
+                }
+                return checkTeamPermissions(apiClient, version, autoCreateProjects, synchronous, updateProjectProperties);
             } catch (ApiClientException e) {
                 return FormValidation.error(e, Messages.Publisher_ConnectionTest_Error(e.getMessage()));
             }
         }
-        return FormValidation.error(Messages.Publisher_ConnectionTest_Warning());
-    }
-
-    private FormValidation testConnectionLegacy(final ApiClient apiClient) throws ApiClientException {
-        final String result = apiClient.testConnection();
-        return result.startsWith("Dependency-Track v") ? FormValidation.ok(Messages.Publisher_ConnectionTest_Success(result)) : FormValidation.error(Messages.Publisher_ConnectionTest_Error(result));
+        return FormValidation.error(Messages.Publisher_ConnectionTest_InputError());
     }
 
     private FormValidation checkTeamPermissions(final ApiClient apiClient, final VersionNumber version, final boolean autoCreateProjects, final boolean synchronous, final boolean projectProperties) throws ApiClientException {

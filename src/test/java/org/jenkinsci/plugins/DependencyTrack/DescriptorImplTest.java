@@ -33,6 +33,7 @@ import hudson.util.VersionNumber;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jenkins.model.Jenkins;
@@ -72,6 +73,7 @@ class DescriptorImplTest {
     private ApiClient client;
     private DescriptorImpl uut;
     private MockAuthorizationStrategy mockAuthorizationStrategy;
+    private final Set<String> requiredPermissions = Stream.of(BOM_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS).map(Enum::toString).collect(Collectors.toSet());
 
     @BeforeEach
     void setup(JenkinsRule r) {
@@ -133,15 +135,15 @@ class DescriptorImplTest {
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
         };
-        when(client.testConnection()).thenReturn("Dependency-Track v3.8.0").thenReturn("test").thenThrow(ApiClientException.class);
+        when(client.testConnection()).thenReturn("Dependency-Track v3.8.0", "test").thenThrow(ApiClientException.class);
         when(client.getVersion()).thenReturn(new VersionNumber("3.8.0"));
         try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
             CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
             uut = new DescriptorImpl(factory);
 
             assertThat(uut.doTestConnectionGlobal("http:///url.tld", credentialsid, false, null))
-                    .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
-                    .hasMessage(Messages.Publisher_ConnectionTest_Success("Dependency-Track v3.8.0"))
+                    .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.WARNING)
+                    .hasMessage(Messages.Publisher_ConnectionTest_VersionWarning("3.8.0", "4.7.0"))
                     .hasNoCause();
 
             assertThat(uut.doTestConnectionGlobal("http:///url.tld/", credentialsid, false, null))
@@ -157,7 +159,7 @@ class DescriptorImplTest {
 
             assertThat(uut.doTestConnectionGlobal("url", "", false, null))
                     .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
-                    .hasMessage(Messages.Publisher_ConnectionTest_Warning())
+                    .hasMessage(Messages.Publisher_ConnectionTest_InputError())
                     .hasNoCause();
         }
     }
@@ -194,8 +196,9 @@ class DescriptorImplTest {
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
         };
-        when(client.testConnection()).thenReturn("Dependency-Track v3.8.0").thenReturn("test").thenThrow(ApiClientException.class);
-        when(client.getVersion()).thenReturn(new VersionNumber("3.8.0"));
+        when(client.testConnection()).thenReturn("Dependency-Track v4.7.0");
+        when(client.getVersion()).thenReturn(new VersionNumber("4.7.0"));
+        when(client.getTeamPermissions()).thenReturn(Team.builder().name("my-team").permissions(requiredPermissions).build());
         try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
             CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
             uut = new DescriptorImpl(factory);
@@ -204,7 +207,6 @@ class DescriptorImplTest {
 
             assertThat(uut.doTestConnectionJob("", "", false, false, false, null))
                     .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
-                    .hasMessage("Connection successful - Dependency-Track v3.8.0")
                     .hasNoCause();
         }
     }
@@ -224,7 +226,8 @@ class DescriptorImplTest {
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
         };
-        when(client.getVersion()).thenReturn(new VersionNumber("4.4.0"));
+        when(client.testConnection()).thenReturn("Dependency-Track v4.7.0");
+        when(client.getVersion()).thenReturn(new VersionNumber("4.7.0"));
         when(client.getTeamPermissions()).thenReturn(team);
         try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
             CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
@@ -260,7 +263,8 @@ class DescriptorImplTest {
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
         };
-        when(client.getVersion()).thenReturn(new VersionNumber("4.4.0"));
+        when(client.testConnection()).thenReturn("Dependency-Track v4.7.0");
+        when(client.getVersion()).thenReturn(new VersionNumber("4.7.0"));
         when(client.getTeamPermissions()).thenReturn(team);
         try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
             CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
@@ -295,7 +299,8 @@ class DescriptorImplTest {
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
         };
-        when(client.getVersion()).thenReturn(new VersionNumber("4.4.0"));
+        when(client.testConnection()).thenReturn("Dependency-Track v4.7.0");
+        when(client.getVersion()).thenReturn(new VersionNumber("4.7.0"));
         when(client.getTeamPermissions()).thenReturn(team);
         try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
             CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
