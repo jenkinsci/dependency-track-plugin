@@ -17,7 +17,6 @@ package org.jenkinsci.plugins.DependencyTrack;
 
 import hudson.util.ReflectionUtils;
 import java.lang.reflect.Field;
-import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -61,13 +60,13 @@ class ProjectPropertiesTest {
 
         assertThatCode(() -> uut.setTags(1)).isInstanceOf(IllegalArgumentException.class);
 
-        Set<Long> setOfWrongType = Collections.singleton(1L);
+        Set<Long> setOfWrongType = Set.of(1L);
         assertThatCode(() -> uut.setTags(setOfWrongType)).isInstanceOf(IllegalArgumentException.class);
 
-        List<Long> listOfWrongType = Collections.singletonList(1L);
+        List<Long> listOfWrongType = List.of(1L);
         assertThatCode(() -> uut.setTags(listOfWrongType)).isInstanceOf(IllegalArgumentException.class);
 
-        List<Character> listOfWrongType2 = Collections.singletonList('a');
+        List<Character> listOfWrongType2 = List.of('a');
         assertThatCode(() -> uut.setTags(listOfWrongType2)).isInstanceOf(IllegalArgumentException.class);
     }
 

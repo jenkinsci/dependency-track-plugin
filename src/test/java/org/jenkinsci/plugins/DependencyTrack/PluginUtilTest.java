@@ -16,7 +16,7 @@
 package org.jenkinsci.plugins.DependencyTrack;
 
 import hudson.util.FormValidation;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -24,10 +24,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
-public class PluginUtilTest {
+class PluginUtilTest {
 
     @Test
-    public void doCheckUrlTest() {
+    void doCheckUrlTest() {
         assertThat(PluginUtil.doCheckUrl("")).isEqualTo(FormValidation.ok());
         assertThat(PluginUtil.doCheckUrl(null)).isEqualTo(FormValidation.ok());
         assertThat(PluginUtil.doCheckUrl("https://foo.bar/asd")).isEqualTo(FormValidation.ok());
@@ -39,7 +39,7 @@ public class PluginUtilTest {
     }
 
     @Test
-    public void parseBaseUrlTest() {
+    void parseBaseUrlTest() {
         assertThat(PluginUtil.parseBaseUrl("  ")).isNull();
         assertThat(PluginUtil.parseBaseUrl("http://foo.bar")).isEqualTo("http://foo.bar");
         assertThat(PluginUtil.parseBaseUrl("http://foo.bar/")).isEqualTo("http://foo.bar");

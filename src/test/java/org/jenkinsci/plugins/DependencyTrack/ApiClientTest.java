@@ -23,12 +23,15 @@ import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import java.io.File;
 import java.io.IOException;
+import java.net.ConnectException;
+import java.net.http.HttpClient;
+import java.net.http.HttpResponse;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.Month;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -37,13 +40,12 @@ import net.sf.json.JSONObject;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
-import org.junit.After;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.api.io.TempDir;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner.StrictStubs;
+import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.netty.DisposableServer;
 import reactor.netty.http.server.HttpServer;
@@ -52,7 +54,10 @@ import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.entry;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.startsWith;
+import static org.mockito.Mockito.doReturn;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -61,11 +66,8 @@ import static org.mockito.Mockito.when;
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
-@RunWith(StrictStubs.class)
-public class ApiClientTest {
-    
-    @Rule
-    public TemporaryFolder tmpDir = new TemporaryFolder();
+@ExtendWith(MockitoExtension.class)
+class ApiClientTest {
 
     private static final String API_KEY = "api-key";
 
@@ -74,28 +76,32 @@ public class ApiClientTest {
     @Mock
     private ConsoleLogger logger;
 
-    @After
-    public void tearDown() {
+    @AfterEach
+    void tearDown() {
         if (server != null) {
             server.disposeNow();
         }
     }
-    
+
     private ApiClient createClient() {
         return new ApiClient(String.format("http://%s:%d", server.host(), server.port()), API_KEY, logger, 1, 1);
     }
 
+    private ApiClient createClient(HttpClient httpClient) {
+        return new ApiClient("http://host.tld", API_KEY, logger, 1, () -> httpClient);
+    }
+
     @Test
-    public void testConnectionTest() throws ApiClientException {
+    void testConnectionTest() throws ApiClientException {
         server = HttpServer.create()
                 // no ipv6 due to https://bugs.openjdk.java.net/browse/JDK-8220663
                 .host("localhost")
                 .port(0)
                 .route(routes -> routes.get(ApiClient.PROJECT_URL, (request, response) -> {
-                    assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
-                    assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-                    return response.addHeader("X-Powered-By", "Dependency-Track v3.8.0").send();
-                }))
+            assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
+            assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
+            return response.addHeader("X-Powered-By", "Dependency-Track v3.8.0").send();
+        }))
                 .bindNow();
 
         ApiClient uut = createClient();
@@ -104,22 +110,24 @@ public class ApiClientTest {
     }
 
     @Test
-    public void testConnectionTestUnauth() {
-        server = HttpServer.create()
-                .host("localhost")
-                .port(0)
-                .route(routes -> routes.get(ApiClient.PROJECT_URL, (request, response) -> response.status(HttpResponseStatus.UNAUTHORIZED).send()))
-                .bindNow();
+    void testConnectionTestWithErrors() throws IOException, InterruptedException {
+        final var httpClient = mock(HttpClient.class);
+        final var uut = createClient(httpClient);
+        doThrow(new ConnectException("oops"), new InterruptedException("oops"))
+                .when(httpClient).send(any(), any());
 
-        ApiClient uut = createClient();
+        assertThatCode(() -> uut.testConnection())
+                .hasMessage(Messages.ApiClient_Error_Connection("", ""))
+                .hasCauseInstanceOf(ConnectException.class);
 
-        assertThatCode(() -> uut.testConnection()).isInstanceOf(ApiClientException.class)
-                .hasNoCause()
-                .hasMessage(Messages.ApiClient_Error_Connection(401, "Unauthorized"));
+        assertThatCode(() -> uut.testConnection())
+                .hasMessage(Messages.ApiClient_Error_Canceled())
+                .hasCauseInstanceOf(InterruptedException.class);
+        assertThat(Thread.currentThread().isInterrupted()).as("current Thread isInterrupted").isTrue();
     }
 
     @Test
-    public void testConnectionTestInternalError() {
+    void testConnectionTestInternalError() {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
@@ -130,35 +138,35 @@ public class ApiClientTest {
 
         assertThatCode(() -> uut.testConnection()).isInstanceOf(ApiClientException.class)
                 .hasNoCause()
-                .hasMessage(Messages.ApiClient_Error_Connection(500, "Internal Server Error"));
-        
+                .hasMessage(Messages.ApiClient_Error_Connection(HttpResponseStatus.INTERNAL_SERVER_ERROR.code(), HttpResponseStatus.INTERNAL_SERVER_ERROR.reasonPhrase()));
+
         verify(logger).log("something went wrong");
     }
 
     @Test()
-    public void getProjectsTest() throws ApiClientException {
+    void getProjectsTest() throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
                 .route(routes -> routes.get(ApiClient.PROJECT_URL, (request, response) -> {
-                    assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
-                    assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-                    QueryStringDecoder query = new QueryStringDecoder(request.uri());
-                    assertThat(query.parameters())
-                            .contains(entry("limit", Collections.singletonList("500")), entry("excludeInactive", Collections.singletonList("true")))
-                            .containsKey("page").extractingByKey("page", as(InstanceOfAssertFactories.list(String.class)))
-                            .hasSize(1).first().satisfies(p -> {
-                        assertThat(Integer.valueOf(p)).isBetween(1, 3);
-                    });
-                    int page = Integer.valueOf(query.parameters().get("page").get(0));
-                    switch (page) {
-                        case 1:
-                            return response.sendString(Mono.just("[{\"name\":\"Project 1\",\"uuid\":\"uuid-1\",\"version\":null},{\"name\":\"Project 2\",\"uuid\":\"uuid-2\",\"version\":\"null\"}]"));
-                        case 2:
-                            return response.sendString(Mono.just("[{\"name\":\"Project 3\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\",\"lastBomImportStr\":\"2007-12-03T10:15:30\",\"tags\":[{\"name\":\"tag1\"},{\"name\":\"tag2\"},{\"name\":null}]}]"));
-                    }
-                    return response.sendNotFound();
-                }))
+            assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
+            assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
+            QueryStringDecoder query = new QueryStringDecoder(request.uri());
+            assertThat(query.parameters())
+                    .contains(entry("limit", List.of("500")), entry("excludeInactive", List.of("true")))
+                    .containsKey("page").extractingByKey("page", as(InstanceOfAssertFactories.list(String.class)))
+                    .hasSize(1).first().satisfies(p -> {
+                assertThat(Integer.valueOf(p)).isBetween(1, 3);
+            });
+            int page = Integer.parseInt(query.parameters().get("page").get(0));
+            switch (page) {
+                case 1:
+                    return response.sendString(Mono.just("[{\"name\":\"Project 1\",\"uuid\":\"uuid-1\",\"version\":null},{\"name\":\"Project 2\",\"uuid\":\"uuid-2\",\"version\":\"null\"}]"));
+                case 2:
+                    return response.sendString(Mono.just("[{\"name\":\"Project 3\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\",\"lastBomImportStr\":\"2007-12-03T10:15:30\",\"tags\":[{\"name\":\"tag1\"},{\"name\":\"tag2\"},{\"name\":null}]}]"));
+            }
+            return response.sendNotFound();
+        }))
                 .bindNow();
 
         ApiClient uut = createClient();
@@ -167,93 +175,151 @@ public class ApiClientTest {
         boolean isOldJsonVersion = net.sf.json.JSONNull.getInstance().equals("null");
 
         assertThat(projects).containsExactly(
-                Project.builder().name("Project 1").uuid("uuid-1").tags(Collections.emptyList()).build(),
-                Project.builder().name("Project 2").uuid("uuid-2").version(isOldJsonVersion ? null : "null").tags(Collections.emptyList()).build(),
-                Project.builder().name("Project 3").uuid("uuid-3").version("1.2.3").tags(Arrays.asList("tag1", "tag2")).lastBomImport(LocalDateTime.of(2007, Month.DECEMBER, 3, 10, 15, 30)).build()
+                Project.builder().name("Project 1").uuid("uuid-1").tags(List.of()).build(),
+                Project.builder().name("Project 2").uuid("uuid-2").version(isOldJsonVersion ? null : "null").tags(List.of()).build(),
+                Project.builder().name("Project 3").uuid("uuid-3").version("1.2.3").tags(List.of("tag1", "tag2")).lastBomImport(LocalDateTime.of(2007, Month.DECEMBER, 3, 10, 15, 30)).build()
         );
     }
 
     @Test
-    public void lookupProjectTest() throws ApiClientException {
+    void getProjectsTestWithErrors() throws IOException, InterruptedException {
+        final var httpClient = mock(HttpClient.class);
+        final var uut = createClient(httpClient);
+        doThrow(new ConnectException("oops"), new InterruptedException("oops"))
+                .when(httpClient).send(any(), any());
+
+        assertThatCode(() -> uut.getProjects())
+                .hasMessage(Messages.ApiClient_Error_Connection("", ""))
+                .hasCauseInstanceOf(ConnectException.class);
+
+        assertThatCode(() -> uut.getProjects())
+                .hasMessage(Messages.ApiClient_Error_Canceled())
+                .hasCauseInstanceOf(InterruptedException.class);
+        assertThat(Thread.currentThread().isInterrupted()).as("current Thread isInterrupted").isTrue();
+    }
+
+    @Test
+    void lookupProjectTest() throws ApiClientException {
         String projectName = "test-project";
         String projectVersion = "1.2.3";
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
                 .route(routes -> routes.get(ApiClient.PROJECT_LOOKUP_URL, (request, response) -> {
-                    assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
-                    assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-                    QueryStringDecoder query = new QueryStringDecoder(request.uri());
-                    assertThat(query.parameters())
-                            .containsExactly(
-                                    entry(ApiClient.PROJECT_LOOKUP_NAME_PARAM, Collections.singletonList(projectName)),
-                                    entry(ApiClient.PROJECT_LOOKUP_VERSION_PARAM, Collections.singletonList(projectVersion))
-                            );
-                    return response.sendString(Mono.just("{\"name\":\"test-project\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\"}"));
-                }))
+            assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
+            assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
+            QueryStringDecoder query = new QueryStringDecoder(request.uri());
+            assertThat(query.parameters())
+                    .containsExactly(
+                            entry(ApiClient.PROJECT_LOOKUP_NAME_PARAM, List.of(projectName)),
+                            entry(ApiClient.PROJECT_LOOKUP_VERSION_PARAM, List.of(projectVersion))
+                    );
+            return response.sendString(Mono.just("{\"name\":\"test-project\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\"}"));
+        }))
                 .bindNow();
 
         ApiClient uut = createClient();
 
         assertThat(uut.lookupProject(projectName, projectVersion)).isEqualTo(Project.builder().name(projectName).version(projectVersion).uuid("uuid-3").build());
+
+        server.disposeNow();
+        server = HttpServer.create().host("localhost").port(0).route(routes -> routes.get(ApiClient.PROJECT_LOOKUP_URL, (request, response) -> response.status(HttpResponseStatus.NOT_FOUND).send())).bindNow();
+        assertThatCode(() -> createClient().lookupProject(projectName, projectVersion))
+                .hasMessage(Messages.ApiClient_Error_ProjectLookup(projectName, projectVersion, HttpResponseStatus.NOT_FOUND.code(), HttpResponseStatus.NOT_FOUND.reasonPhrase()))
+                .hasNoCause();
+        verify(logger).log("");
     }
 
     @Test
-    public void getFindingsTest() throws ApiClientException {
+    void lookupProjectTestWithErrors() throws IOException, InterruptedException {
+        final var httpClient = mock(HttpClient.class);
+        final var uut = createClient(httpClient);
+        doThrow(new ConnectException("oops"), new InterruptedException("oops"))
+                .when(httpClient).send(any(), any());
+
+        assertThatCode(() -> uut.lookupProject("", ""))
+                .hasMessage(Messages.ApiClient_Error_Connection("", ""))
+                .hasCauseInstanceOf(ConnectException.class);
+
+        assertThatCode(() -> uut.lookupProject("", ""))
+                .hasMessage(Messages.ApiClient_Error_Canceled())
+                .hasCauseInstanceOf(InterruptedException.class);
+        assertThat(Thread.currentThread().isInterrupted()).as("current Thread isInterrupted").isTrue();
+    }
+
+    @Test
+    void getFindingsTest() throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
                 .route(routes -> routes.get(ApiClient.PROJECT_FINDINGS_URL + "/{uuid}", (request, response) -> {
-                    assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
-                    assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-                    assertThat(request.param("uuid")).isNotEmpty();
-                    String uuid = request.param("uuid");
-                    switch (uuid) {
-                        case "uuid-1":
-                            return response.sendString(Mono.just("[]"));
-                        default:
-                            return response.sendNotFound();
-                    }
-                }))
+            assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
+            assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
+            assertThat(request.param("uuid")).isNotEmpty();
+            String uuid = request.param("uuid");
+            switch (uuid) {
+                case "uuid-1":
+                    return response.sendString(Mono.just("[]"));
+                default:
+                    return response.sendNotFound();
+            }
+        }))
                 .bindNow();
 
         ApiClient uut = createClient();
 
         assertThatCode(() -> uut.getFindings("foo")).isInstanceOf(ApiClientException.class)
                 .hasNoCause()
-                .hasMessage(Messages.ApiClient_Error_RetrieveFindings(404, "Not Found"));
+                .hasMessage(Messages.ApiClient_Error_RetrieveFindings(HttpResponseStatus.NOT_FOUND.code(), HttpResponseStatus.NOT_FOUND.reasonPhrase()));
 
         assertThat(uut.getFindings("uuid-1")).isEmpty();
     }
 
     @Test
-    public void uploadTestWithUuid() throws IOException, InterruptedException {
-        File bom = tmpDir.newFile();
-        Files.write(bom.toPath(), "<test />".getBytes(StandardCharsets.UTF_8));
+    void getFindingsTestWithErrors() throws IOException, InterruptedException {
+        final var httpClient = mock(HttpClient.class);
+        final var uut = createClient(httpClient);
+        doThrow(new ConnectException("oops"), new InterruptedException("oops"))
+                .when(httpClient).send(any(), any());
+
+        assertThatCode(() -> uut.getFindings("foo"))
+                .hasMessage(Messages.ApiClient_Error_Connection("", ""))
+                .hasCauseInstanceOf(ConnectException.class);
+
+        assertThatCode(() -> uut.getFindings("foo"))
+                .hasMessage(Messages.ApiClient_Error_Canceled())
+                .hasCauseInstanceOf(InterruptedException.class);
+        assertThat(Thread.currentThread().isInterrupted()).as("current Thread isInterrupted").isTrue();
+    }
+
+    @Test
+    void uploadTestWithUuid(@TempDir Path tmp) throws IOException, InterruptedException {
+        Path bom = tmp.resolve("bom.xml");
+        Files.writeString(bom, "<test />", Charset.defaultCharset());
         final AtomicReference<String> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
                 .route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> {
-                    assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
-                    assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-                    assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-                    assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_LENGTH)).isTrue();
-                    return response.sendString(
-                            request.receive().asString(StandardCharsets.UTF_8)
+            assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
+            assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
+            assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
+            assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_LENGTH)).isTrue();
+            return response.sendString(
+                    request.receive().asString(StandardCharsets.UTF_8)
                             .doOnNext(body -> requestBody.set(body))
                             .doOnComplete(() -> completionSignal.countDown())
                             .map(body -> "{\"token\":\"uuid-1\"}")
-                    );
-                }))
+            );
+        }))
                 .bindNow();
 
         ApiClient uut = createClient();
-        assertThat(uut.upload("uuid-1", null, null, new FilePath(bom), false)).isEqualTo(new UploadResult(true, "uuid-1"));
-        
+        assertThat(uut.upload("uuid-1", null, null, new FilePath(bom.toFile()), false)).isEqualTo(new UploadResult(true, "uuid-1"));
+
         File mockFile = mock(File.class);
-        when(mockFile.getPath()).thenReturn(tmpDir.getRoot().getPath());
+        when(mockFile.getPath()).thenReturn(tmp.toAbsolutePath().toString());
         FilePath fileWithError = new FilePath(mockFile);
         assertThat(uut.upload(null, "p1", "v1", fileWithError, true)).isEqualTo(new UploadResult(false));
         String expectedBody = "{\"bom\":\"PHRlc3QgLz4=\",\"project\":\"uuid-1\"}";
@@ -262,121 +328,149 @@ public class ApiClientTest {
     }
 
     @Test
-    public void uploadTestWithName() throws IOException, InterruptedException {
-        File bom = tmpDir.newFile();
-        Files.write(bom.toPath(), "<test />".getBytes(StandardCharsets.UTF_8));
+    void uploadTestWithName(@TempDir Path tmp) throws IOException, InterruptedException {
+        Path bom = tmp.resolve("bom.xml");
+        Files.writeString(bom, "<test />", Charset.defaultCharset());
         final AtomicReference<String> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
                 .route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> {
-                    assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
-                    assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-                    assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-                    assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_LENGTH)).isTrue();
-                    return response.sendString(
-                            request.receive().asString(StandardCharsets.UTF_8)
+            assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
+            assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
+            assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
+            assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_LENGTH)).isTrue();
+            return response.sendString(
+                    request.receive().asString(StandardCharsets.UTF_8)
                             .doOnNext(body -> requestBody.set(body))
                             .doOnComplete(() -> completionSignal.countDown())
                             .map(body -> "")
-                    );
-                }))
+            );
+        }))
                 .bindNow();
 
         ApiClient uut = createClient();
-        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom), false)).isEqualTo(new UploadResult(true));
+        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom.toFile()), false)).isEqualTo(new UploadResult(true));
         String expectedBody = "{\"bom\":\"PHRlc3QgLz4=\",\"projectName\":\"p1\",\"projectVersion\":\"v1\",\"autoCreate\":false}";
         completionSignal.await(5, TimeUnit.SECONDS);
         assertThat(requestBody.get()).isEqualTo(expectedBody);
     }
 
     @Test
-    public void uploadTestWithErrors() throws IOException, InterruptedException {
+    void uploadTestWithErrors(@TempDir Path tmp) throws IOException, InterruptedException {
         ApiClient uut;
-        
+        File bom = tmp.resolve("bom.xml").toFile();
+        bom.createNewFile();
+
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.BAD_REQUEST).send())).bindNow();
         uut = createClient();
-        assertThat(uut.upload(null, "p1", "v1", new FilePath(tmpDir.newFile()), true)).isEqualTo(new UploadResult(false));
+        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom), true)).isEqualTo(new UploadResult(false));
         verify(logger).log(Messages.Builder_Payload_Invalid());
         server.disposeNow();
-        
+
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.UNAUTHORIZED).send())).bindNow();
         uut = createClient();
-        assertThat(uut.upload(null, "p1", "v1", new FilePath(tmpDir.newFile()), true)).isEqualTo(new UploadResult(false));
+        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom), true)).isEqualTo(new UploadResult(false));
         verify(logger).log(Messages.Builder_Unauthorized());
         server.disposeNow();
-        
+
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.NOT_FOUND).send())).bindNow();
         uut = createClient();
-        assertThat(uut.upload(null, "p1", "v1", new FilePath(tmpDir.newFile()), true)).isEqualTo(new UploadResult(false));
+        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom), true)).isEqualTo(new UploadResult(false));
         verify(logger).log(Messages.Builder_Project_NotFound());
         server.disposeNow();
 
+        server = HttpServer.create().host("localhost").port(0).route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.GONE).send())).bindNow();
+        uut = createClient();
+        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom), true)).isEqualTo(new UploadResult(false));
+        verify(logger).log(Messages.ApiClient_Error_Connection(HttpResponseStatus.GONE.code(), HttpResponseStatus.GONE.reasonPhrase()));
+        server.disposeNow();
+
         File mockFile = mock(File.class);
-        when(mockFile.getPath()).thenReturn(tmpDir.getRoot().getPath());
+        when(mockFile.getPath()).thenReturn(tmp.toAbsolutePath().toString());
         FilePath fileWithError = new FilePath(mockFile);
         assertThat(uut.upload(null, "p1", "v1", fileWithError, true)).isEqualTo(new UploadResult(false));
-        verify(logger).log(startsWith(Messages.Builder_Error_Processing(tmpDir.getRoot().getPath(), "")));
+        verify(logger).log(startsWith(Messages.Builder_Error_Processing(tmp.toAbsolutePath().toString(), "")));
     }
 
     @Test
-    public void isTokenBeingProcessedTest() throws ApiClientException {
+    void isTokenBeingProcessedTest() throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
                 .route(routes -> routes.get(ApiClient.BOM_TOKEN_URL + "/{uuid}", (request, response) -> {
-                    assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
-                    assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-                    assertThat(request.param("uuid")).isNotEmpty();
-                    String uuid = request.param("uuid");
-                    switch (uuid) {
-                        case "uuid-1":
-                            return response.sendString(Mono.just("{\"processing\":true}"));
-                        default:
-                            return response.sendNotFound();
-                    }
-                }))
+            assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
+            assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
+            assertThat(request.param("uuid")).isNotEmpty();
+            String uuid = request.param("uuid");
+            switch (uuid) {
+                case "uuid-1":
+                    return response.sendString(Mono.just("{\"processing\":true}"));
+                default:
+                    return response.sendNotFound();
+            }
+        }))
                 .bindNow();
 
         ApiClient uut = createClient();
 
         assertThatCode(() -> uut.isTokenBeingProcessed("foo")).isInstanceOf(ApiClientException.class)
                 .hasNoCause()
-                .hasMessage(Messages.ApiClient_Error_TokenProcessing(404, "Not Found"));
+                .hasMessage(Messages.ApiClient_Error_TokenProcessing(HttpResponseStatus.NOT_FOUND.code(), HttpResponseStatus.NOT_FOUND.reasonPhrase()));
+        verify(logger).log("");
 
         assertThat(uut.isTokenBeingProcessed("uuid-1")).isTrue();
     }
-    
+
     @Test
-    public void updateProjectPropertiesTest() throws ApiClientException, InterruptedException {
+    void isTokenBeingProcessedTestWithErrors() throws IOException, InterruptedException {
+        final var httpClient = mock(HttpClient.class);
+        final var uut = createClient(httpClient);
+        doThrow(new ConnectException("oops"), new InterruptedException("oops"))
+                .when(httpClient).send(any(), any());
+
+        assertThatCode(() -> uut.isTokenBeingProcessed("foo"))
+                .hasMessage(Messages.ApiClient_Error_Connection("", ""))
+                .hasCauseInstanceOf(ConnectException.class);
+
+        assertThatCode(() -> uut.isTokenBeingProcessed("foo"))
+                .hasMessage(Messages.ApiClient_Error_Canceled())
+                .hasCauseInstanceOf(InterruptedException.class);
+        assertThat(Thread.currentThread().isInterrupted()).as("current Thread isInterrupted").isTrue();
+    }
+
+    @Test
+    void updateProjectPropertiesTest() throws ApiClientException, InterruptedException {
         final AtomicReference<String> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
                 .route(routes -> routes
-                    .get(ApiClient.PROJECT_URL + "/uuid-3", (request, response) -> {
-                        assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
-                        assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-                        return response.sendString(Mono.just("{\"name\":\"test-project\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\",\"tags\":[{\"name\":\"tag1\"},{\"name\":\"tag2\"}],\"parent\":{\"uuid\":\"old-parent\"},\"parentUuid\":\"old-parent\"}"));
-                    })
-                    .post(ApiClient.PROJECT_URL, (request, response) -> {
-                        assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
-                        assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-                        return response.sendString(
-                                request.receive().asString(StandardCharsets.UTF_8)
-                                .doOnNext(body -> requestBody.set(body))
-                                .doOnComplete(() -> completionSignal.countDown())
-                        );
-                    })
+                .get(ApiClient.PROJECT_URL + "/uuid-3", (request, response) -> {
+                    assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
+                    assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
+                    return response.sendString(Mono.just("{\"name\":\"test-project\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\",\"tags\":[{\"name\":\"tag1\"},{\"name\":\"tag2\"}],\"parent\":{\"uuid\":\"old-parent\"},\"parentUuid\":\"old-parent\"}"));
+                })
+                .post(ApiClient.PROJECT_URL, (request, response) -> {
+                    assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
+                    assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
+                    assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
+                    assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_LENGTH)).isTrue();
+                    return response.sendString(
+                            request.receive().asString(StandardCharsets.UTF_8)
+                                    .doOnNext(body -> requestBody.set(body))
+                                    .doOnComplete(() -> completionSignal.countDown())
+                    );
+                })
                 )
                 .bindNow();
 
         ApiClient uut = createClient();
-        
+
         final ProjectProperties props = new ProjectProperties();
-        props.setTags(Arrays.asList("tag2", "tag4"));
+        props.setTags(List.of("tag2", "tag4"));
         props.setSwidTagId("my swid tag id");
         props.setGroup("my group");
         props.setDescription("my description");
@@ -392,39 +486,138 @@ public class ApiClientTest {
         assertThat(project.getDescription()).isEqualTo(props.getDescription());
         assertThat(project.getParent()).hasFieldOrPropertyWithValue("uuid", props.getParentId());
         assertThat(updatedProject.has("parentUuid")).isFalse();
+        
+        server.disposeNow();
+        server = HttpServer.create().host("localhost").port(0).route(routes -> routes.get(ApiClient.PROJECT_URL + "/uuid-unknown", (request, response) -> response.status(HttpResponseStatus.NOT_FOUND).send())).bindNow();
+        assertThatCode(() -> createClient().updateProjectProperties("uuid-unknown", new ProjectProperties()))
+                .hasMessage(Messages.ApiClient_Error_ProjectLoad("uuid-unknown", HttpResponseStatus.NOT_FOUND.code(), HttpResponseStatus.NOT_FOUND.reasonPhrase()))
+                .hasNoCause();
+        verify(logger).log("");
     }
 
     @Test
-    public void testGetTeamPermissions() throws ApiClientException {
+    void updateProjectPropertiesTestWithErrorsOnLoad() throws IOException, InterruptedException {
+        final var httpClient = mock(HttpClient.class);
+        final var uut = createClient(httpClient);
+        doThrow(new ConnectException("oops"), new InterruptedException("oops"))
+                .when(httpClient).send(any(), any());
+
+        assertThatCode(() -> uut.updateProjectProperties("foo", new ProjectProperties()))
+                .hasMessage(Messages.ApiClient_Error_Connection("", ""))
+                .hasCauseInstanceOf(ConnectException.class);
+
+        assertThatCode(() -> uut.updateProjectProperties("foo", new ProjectProperties()))
+                .hasMessage(Messages.ApiClient_Error_Canceled())
+                .hasCauseInstanceOf(InterruptedException.class);
+        assertThat(Thread.currentThread().isInterrupted()).as("current Thread isInterrupted").isTrue();
+    }
+
+    @Test
+    void updateProjectPropertiesTestWithErrorsOnUpdate() throws IOException, InterruptedException {
+        final var httpClient = mock(HttpClient.class);
+        final var uut = createClient(httpClient);
+        final var project = "{\"name\":\"name\",\"uuid\":\"uuid\",\"version\":\"version\"}";
+        final var response = mock(HttpResponse.class);
+        when(response.body()).thenReturn(project);
+        when(response.statusCode()).thenReturn(200, HttpResponseStatus.INTERNAL_SERVER_ERROR.code(), 200, 200);
+        
+        doReturn(response, response).when(httpClient).send(any(), any());
+        assertThatCode(() -> uut.updateProjectProperties("uuid-unknown", new ProjectProperties()))
+                .hasMessage(Messages.ApiClient_Error_ProjectUpdate("uuid-unknown", HttpResponseStatus.INTERNAL_SERVER_ERROR.code(), HttpResponseStatus.INTERNAL_SERVER_ERROR.reasonPhrase()))
+                .hasNoCause();
+        verify(logger).log(project);
+        
+        doReturn(response).doThrow(new ConnectException("oops")).when(httpClient).send(any(), any());
+        assertThatCode(() -> uut.updateProjectProperties("foo", new ProjectProperties()))
+                .hasMessage(Messages.ApiClient_Error_Connection("", ""))
+                .hasCauseInstanceOf(ConnectException.class);
+
+        doReturn(response).doThrow(new InterruptedException("oops")).when(httpClient).send(any(), any());
+        assertThatCode(() -> uut.updateProjectProperties("foo", new ProjectProperties()))
+                .hasMessage(Messages.ApiClient_Error_Canceled())
+                .hasCauseInstanceOf(InterruptedException.class);
+        assertThat(Thread.currentThread().isInterrupted()).as("current Thread isInterrupted").isTrue();
+    }
+
+    @Test
+    void getTeamPermissionsTest() throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
                 .route(routes -> routes.get(ApiClient.TEAM_SELF_URL, (request, response) -> {
-                    return response.sendString(Mono.just("{\"name\":\"test-team\",\"permissions\":[{\"name\":\"BOM_UPLOAD\"},{\"name\":\"PROJECT_CREATION_UPLOAD\"}]}"));
-                }))
+            return response.sendString(Mono.just("{\"name\":\"test-team\",\"permissions\":[{\"name\":\"BOM_UPLOAD\"},{\"name\":\"PROJECT_CREATION_UPLOAD\"}]}"));
+        }))
                 .bindNow();
 
         ApiClient uut = createClient();
 
         assertThat(uut.getTeamPermissions()).satisfies(team -> {
-                assertThat(team.getName()).isEqualTo("test-team");
-                assertThat(team.getPermissions()).containsExactlyInAnyOrder("BOM_UPLOAD", "PROJECT_CREATION_UPLOAD");
+            assertThat(team.getName()).isEqualTo("test-team");
+            assertThat(team.getPermissions()).containsExactlyInAnyOrder("BOM_UPLOAD", "PROJECT_CREATION_UPLOAD");
         });
+
+        server.disposeNow();
+        server = HttpServer.create().host("localhost").port(0).route(routes -> routes.get(ApiClient.TEAM_SELF_URL, (request, response) -> response.status(HttpResponseStatus.NOT_FOUND).send())).bindNow();
+        assertThatCode(() -> createClient().getTeamPermissions())
+                .hasMessage(Messages.ApiClient_Error_Connection(HttpResponseStatus.NOT_FOUND.code(), HttpResponseStatus.NOT_FOUND.reasonPhrase()))
+                .hasNoCause();
+        verify(logger).log("");
     }
 
     @Test
-    public void testGetVersion() throws ApiClientException {
+    void getTeamPermissionsTestWithErrors() throws IOException, InterruptedException {
+        final var httpClient = mock(HttpClient.class);
+        final var uut = createClient(httpClient);
+        doThrow(new ConnectException("oops"), new InterruptedException("oops"))
+                .when(httpClient).send(any(), any());
+
+        assertThatCode(() -> uut.getTeamPermissions())
+                .hasMessage(Messages.ApiClient_Error_Connection("", ""))
+                .hasCauseInstanceOf(ConnectException.class);
+
+        assertThatCode(() -> uut.getTeamPermissions())
+                .hasMessage(Messages.ApiClient_Error_Canceled())
+                .hasCauseInstanceOf(InterruptedException.class);
+        assertThat(Thread.currentThread().isInterrupted()).as("current Thread isInterrupted").isTrue();
+    }
+
+    @Test
+    void testGetVersion() throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
                 .route(routes -> routes.get(ApiClient.VERSION_URL, (request, response) -> {
-                    return response.sendString(Mono.just("{\"version\":\"1.2.4\"}"));
-                }))
+            return response.sendString(Mono.just("{\"version\":\"1.2.4\"}"));
+        }))
                 .bindNow();
 
         ApiClient uut = createClient();
 
         assertThat(uut.getVersion()).isEqualTo(new VersionNumber("1.2.4"));
+
+        server.disposeNow();
+        server = HttpServer.create().host("localhost").port(0).route(routes -> routes.get(ApiClient.VERSION_URL, (request, response) -> response.status(HttpResponseStatus.BAD_REQUEST).send())).bindNow();
+        assertThatCode(() -> createClient().getVersion())
+                .hasMessage(Messages.ApiClient_Error_Connection(HttpResponseStatus.BAD_REQUEST.code(), HttpResponseStatus.BAD_REQUEST.reasonPhrase()))
+                .hasNoCause();
+        verify(logger).log("");
+    }
+
+    @Test
+    void testGetVersionWithErrors() throws IOException, InterruptedException {
+        final var httpClient = mock(HttpClient.class);
+        final var uut = createClient(httpClient);
+        doThrow(new ConnectException("oops"), new InterruptedException("oops"))
+                .when(httpClient).send(any(), any());
+
+        assertThatCode(() -> uut.getVersion())
+                .hasMessage(Messages.ApiClient_Error_Connection("", ""))
+                .hasCauseInstanceOf(ConnectException.class);
+
+        assertThatCode(() -> uut.getVersion())
+                .hasMessage(Messages.ApiClient_Error_Canceled())
+                .hasCauseInstanceOf(InterruptedException.class);
+        assertThat(Thread.currentThread().isInterrupted()).as("current Thread isInterrupted").isTrue();
     }
 
 }

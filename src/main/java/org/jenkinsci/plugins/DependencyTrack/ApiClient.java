@@ -19,48 +19,39 @@ import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.FilePath;
 import hudson.util.VersionNumber;
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.UncheckedIOException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import lombok.RequiredArgsConstructor;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
 import org.jenkinsci.plugins.DependencyTrack.model.Team;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
+import static org.springframework.http.HttpHeaders.ACCEPT;
+import static org.springframework.http.HttpHeaders.CONTENT_TYPE;
+import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
-@RequiredArgsConstructor
 public class ApiClient {
 
-    private static final String HEADER_CONTENT_TYPE = "Content-Type";
-    private static final String HEADER_ACCEPT = "Accept";
-    private static final String MEDIATYPE_JSON = "application/json";
     private static final String API_URL = "/api/v1";
-    private static final int MS_TO_S_FACTOR = 1000;
     static final String API_KEY_HEADER = "X-Api-Key";
     static final String PROJECT_FINDINGS_URL = API_URL + "/finding/project";
     static final String BOM_URL = API_URL + "/bom";
@@ -84,74 +75,100 @@ public class ApiClient {
     private final String apiKey;
 
     private final ConsoleLogger logger;
+    private final HttpClient httpClient;
 
     /**
-     * the connection-timeout in seconds for every call to DT
+     * the read-timeout for every call to DT
      */
-    private final int connectionTimeout;
+    private final Duration readTimeout;
 
     /**
-     * the read-timeout in seconds for every call to DT
+     *
+     * @param baseUrl the base url to DT instance without trailing slashes, e.g.
+     * "http://host.tld:port"
+     * @param apiKey the api key to authorize with against DT
+     * @param logger
+     * @param connectionTimeout the connection-timeout in seconds for every call
+     * to DT
+     * @param readTimeout the read-timeout in seconds for every call to DT
      */
-    private final int readTimeout;
-    
+    public ApiClient(@NonNull final String baseUrl, @NonNull final String apiKey, @NonNull final ConsoleLogger logger, final int connectionTimeout, final int readTimeout) {
+        this(baseUrl, apiKey, logger, readTimeout, () -> HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(connectionTimeout)).build());
+    }
+
+    ApiClient(@NonNull final String baseUrl, @NonNull final String apiKey, @NonNull final ConsoleLogger logger, final int readTimeout, @NonNull final HttpClientFactory factory) {
+        this.baseUrl = baseUrl;
+        this.apiKey = apiKey;
+        this.logger = logger;
+        this.readTimeout = Duration.ofSeconds(readTimeout);
+        httpClient = factory.create();
+    }
+
     @NonNull
     public VersionNumber getVersion() throws ApiClientException {
         try {
-            final HttpURLConnection conn = createConnection(VERSION_URL);
-            conn.connect();
-            if (conn.getResponseCode() == HTTP_OK) {
-                try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
-                    final JSONObject jsonObject = JSONObject.fromObject(getResponseBody(in));
-                    return new VersionNumber(jsonObject.getString("version"));
-                }
-            } else {
-                logHttpError(conn);
-                throw new ApiClientException(Messages.ApiClient_Error_Connection(conn.getResponseCode(), conn.getResponseMessage()));
+            final var request = createRequest(URI.create(VERSION_URL));
+            final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            final var body = response.body();
+            final int status = response.statusCode();
+            if (status != HTTP_OK) {
+                logger.log(body);
+                throw new ApiClientException(Messages.ApiClient_Error_Connection(status, HttpStatus.valueOf(status).getReasonPhrase()));
             }
+            final var jsonObject = JSONObject.fromObject(body);
+            return new VersionNumber(jsonObject.getString("version"));
         } catch (ApiClientException e) {
             throw e;
         } catch (IOException e) {
             throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ApiClientException(Messages.ApiClient_Error_Canceled(), e);
         }
     }
 
     @NonNull
     public String testConnection() throws ApiClientException {
         try {
-            final HttpURLConnection conn = createConnection(PROJECT_URL);
-            conn.connect();
-            if (conn.getResponseCode() == HTTP_OK) {
-                return StringUtils.trimToEmpty(conn.getHeaderField("X-Powered-By"));
+            final var request = createRequest(URI.create(PROJECT_URL));
+            final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            final int status = response.statusCode();
+            if (status == HTTP_OK) {
+                return response.headers().firstValue("X-Powered-By").map(StringUtils::trim).orElse(StringUtils.EMPTY);
             } else {
-                logHttpError(conn);
-                throw new ApiClientException(Messages.ApiClient_Error_Connection(conn.getResponseCode(), conn.getResponseMessage()));
+                logger.log(response.body());
+                throw new ApiClientException(Messages.ApiClient_Error_Connection(status, HttpStatus.valueOf(status).getReasonPhrase()));
             }
         } catch (ApiClientException e) {
             throw e;
         } catch (IOException e) {
             throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ApiClientException(Messages.ApiClient_Error_Canceled(), e);
         }
     }
 
     @NonNull
     public Team getTeamPermissions() throws ApiClientException {
         try {
-            final HttpURLConnection conn = createConnection(TEAM_SELF_URL);
-            conn.connect();
-            if (conn.getResponseCode() == HTTP_OK) {
-                try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
-                    final JSONObject jsonObject = JSONObject.fromObject(getResponseBody(in));
-                    return TeamParser.parse(jsonObject);
-                }
-            } else {
-                logHttpError(conn);
-                throw new ApiClientException(Messages.ApiClient_Error_Connection(conn.getResponseCode(), conn.getResponseMessage()));
+            final var request = createRequest(URI.create(TEAM_SELF_URL));
+            final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            final var body = response.body();
+            final int status = response.statusCode();
+            if (status != HTTP_OK) {
+                logger.log(body);
+                throw new ApiClientException(Messages.ApiClient_Error_Connection(status, HttpStatus.valueOf(status).getReasonPhrase()));
             }
+            final var jsonObject = JSONObject.fromObject(body);
+            return TeamParser.parse(jsonObject);
         } catch (ApiClientException e) {
             throw e;
         } catch (IOException e) {
             throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ApiClientException(Messages.ApiClient_Error_Canceled(), e);
         }
     }
 
@@ -171,83 +188,91 @@ public class ApiClient {
     @NonNull
     private List<Project> getProjectsPaged(final int page) throws ApiClientException {
         try {
-            final HttpURLConnection conn = createConnection(PROJECT_URL + "?limit=500&excludeInactive=true&page=" + page);
-            conn.setDoOutput(true);
-            conn.connect();
-            if (conn.getResponseCode() == HTTP_OK) {
-                try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
-                    JSONArray array = JSONArray.fromObject(getResponseBody(in));
-                    return array.stream()
-                            .map(o -> ProjectParser.parse((JSONObject) o))
-                            .collect(Collectors.toList());
-                }
+            final var uri = UriComponentsBuilder.fromUriString(PROJECT_URL)
+                    .queryParam("limit", "{limit}")
+                    .queryParam("excludeInactive", "{excludeInactive}")
+                    .queryParam("page", "{page}")
+                    .build(500, true, page);
+            final var request = createRequest(uri);
+            final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            if (response.statusCode() == HTTP_OK) {
+                return JSONArray.fromObject(response.body()).stream()
+                        .map(JSONObject.class::cast)
+                        .map(ProjectParser::parse)
+                        .collect(Collectors.toList());
             }
         } catch (IOException e) {
             throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ApiClientException(Messages.ApiClient_Error_Canceled(), e);
         }
-        return Collections.emptyList();
+        return List.of();
     }
 
     @NonNull
     public Project lookupProject(@NonNull final String projectName, @NonNull final String projectVersion) throws ApiClientException {
         try {
-            final HttpURLConnection conn = createConnection(PROJECT_LOOKUP_URL + "?"
-                    + PROJECT_LOOKUP_NAME_PARAM + "=" + URLEncoder.encode(projectName, StandardCharsets.UTF_8.name()) + "&"
-                    + PROJECT_LOOKUP_VERSION_PARAM + "=" + URLEncoder.encode(projectVersion, StandardCharsets.UTF_8.name()));
-            conn.setDoOutput(true);
-            conn.connect();
-            // Checks the server response
-            if (conn.getResponseCode() == HTTP_OK) {
-                try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
-                    final JSONObject jsonObject = JSONObject.fromObject(getResponseBody(in));
-                    final String version = jsonObject.getString("version");
-                    final Project.ProjectBuilder builder = Project.builder()
-                            .name(jsonObject.getString("name"))
-                            .uuid(jsonObject.getString("uuid"));
-                    if (StringUtils.isNotBlank(version) && !"null".equalsIgnoreCase(version)) {
-                        builder.version(version);
-                    }
-                    return builder.build();
-                }
-            } else {
-                logHttpError(conn);
-                throw new ApiClientException(Messages.ApiClient_Error_ProjectLookup(projectName, projectVersion, conn.getResponseCode(), conn.getResponseMessage()));
+            final var uri = UriComponentsBuilder.fromUriString(PROJECT_LOOKUP_URL)
+                    .queryParam(PROJECT_LOOKUP_NAME_PARAM, "{name}")
+                    .queryParam(PROJECT_LOOKUP_VERSION_PARAM, "{version}")
+                    .build(projectName, projectVersion);
+            final var request = createRequest(uri);
+            final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            final var body = response.body();
+            final int status = response.statusCode();
+            if (status != HTTP_OK) {
+                logger.log(body);
+                throw new ApiClientException(Messages.ApiClient_Error_ProjectLookup(projectName, projectVersion, status, HttpStatus.valueOf(status).getReasonPhrase()));
             }
+            final var jsonObject = JSONObject.fromObject(body);
+            final var version = jsonObject.getString("version");
+            final var builder = Project.builder()
+                    .name(jsonObject.getString("name"))
+                    .uuid(jsonObject.getString("uuid"));
+            if (StringUtils.isNotBlank(version) && !"null".equalsIgnoreCase(version)) {
+                builder.version(version);
+            }
+            return builder.build();
         } catch (ApiClientException e) {
             throw e;
         } catch (IOException e) {
-            throw new ApiClientException(Messages.ApiClient_Error_ProjectLookup(projectName, projectVersion, StringUtils.EMPTY, StringUtils.EMPTY), e);
+            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ApiClientException(Messages.ApiClient_Error_Canceled(), e);
         }
     }
 
     @NonNull
     public List<Finding> getFindings(@NonNull final String projectUuid) throws ApiClientException {
         try {
-            final HttpURLConnection conn = createConnection(PROJECT_FINDINGS_URL + "/" + URLEncoder.encode(projectUuid, StandardCharsets.UTF_8.name()));
-            conn.setDoOutput(true);
-            conn.connect();
-            // Checks the server response
-            if (conn.getResponseCode() == HTTP_OK) {
-                try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
-                    return FindingParser.parse(getResponseBody(in));
-                }
-            } else {
-                logHttpError(conn);
-                throw new ApiClientException(Messages.ApiClient_Error_RetrieveFindings(conn.getResponseCode(), conn.getResponseMessage()));
+            final var uri = UriComponentsBuilder.fromUriString(PROJECT_FINDINGS_URL).pathSegment("{uuid}").build(projectUuid);
+            final var request = createRequest(uri);
+            final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            final var body = response.body();
+            final int status = response.statusCode();
+            if (status != HTTP_OK) {
+                logger.log(body);
+                throw new ApiClientException(Messages.ApiClient_Error_RetrieveFindings(status, HttpStatus.valueOf(status).getReasonPhrase()));
             }
+            return FindingParser.parse(body);
         } catch (ApiClientException e) {
             throw e;
         } catch (IOException e) {
-            throw new ApiClientException(Messages.ApiClient_Error_RetrieveFindings(StringUtils.EMPTY, StringUtils.EMPTY), e);
+            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ApiClientException(Messages.ApiClient_Error_Canceled(), e);
         }
     }
 
     @NonNull
     public UploadResult upload(@Nullable final String projectId, @Nullable final String projectName, @Nullable final String projectVersion, @NonNull final FilePath artifact,
-            boolean autoCreateProject) throws IOException {
+            boolean autoCreateProject) throws IOException, InterruptedException {
         final String encodedScan;
-        try {
-            encodedScan = Base64.encodeBase64String(artifact.readToString().getBytes(StandardCharsets.UTF_8));
+        try (var in = artifact.read()) {
+            encodedScan = Base64.getEncoder().encodeToString(in.readAllBytes());
         } catch (IOException | InterruptedException e) {
             logger.log(Messages.Builder_Error_Processing(artifact.getRemote(), e.getLocalizedMessage()));
             return new UploadResult(false);
@@ -262,51 +287,33 @@ public class ApiClient {
                     .element("projectVersion", projectVersion)
                     .element("autoCreate", autoCreateProject);
         }
-        byte[] payloadBytes = jsonObject.toString().getBytes(StandardCharsets.UTF_8);
-        // Creates the request and connects
-        final HttpURLConnection conn = createConnection(BOM_URL);
-        conn.setDoOutput(true);
-        conn.setRequestMethod("PUT");
-        conn.setRequestProperty("Content-Length", Integer.toString(payloadBytes.length));
-        conn.setRequestProperty(HEADER_CONTENT_TYPE, MEDIATYPE_JSON);
-        conn.connect();
-        // Sends the payload bytes
-        try (OutputStream os = new BufferedOutputStream(conn.getOutputStream())) {
-            os.write(payloadBytes);
-            os.flush();
-        } catch (IOException e) {
-            logger.log(Messages.Builder_Error_Processing(artifact.getRemote(), e.getLocalizedMessage()));
-            return new UploadResult(false);
-        }
+        final var request = createRequest(URI.create(BOM_URL), "PUT", HttpRequest.BodyPublishers.ofString(jsonObject.toString()));
+        final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        final var body = response.body();
+        final int status = response.statusCode();
         // Checks the server response
-        switch (conn.getResponseCode()) {
+        switch (status) {
             case HTTP_OK:
-                try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
-                String responseBody = getResponseBody(in);
-                if (StringUtils.isNotBlank(responseBody)) {
-                    final JSONObject json = JSONObject.fromObject(responseBody);
+                if (StringUtils.isNotBlank(body)) {
+                    final var json = JSONObject.fromObject(body);
                     return new UploadResult(true, StringUtils.trimToNull(json.getString("token")));
                 } else {
                     return new UploadResult(true);
                 }
-            }
             case HTTP_BAD_REQUEST:
                 logger.log(Messages.Builder_Payload_Invalid());
-                logHttpError(conn);
                 break;
             case HTTP_UNAUTHORIZED:
                 logger.log(Messages.Builder_Unauthorized());
-                logHttpError(conn);
                 break;
             case HTTP_NOT_FOUND:
                 logger.log(Messages.Builder_Project_NotFound());
-                logHttpError(conn);
                 break;
             default:
-                logger.log(Messages.ApiClient_Error_Connection(conn.getResponseCode(), conn.getResponseMessage()));
-                logHttpError(conn);
+                logger.log(Messages.ApiClient_Error_Connection(status, HttpStatus.valueOf(status).getReasonPhrase()));
                 break;
         }
+        logger.log(body);
         return new UploadResult(false);
     }
 
@@ -318,7 +325,7 @@ public class ApiClient {
         // 2. merge tags
         final List<Map<String, String>> mergedTags = Stream.concat(project.getTags().stream(), properties.getTags().stream())
                 .distinct()
-                .map(tag -> Collections.singletonMap("name", tag))
+                .map(tag -> Map.of("name", tag))
                 .collect(Collectors.toList());
         rawProject.element("tags", mergedTags);
         // overwrite swidTagId only if it is set (means not null)
@@ -340,95 +347,83 @@ public class ApiClient {
 
     private void updateProject(@NonNull final String projectUuid, @NonNull final JSONObject project) throws ApiClientException {
         try {
-            byte[] payloadBytes = project.toString().getBytes(StandardCharsets.UTF_8);
-            final HttpURLConnection conn = createConnection(PROJECT_URL);
-            conn.setDoOutput(true);
-            conn.setRequestMethod("POST");
-            conn.setRequestProperty("Content-Length", Integer.toString(payloadBytes.length));
-            conn.setRequestProperty(HEADER_CONTENT_TYPE, MEDIATYPE_JSON);
-            conn.connect();
-            // Sends the payload bytes
-            try (OutputStream os = new BufferedOutputStream(conn.getOutputStream())) {
-                os.write(payloadBytes);
-                os.flush();
-            }
-            if (conn.getResponseCode() != HTTP_OK) {
-                logger.log(Messages.ApiClient_Error_ProjectUpdate(projectUuid, conn.getResponseCode(), conn.getResponseMessage()));
-                logHttpError(conn);
-                throw new ApiClientException(Messages.ApiClient_Error_ProjectUpdate(projectUuid, conn.getResponseCode(), conn.getResponseMessage()));
+            final var request = createRequest(URI.create(PROJECT_URL), "POST", HttpRequest.BodyPublishers.ofString(project.toString()));
+            final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            final var body = response.body();
+            final int status = response.statusCode();
+            if (status != HTTP_OK) {
+                logger.log(body);
+                throw new ApiClientException(Messages.ApiClient_Error_ProjectUpdate(projectUuid, status, HttpStatus.valueOf(status).getReasonPhrase()));
             }
         } catch (ApiClientException e) {
             throw e;
         } catch (IOException e) {
-            throw new ApiClientException(Messages.ApiClient_Error_ProjectUpdate(projectUuid, StringUtils.EMPTY, StringUtils.EMPTY), e);
+            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ApiClientException(Messages.ApiClient_Error_Canceled(), e);
         }
     }
 
     @NonNull
     private JSONObject loadProject(@NonNull final String projectUuid) throws ApiClientException {
         try {
-            final HttpURLConnection conn = createConnection(PROJECT_URL + "/" + URLEncoder.encode(projectUuid, StandardCharsets.UTF_8.name()));
-            conn.connect();
-            if (conn.getResponseCode() == HTTP_OK) {
-                try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
-                    return JSONObject.fromObject(getResponseBody(in));
-                }
-            } else {
-                logger.log(Messages.ApiClient_Error_ProjectLoad(projectUuid, conn.getResponseCode(), conn.getResponseMessage()));
-                logHttpError(conn);
-                throw new ApiClientException(Messages.ApiClient_Error_ProjectLoad(projectUuid, conn.getResponseCode(), conn.getResponseMessage()));
+            final var uri = UriComponentsBuilder.fromUriString(PROJECT_URL).pathSegment("{uuid}").build(projectUuid);
+            final var request = createRequest(uri);
+            final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            final var body = response.body();
+            final int status = response.statusCode();
+            if (status != HTTP_OK) {
+                logger.log(body);
+                throw new ApiClientException(Messages.ApiClient_Error_ProjectLoad(projectUuid, status, HttpStatus.valueOf(status).getReasonPhrase()));
             }
+            return JSONObject.fromObject(response.body());
         } catch (ApiClientException e) {
             throw e;
         } catch (IOException e) {
-            throw new ApiClientException(Messages.ApiClient_Error_ProjectLoad(projectUuid, StringUtils.EMPTY, StringUtils.EMPTY), e);
+            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ApiClientException(Messages.ApiClient_Error_Canceled(), e);
         }
     }
 
     public boolean isTokenBeingProcessed(@NonNull final String token) throws ApiClientException {
         try {
-            final HttpURLConnection conn = createConnection(BOM_TOKEN_URL + "/" + URLEncoder.encode(token, StandardCharsets.UTF_8.name()));
-            conn.connect();
-            if (conn.getResponseCode() == HTTP_OK) {
-                try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
-                    final JSONObject jsonObject = JSONObject.fromObject(getResponseBody(in));
-                    return jsonObject.getBoolean("processing");
-                }
-            } else {
-                logger.log(Messages.ApiClient_Error_TokenProcessing(conn.getResponseCode(), conn.getResponseMessage()));
-                logHttpError(conn);
-                throw new ApiClientException(Messages.ApiClient_Error_TokenProcessing(conn.getResponseCode(), conn.getResponseMessage()));
+            final var uri = UriComponentsBuilder.fromUriString(BOM_TOKEN_URL).pathSegment("{token}").build(token);
+            final var request = createRequest(uri);
+            final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            final var body = response.body();
+            final int status = response.statusCode();
+            if (status != HTTP_OK) {
+                logger.log(body);
+                throw new ApiClientException(Messages.ApiClient_Error_TokenProcessing(status, HttpStatus.valueOf(status).getReasonPhrase()));
             }
+            final var jsonObject = JSONObject.fromObject(body);
+            return jsonObject.getBoolean("processing");
         } catch (ApiClientException e) {
             throw e;
         } catch (IOException e) {
-            throw new ApiClientException(Messages.ApiClient_Error_TokenProcessing(StringUtils.EMPTY, StringUtils.EMPTY), e);
+            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ApiClientException(Messages.ApiClient_Error_Canceled(), e);
         }
     }
 
-    private String getResponseBody(final InputStream in) {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(in, StandardCharsets.UTF_8));
-        return reader.lines().collect(Collectors.joining());
+    private HttpRequest createRequest(final URI uri) {
+        return createRequest(uri, "GET", HttpRequest.BodyPublishers.noBody());
     }
 
-    private void logHttpError(final HttpURLConnection conn) {
-        try (InputStream in = new BufferedInputStream(conn.getErrorStream())) {
-            logger.log(getResponseBody(in));
-        } catch (UncheckedIOException | IOException ignore) {
-            // ignored ... the error stream might have been closed already or whatever
+    private HttpRequest createRequest(final URI uri, final String method, final HttpRequest.BodyPublisher bodyPublisher) {
+        final var builder = HttpRequest.newBuilder(URI.create(baseUrl).resolve(uri))
+                .header(API_KEY_HEADER, apiKey)
+                .header(ACCEPT, APPLICATION_JSON_VALUE)
+                .timeout(readTimeout)
+                .method(method, bodyPublisher);
+        if (!"GET".equalsIgnoreCase(method)) {
+            builder.header(CONTENT_TYPE, APPLICATION_JSON_VALUE);
         }
-    }
-
-    private HttpURLConnection createConnection(final String url) throws IOException {
-        final URLConnection conn = new URL(baseUrl + url).openConnection();
-        conn.setRequestProperty(API_KEY_HEADER, apiKey);
-        conn.setRequestProperty(HEADER_ACCEPT, MEDIATYPE_JSON);
-        conn.setConnectTimeout(connectionTimeout * MS_TO_S_FACTOR);
-        conn.setReadTimeout(readTimeout * MS_TO_S_FACTOR);
-        if (conn instanceof HttpURLConnection) {
-            return (HttpURLConnection) conn;
-        } else {
-            throw new ApiClientException(Messages.Publisher_ConnectionTest_InvalidProtocols());
-        }
+        return builder.build();
     }
 }

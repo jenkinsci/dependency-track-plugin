@@ -33,8 +33,9 @@ class FindingParser {
 
     List<Finding> parse(final String jsonResponse) {
         final JSONArray jsonArray = JSONArray.fromObject(jsonResponse);
-		return jsonArray.stream()
-                .map(o -> parseFinding((JSONObject) o))
+        return jsonArray.stream()
+                .map(JSONObject.class::cast)
+                .map(FindingParser::parseFinding)
                 .collect(Collectors.toList());
     }
 
