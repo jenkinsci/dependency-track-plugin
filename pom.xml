@@ -410,7 +410,7 @@
         <dependency>
             <groupId>io.projectreactor.netty</groupId>
             <artifactId>reactor-netty</artifactId>
-            <version>[1.0.0,1.0.99)</version>
+            <version>[1.1.0,1.1.99)</version>
             <scope>test</scope>
         </dependency>
         <dependency>

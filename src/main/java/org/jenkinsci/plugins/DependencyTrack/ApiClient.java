@@ -30,7 +30,6 @@ import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
@@ -318,36 +317,34 @@ public class ApiClient {
     }
 
     public void updateProjectProperties(@NonNull final String projectUuid, @NonNull final ProjectProperties properties) throws ApiClientException {
-        // update overwrites all properties. missing properties in the request will cause them to be deleted in the project!
-        // 1. load project
-        final JSONObject rawProject = loadProject(projectUuid);
-        final Project project = ProjectParser.parse(rawProject);
-        // 2. merge tags
-        final List<Map<String, String>> mergedTags = Stream.concat(project.getTags().stream(), properties.getTags().stream())
-                .distinct()
+        final var updates = new JSONObject();
+        final var tags = properties.getTags().stream()
                 .map(tag -> Map.of("name", tag))
                 .collect(Collectors.toList());
-        rawProject.element("tags", mergedTags);
+        // overwrite tags if needed
+        if (!tags.isEmpty()) {
+            updates.element("tags", tags);
+        }
         // overwrite swidTagId only if it is set (means not null)
-        rawProject.elementOpt("swidTagId", properties.getSwidTagId());
+        updates.elementOpt("swidTagId", properties.getSwidTagId());
         // overwrite group only if it is set (means not null)
-        rawProject.elementOpt("group", properties.getGroup());
+        updates.elementOpt("group", properties.getGroup());
         // overwrite description only if it is set (means not null)
-        rawProject.elementOpt("description", properties.getDescription());
+        updates.elementOpt("description", properties.getDescription());
         // set new parent project if it is set (means not null)
         if (properties.getParentId() != null) {
             JSONObject newParent = new JSONObject().elementOpt("uuid", properties.getParentId());
-            rawProject.element("parent", newParent);
+            updates.element("parent", newParent);
         }
-        // remove parentUuid wich may be present but can not be consumed by Dependency-Track (https://github.com/DependencyTrack/dependency-track/issues/2439)
-        rawProject.remove("parentUuid");
-        // 3. update project
-        updateProject(projectUuid, rawProject);
+        
+        // update project
+        updateProject(projectUuid, updates);
     }
 
     private void updateProject(@NonNull final String projectUuid, @NonNull final JSONObject project) throws ApiClientException {
         try {
-            final var request = createRequest(URI.create(PROJECT_URL), "POST", HttpRequest.BodyPublishers.ofString(project.toString()));
+            final var uri = UriComponentsBuilder.fromUriString(PROJECT_URL).pathSegment("{uuid}").build(projectUuid);
+            final var request = createRequest(uri, "PATCH", HttpRequest.BodyPublishers.ofString(project.toString()));
             final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
             final var body = response.body();
             final int status = response.statusCode();
@@ -355,29 +352,6 @@ public class ApiClient {
                 logger.log(body);
                 throw new ApiClientException(Messages.ApiClient_Error_ProjectUpdate(projectUuid, status, HttpStatus.valueOf(status).getReasonPhrase()));
             }
-        } catch (ApiClientException e) {
-            throw e;
-        } catch (IOException e) {
-            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiClientException(Messages.ApiClient_Error_Canceled(), e);
-        }
-    }
-
-    @NonNull
-    private JSONObject loadProject(@NonNull final String projectUuid) throws ApiClientException {
-        try {
-            final var uri = UriComponentsBuilder.fromUriString(PROJECT_URL).pathSegment("{uuid}").build(projectUuid);
-            final var request = createRequest(uri);
-            final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            final var body = response.body();
-            final int status = response.statusCode();
-            if (status != HTTP_OK) {
-                logger.log(body);
-                throw new ApiClientException(Messages.ApiClient_Error_ProjectLoad(projectUuid, status, HttpStatus.valueOf(status).getReasonPhrase()));
-            }
-            return JSONObject.fromObject(response.body());
         } catch (ApiClientException e) {
             throw e;
         } catch (IOException e) {

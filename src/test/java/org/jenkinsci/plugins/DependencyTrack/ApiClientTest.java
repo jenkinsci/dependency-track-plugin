@@ -19,13 +19,13 @@ import hudson.FilePath;
 import hudson.util.VersionNumber;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import java.io.File;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.net.http.HttpClient;
-import java.net.http.HttpResponse;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -56,7 +56,6 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.startsWith;
-import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -448,12 +447,7 @@ class ApiClientTest {
                 .host("localhost")
                 .port(0)
                 .route(routes -> routes
-                .get(ApiClient.PROJECT_URL + "/uuid-3", (request, response) -> {
-                    assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
-                    assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-                    return response.sendString(Mono.just("{\"name\":\"test-project\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\",\"tags\":[{\"name\":\"tag1\"},{\"name\":\"tag2\"}],\"parent\":{\"uuid\":\"old-parent\"},\"parentUuid\":\"old-parent\"}"));
-                })
-                .post(ApiClient.PROJECT_URL, (request, response) -> {
+                .route(request -> request.uri().equals(ApiClient.PROJECT_URL + "/uuid-3") && request.method().equals(HttpMethod.PATCH), (request, response) -> {
                     assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
                     assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
                     assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
@@ -480,23 +474,21 @@ class ApiClientTest {
         completionSignal.await(5, TimeUnit.SECONDS);
         final JSONObject updatedProject = JSONObject.fromObject(requestBody.get());
         final Project project = ProjectParser.parse(updatedProject);
-        assertThat(project.getTags()).containsExactlyInAnyOrder("tag1", "tag2", "tag4");
+        assertThat(project.getTags()).containsExactlyInAnyOrderElementsOf(props.getTags());
         assertThat(project.getSwidTagId()).isEqualTo(props.getSwidTagId());
         assertThat(project.getGroup()).isEqualTo(props.getGroup());
         assertThat(project.getDescription()).isEqualTo(props.getDescription());
         assertThat(project.getParent()).hasFieldOrPropertyWithValue("uuid", props.getParentId());
         assertThat(updatedProject.has("parentUuid")).isFalse();
-        
-        server.disposeNow();
-        server = HttpServer.create().host("localhost").port(0).route(routes -> routes.get(ApiClient.PROJECT_URL + "/uuid-unknown", (request, response) -> response.status(HttpResponseStatus.NOT_FOUND).send())).bindNow();
+
         assertThatCode(() -> createClient().updateProjectProperties("uuid-unknown", new ProjectProperties()))
-                .hasMessage(Messages.ApiClient_Error_ProjectLoad("uuid-unknown", HttpResponseStatus.NOT_FOUND.code(), HttpResponseStatus.NOT_FOUND.reasonPhrase()))
+                .hasMessage(Messages.ApiClient_Error_ProjectUpdate("uuid-unknown", HttpResponseStatus.NOT_FOUND.code(), HttpResponseStatus.NOT_FOUND.reasonPhrase()))
                 .hasNoCause();
         verify(logger).log("");
     }
 
     @Test
-    void updateProjectPropertiesTestWithErrorsOnLoad() throws IOException, InterruptedException {
+    void updateProjectPropertiesTestWithErrorsOnUpdate() throws IOException, InterruptedException {
         final var httpClient = mock(HttpClient.class);
         final var uut = createClient(httpClient);
         doThrow(new ConnectException("oops"), new InterruptedException("oops"))
@@ -506,33 +498,6 @@ class ApiClientTest {
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
 
-        assertThatCode(() -> uut.updateProjectProperties("foo", new ProjectProperties()))
-                .hasMessage(Messages.ApiClient_Error_Canceled())
-                .hasCauseInstanceOf(InterruptedException.class);
-        assertThat(Thread.currentThread().isInterrupted()).as("current Thread isInterrupted").isTrue();
-    }
-
-    @Test
-    void updateProjectPropertiesTestWithErrorsOnUpdate() throws IOException, InterruptedException {
-        final var httpClient = mock(HttpClient.class);
-        final var uut = createClient(httpClient);
-        final var project = "{\"name\":\"name\",\"uuid\":\"uuid\",\"version\":\"version\"}";
-        final var response = mock(HttpResponse.class);
-        when(response.body()).thenReturn(project);
-        when(response.statusCode()).thenReturn(200, HttpResponseStatus.INTERNAL_SERVER_ERROR.code(), 200, 200);
-        
-        doReturn(response, response).when(httpClient).send(any(), any());
-        assertThatCode(() -> uut.updateProjectProperties("uuid-unknown", new ProjectProperties()))
-                .hasMessage(Messages.ApiClient_Error_ProjectUpdate("uuid-unknown", HttpResponseStatus.INTERNAL_SERVER_ERROR.code(), HttpResponseStatus.INTERNAL_SERVER_ERROR.reasonPhrase()))
-                .hasNoCause();
-        verify(logger).log(project);
-        
-        doReturn(response).doThrow(new ConnectException("oops")).when(httpClient).send(any(), any());
-        assertThatCode(() -> uut.updateProjectProperties("foo", new ProjectProperties()))
-                .hasMessage(Messages.ApiClient_Error_Connection("", ""))
-                .hasCauseInstanceOf(ConnectException.class);
-
-        doReturn(response).doThrow(new InterruptedException("oops")).when(httpClient).send(any(), any());
         assertThatCode(() -> uut.updateProjectProperties("foo", new ProjectProperties()))
                 .hasMessage(Messages.ApiClient_Error_Canceled())
                 .hasCauseInstanceOf(InterruptedException.class);
