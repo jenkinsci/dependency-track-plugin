@@ -50,7 +50,7 @@ public class ApiClient {
     private static final String API_URL = "/api/v1";
     static final String API_KEY_HEADER = "X-Api-Key";
     static final String PROJECT_FINDINGS_URL = API_URL + "/finding/project";
-    static final String PROJECT_POLICY_VIOLATION_URL = API_URL + "/violation/project/%s";
+    static final String PROJECT_POLICY_VIOLATION_URL = API_URL + "/violation/project";
     static final String BOM_URL = API_URL + "/bom";
     static final String BOM_TOKEN_URL = BOM_URL + "/token";
     static final String PROJECT_URL = API_URL + "/project";
@@ -267,27 +267,23 @@ public class ApiClient {
     @NonNull
     public List<PolicyViolation> getPolicyViolation(@NonNull final String projectUuid) throws ApiClientException {
         try {
-            final HttpURLConnection conn =
-                    createConnection(
-                            String.format(
-                                    PROJECT_POLICY_VIOLATION_URL,
-                                    URLEncoder.encode(projectUuid, StandardCharsets.UTF_8.name())));
-
-            conn.setDoOutput(true);
-            conn.connect();
-            // Checks the server response
-            if (conn.getResponseCode() == HTTP_OK) {
-                try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
-                    return PolicyViolationsParser.parse(getResponseBody(in));
-                }
-            } else {
-                logHttpError(conn);
-                throw new ApiClientException(Messages.ApiClient_Error_RetrievePolicyViolations(conn.getResponseCode(), conn.getResponseMessage()));
+            final var uri = UriComponentsBuilder.fromUriString(PROJECT_POLICY_VIOLATION_URL).pathSegment("{uuid}").build(projectUuid);
+            final var request = createRequest(uri);
+            final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            final var body = response.body();
+            final int status = response.statusCode();
+            if (status != HTTP_OK) {
+                logger.log(body);
+                throw new ApiClientException(Messages.ApiClient_Error_RetrievePolicyViolations(status, HttpStatus.valueOf(status).getReasonPhrase()));
             }
+            return PolicyViolationsParser.parse(body);
         } catch (ApiClientException e) {
             throw e;
         } catch (IOException e) {
             throw new ApiClientException(Messages.ApiClient_Error_RetrievePolicyViolations(StringUtils.EMPTY, StringUtils.EMPTY), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ApiClientException(Messages.ApiClient_Error_Canceled(), e);
         }
     }
 

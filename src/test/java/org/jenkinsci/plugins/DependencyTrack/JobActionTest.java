@@ -25,6 +25,7 @@ import hudson.security.ACLContext;
 import hudson.security.AccessDeniedException3;
 import hudson.util.RunList;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.List;
 import net.sf.json.JSONArray;
 import org.assertj.core.api.Assertions;

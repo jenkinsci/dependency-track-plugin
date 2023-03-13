@@ -102,7 +102,7 @@ class ResultActionTest {
     }
 
     @Test
-    void getPolicyViolationsJson() throws IOException {
+    void getPolicyViolationsJson(JenkinsRule j) throws IOException {
         final FreeStyleProject project = j.createFreeStyleProject();
         final FreeStyleBuild b1 = new FreeStyleBuild(project);
         final ResultAction uut = new ResultAction(null, new SeverityDistribution(1), getTestPolicyViolations(), new ViolationDistribution(1));
