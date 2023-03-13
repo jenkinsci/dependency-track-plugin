@@ -6,14 +6,14 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>4.31</version>
+        <version>4.55</version>
         <relativePath />
     </parent>
 
     <artifactId>dependency-track</artifactId>
 
     <name>OWASP Dependency-Track Plugin</name>
-    <version>4.3.1-SNAPSHOT</version>
+    <version>5.0.0-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <inceptionYear>2018</inceptionYear>
     <organization>
@@ -37,28 +37,17 @@
     </licenses>
 
     <properties>
-        <jenkins.version>2.289.2</jenkins.version>
+        <jenkins.version>2.375.2</jenkins.version>
         <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
-        <configuration-as-code.version>1.55.1</configuration-as-code.version>
-        <java.level>8</java.level>
+        <configuration-as-code.version>1569.vb_72405b_80249</configuration-as-code.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <junit-jupiter.version>[5.8.0,5.8.99)</junit-jupiter.version>
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <npm.path>npm</npm.path>
         <npm.suffix />
     </properties>
     
     <profiles>
-        <profile>
-            <id>jdk-gte-9</id>
-            <activation>
-                <jdk>[9,)</jdk>
-            </activation>
-            <properties>
-                <maven.compiler.release>${java.level}</maven.compiler.release>
-            </properties>
-        </profile>
         <profile>
             <id>windows</id>
             <activation>
@@ -174,7 +163,8 @@
                     <pushChanges>false</pushChanges>
                     <localCheckout>true</localCheckout>
                     <tagNameFormat>v@{project.version}</tagNameFormat>
-                    <preparationGoals>clean sync-packagejson-version:sync verify</preparationGoals>
+                    <preparationGoals>clean sync-packagejson-version:sync scm:checkin verify</preparationGoals>
+                    <completionGoals>sync-packagejson-version:sync scm:checkin</completionGoals>
                 </configuration>
             </plugin>
             <plugin>
@@ -191,6 +181,22 @@
                                 <include>package-lock.json</include>
                             </includes>
                         </fileset>
+                        <fileset>
+                            <directory>src/main/webapp/js/libs</directory>
+                            <includes>
+                                <include>bootstrap-vue.min.js</include>
+                                <include>bootstrap-vue-icons.min.js</include>
+                                <include>vue.min.js</include>
+                                <include>echarts.esm.min.js</include>
+                            </includes>
+                        </fileset>
+                        <fileset>
+                            <directory>src/main/webapp/css</directory>
+                            <includes>
+                                <include>bootstrap.min.css</include>
+                                <include>bootstrap-vue.min.css</include>
+                            </includes>
+                        </fileset>
                     </filesets>
                 </configuration>
             </plugin>
@@ -198,6 +204,16 @@
                 <groupId>de.ingogriebsch.maven</groupId>
                 <artifactId>sync-packagejson-version-maven-plugin</artifactId>
                 <version>1.3.0</version>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-scm-plugin</artifactId>
+                <version>2.0.0-M3</version>
+                <configuration>
+                    <pushChanges>false</pushChanges>
+                    <message>[maven-scm-plugin] updating package.json</message>
+                    <includes>package.json</includes>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -218,48 +234,69 @@
                 </executions>
             </plugin>
             <plugin>
-                <groupId>org.jenkins-ci.tools</groupId>
-                <artifactId>maven-hpi-plugin</artifactId>
-                <configuration>
-                    <webResources>
-                        <resource>
-                            <directory>node_modules/bootstrap-vue/dist</directory>
-                            <targetPath>js/libs</targetPath>
-                            <includes>
-                                <include>bootstrap-vue.min.js</include>
-                                <include>bootstrap-vue-icons.min.js</include>
-                            </includes>
-                        </resource>
-                        <resource>
-                            <directory>node_modules/vue/dist</directory>
-                            <targetPath>js/libs</targetPath>
-                            <includes>
-                                <include>vue.min.js</include>
-                            </includes>
-                        </resource>
-                        <resource>
-                            <directory>node_modules/echarts/dist</directory>
-                            <targetPath>js/libs</targetPath>
-                            <includes>
-                                <include>echarts.esm.min.js</include>
-                            </includes>
-                        </resource>
-                        <resource>
-                            <directory>node_modules/bootstrap/dist/css</directory>
-                            <targetPath>css</targetPath>
-                            <includes>
-                                <include>bootstrap.min.css</include>
-                            </includes>
-                        </resource>
-                        <resource>
-                            <directory>node_modules/bootstrap-vue/dist</directory>
-                            <targetPath>css</targetPath>
-                            <includes>
-                                <include>bootstrap-vue.min.css</include>
-                            </includes>
-                        </resource>
-                    </webResources>
-                </configuration>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-resources-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-js-libs</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/src/main/webapp/js/libs</outputDirectory>
+                            <overwrite>true</overwrite>
+                            <nonFilteredFileExtensions>js</nonFilteredFileExtensions>
+                            <resources>
+                                <resource>
+                                    <directory>node_modules/bootstrap-vue/dist</directory>
+                                    <includes>
+                                        <include>bootstrap-vue.min.js</include>
+                                        <include>bootstrap-vue-icons.min.js</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <directory>node_modules/vue/dist</directory>
+                                    <includes>
+                                        <include>vue.min.js</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <directory>node_modules/echarts/dist</directory>
+                                    <includes>
+                                        <include>echarts.esm.min.js</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>copy-css-libs</id>
+                        <phase>process-resources</phase>
+                        <goals>
+                            <goal>copy-resources</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${basedir}/src/main/webapp/css</outputDirectory>
+                            <overwrite>true</overwrite>
+                            <nonFilteredFileExtensions>css</nonFilteredFileExtensions>
+                            <resources>
+                                <resource>
+                                    <directory>node_modules/bootstrap/dist/css</directory>
+                                    <includes>
+                                        <include>bootstrap.min.css</include>
+                                    </includes>
+                                </resource>
+                                <resource>
+                                    <directory>node_modules/bootstrap-vue/dist</directory>
+                                    <includes>
+                                        <include>bootstrap-vue.min.css</include>
+                                    </includes>
+                                </resource>
+                            </resources>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -287,6 +324,28 @@
                             <fail>true</fail>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>display-info</id>
+                        <configuration>
+                            <rules>
+                                <requireUpperBoundDeps>
+                                    <excludes>
+                                        <exclude>com.google.code.findbugs:annotations</exclude>
+                                        <exclude>com.google.code.findbugs:jsr305</exclude>
+                                        <exclude>com.google.guava:guava</exclude>
+                                        <exclude>commons-logging:commons-logging</exclude>
+                                        <exclude>javax.servlet:javax.servlet-api</exclude>
+                                        <exclude>javax.servlet:servlet-api</exclude>
+                                        <exclude>net.java.dev.jna:jna</exclude>
+                                        <exclude>org.kohsuke:access-modifier-annotation</exclude>
+                                        <exclude>com.github.spotbugs:spotbugs-annotations</exclude>
+                                        <exclude>org.ow2.asm:asm</exclude>
+                                        <exclude>net.bytebuddy:byte-buddy</exclude>
+                                    </excludes>
+                                </requireUpperBoundDeps>
+                            </rules>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
@@ -307,18 +366,18 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.22</version>
+            <version>1.18.26</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>credentials</artifactId>
-            <version>2.6.1.1</version>
+            <version>1214.v1de940103927</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>plain-credentials</artifactId>
-            <version>1.8</version>
+            <version>143.v1b_df8b_d3b_e48</version>
         </dependency>
         <dependency>
             <groupId>io.jenkins</groupId>
@@ -344,27 +403,29 @@
             <scope>test</scope>
         </dependency>
         <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
             <groupId>io.projectreactor.netty</groupId>
             <artifactId>reactor-netty</artifactId>
-            <version>[1.0.0,1.0.99)</version>
+            <version>[1.1.0,1.1.99)</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-engine</artifactId>
-            <version>${junit-jupiter.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter-params</artifactId>
-            <version>${junit-jupiter.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.vintage</groupId>
             <artifactId>junit-vintage-engine</artifactId>
-            <version>${junit-jupiter.version}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

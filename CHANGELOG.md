@@ -5,6 +5,15 @@
 ### ⭐ New Features
 ### 🐞 Bugs Fixed
 
+## 5.0.0 - Unreleased
+### ⚠ Breaking
+- require Jenkins 2.375.2 or newer
+- require Java 11 or newer ([required since Jenkins 2.361.1](https://www.jenkins.io/blog/2022/06/28/require-java-11/))
+- require Dependency-Track 4.7 or newer
+
+### ⭐ New Features
+### 🐞 Bugs Fixed
+
 ## v4.3.0 - 2022-02-20
 ### ⚠ Breaking
 ### ⭐ New Features

@@ -18,7 +18,7 @@ package org.jenkinsci.plugins.DependencyTrack;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Arrays;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -29,10 +29,10 @@ import static org.mockito.Mockito.verify;
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
-public class ConsoleLoggerTest {
+class ConsoleLoggerTest {
 
     @Test
-    public void testLog() throws IOException {
+    void testLog() throws IOException {
         PrintStream ps = mock(PrintStream.class);
         ConsoleLogger uut = new ConsoleLogger(ps);
         uut.log("test\r\nline2");
@@ -40,7 +40,7 @@ public class ConsoleLoggerTest {
     }
     
     @Test
-    public void testWrite() throws IOException {
+    void testWrite() throws IOException {
         PrintStream ps = spy(new PrintStream(System.err));
         ConsoleLogger uut = new ConsoleLogger(ps);
         uut.write("test\nline2\n".getBytes());

@@ -23,7 +23,7 @@ import org.jenkinsci.plugins.DependencyTrack.model.Component;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.Severity;
 import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -31,10 +31,10 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
-public class FindingParserTest {
+class FindingParserTest {
 
     @Test
-    public void parseTest() {
+    void parseTest() {
         assertThat(FindingParser.parse("[]")).isEmpty();
 
         File findings = new File("src/test/resources/findings.json");

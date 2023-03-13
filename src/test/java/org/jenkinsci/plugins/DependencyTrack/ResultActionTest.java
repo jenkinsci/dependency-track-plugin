@@ -25,19 +25,15 @@ import hudson.security.AccessDeniedException3;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.Collections;
 import java.util.List;
 import net.sf.json.JSONArray;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.util.Files;
-import org.jenkinsci.plugins.DependencyTrack.model.Finding;
-import org.jenkinsci.plugins.DependencyTrack.model.PolicyViolation;
-import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
-import org.jenkinsci.plugins.DependencyTrack.model.ViolationDistribution;
-import org.junit.Rule;
-import org.junit.Test;
+import org.jenkinsci.plugins.DependencyTrack.model.*;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -47,10 +43,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
-public class ResultActionTest {
-
-    @Rule
-    public JenkinsRule j = new JenkinsRule();
+@WithJenkins
+class ResultActionTest {
 
     private List<Finding> getTestFindings() {
         File findings = new File("src/test/resources/findings.json");
@@ -64,19 +58,23 @@ public class ResultActionTest {
     }
 
     @Test
-    public void getVersionHashTest() {
+    void getVersionHashTest(JenkinsRule j) {
         final ResultAction uut = new ResultAction(null, null, null, null);
         // does not equal sha-256 of empty string
         assertThat(uut.getVersionHash()).matches("[a-f0-9]{64}").isNotEqualTo("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
     }
 
     @Test
-    public void getFindingsJsonPermissionTest() throws IOException {
+    void getFindingsJsonPermissionTest(JenkinsRule j) throws IOException {
         final MockAuthorizationStrategy mockAuthorizationStrategy = new MockAuthorizationStrategy();
         j.jenkins.setAuthorizationStrategy(mockAuthorizationStrategy);
         j.jenkins.setSecurityRealm(j.createDummySecurityRealm());
 
-        final FreeStyleProject project = j.createFreeStyleProject();
+        FreeStyleProject project;
+        try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
+            mockAuthorizationStrategy.grant(Job.CREATE).onRoot().to(ACL.SYSTEM_USERNAME);
+            project = j.createFreeStyleProject();
+        }
         final FreeStyleBuild b1 = new FreeStyleBuild(project);
         final ResultAction uut = new ResultAction(getTestFindings(), new SeverityDistribution(1), null, new ViolationDistribution(1));
         uut.onLoad(b1);
@@ -94,7 +92,8 @@ public class ResultActionTest {
     }
 
     @Test
-    public void getFindingsJson() throws IOException {
+    @SuppressWarnings("unchecked")
+    void getFindingsJson(JenkinsRule j) throws IOException {
         final FreeStyleProject project = j.createFreeStyleProject();
         final FreeStyleBuild b1 = new FreeStyleBuild(project);
         final ResultAction uut = new ResultAction(getTestFindings(), new SeverityDistribution(1), null, new ViolationDistribution(1));
@@ -103,7 +102,7 @@ public class ResultActionTest {
     }
 
     @Test
-    public void getPolicyViolationsJson() throws IOException {
+    void getPolicyViolationsJson() throws IOException {
         final FreeStyleProject project = j.createFreeStyleProject();
         final FreeStyleBuild b1 = new FreeStyleBuild(project);
         final ResultAction uut = new ResultAction(null, new SeverityDistribution(1), getTestPolicyViolations(), new ViolationDistribution(1));
@@ -112,16 +111,16 @@ public class ResultActionTest {
     }
 
     @Test
-    public void hasFindingsTest() {
+    void hasFindingsTest() {
         assertThat(new ResultAction(null, new SeverityDistribution(1), null, new ViolationDistribution(1)).hasFindings()).isFalse();
-        assertThat(new ResultAction(Collections.emptyList(), new SeverityDistribution(1), null, new ViolationDistribution(1)).hasFindings()).isFalse();
+        assertThat(new ResultAction(List.of(), new SeverityDistribution(1), null, new ViolationDistribution(1)).hasFindings()).isFalse();
         assertThat(new ResultAction(getTestFindings(), new SeverityDistribution(1), null, new ViolationDistribution(1)).hasFindings()).isTrue();
     }
 
     @Test
-    public void hasPolicyViolationsTest() {
+    void hasPolicyViolationsTest() {
         assertThat(new ResultAction(null, new SeverityDistribution(1), null, new ViolationDistribution(1)).hasFindings()).isFalse();
-        assertThat(new ResultAction(null, new SeverityDistribution(1), Collections.emptyList(), new ViolationDistribution(1)).hasPolicyViolations()).isFalse();
+        assertThat(new ResultAction(null, new SeverityDistribution(1), List.of(), new ViolationDistribution(1)).hasPolicyViolations()).isFalse();
         assertThat(new ResultAction(null, new SeverityDistribution(1), getTestPolicyViolations(), new ViolationDistribution(1)).hasPolicyViolations()).isTrue();
     }
 }

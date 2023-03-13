@@ -25,15 +25,14 @@ import hudson.security.ACLContext;
 import hudson.security.AccessDeniedException3;
 import hudson.util.RunList;
 import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.List;
 import net.sf.json.JSONArray;
 import org.assertj.core.api.Assertions;
 import org.jenkinsci.plugins.DependencyTrack.model.*;
-import org.junit.Rule;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
@@ -45,37 +44,40 @@ import static org.mockito.Mockito.when;
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
-public class JobActionTest {
-
-    @Rule
-    public JenkinsRule j = new JenkinsRule();
+@WithJenkins
+class JobActionTest {
 
     @Test
-    public void isTrendVisible() {
+    void isTrendVisible() {
         Job job = mock(Job.class);
         Run run = mock(Run.class);
         when(run.getAction(ResultAction.class))
                 .thenReturn(
                         new ResultAction(
-                                Collections.emptyList(),
+                                List.of(),
                                 new SeverityDistribution(1),
-                                Collections.emptyList(),
+                                List.of(),
                                 new ViolationDistribution(1)));
 
         when(job.getBuilds())
-                .thenReturn(RunList.fromRuns(Collections.emptyList()))
-                .thenReturn(RunList.fromRuns(Collections.singletonList(run)));
+                .thenReturn(RunList.fromRuns(List.of()))
+                .thenReturn(RunList.fromRuns(List.of(run)));
         JobAction uut = new JobAction(job);
         assertThat(uut.isTrendVisible()).isFalse();
         assertThat(uut.isTrendVisible()).isTrue();
     }
 
     @Test
-    public void getTrendDistributionPermissionTest() throws IOException {
+    void getTrendDistributionTrendPermissionTest(JenkinsRule j) throws IOException {
         final MockAuthorizationStrategy mockAuthorizationStrategy = new MockAuthorizationStrategy();
         j.jenkins.setAuthorizationStrategy(mockAuthorizationStrategy);
         j.jenkins.setSecurityRealm(j.createDummySecurityRealm());
-        final FreeStyleProject project = j.createFreeStyleProject();
+
+        FreeStyleProject project;
+        try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
+            mockAuthorizationStrategy.grant(Job.CREATE).onRoot().to(ACL.SYSTEM_USERNAME);
+            project = j.createFreeStyleProject();
+        }
         final JobAction uut = new JobAction(project);
         final User anonymous = User.getOrCreateByIdOrFullName(ACL.ANONYMOUS_USERNAME);
         // without propper permissions
@@ -90,9 +92,8 @@ public class JobActionTest {
     }
 
     @Test
-    public void getSeverityDistribution() throws IOException {
+    void getSeverityDistribution(JenkinsRule j) throws IOException {
         final FreeStyleProject project = j.createFreeStyleProject();
-
         final SeverityDistribution sd1 = new SeverityDistribution(1);
         sd1.add(Severity.MEDIUM);
         final SeverityDistribution sd2 = new SeverityDistribution(2);

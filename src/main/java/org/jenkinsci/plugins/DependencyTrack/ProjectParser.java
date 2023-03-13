@@ -16,7 +16,6 @@
 package org.jenkinsci.plugins.DependencyTrack;
 
 import java.time.LocalDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
@@ -36,7 +35,7 @@ class ProjectParser {
                 .description(ParserUtil.getKeyOrNull(json, "description"))
                 .version(ParserUtil.getKeyOrNull(json, "version"))
                 .uuid(ParserUtil.getKeyOrNull(json, "uuid"))
-                .tags(json.has("tags") ? parseTags(json.getJSONArray("tags")) : Collections.emptyList())
+                .tags(json.has("tags") ? parseTags(json.getJSONArray("tags")) : List.of())
                 .lastBomImport(parseDateTime(ParserUtil.getKeyOrNull(json, "lastBomImportStr")))
                 .lastBomImportFormat(ParserUtil.getKeyOrNull(json, "lastBomImportFormat"))
                 .lastInheritedRiskScore(lastInheritedRiskScoreStr != null ? Double.parseDouble(lastInheritedRiskScoreStr) : null)
@@ -46,7 +45,7 @@ class ProjectParser {
                 .parent(json.has("parent") ? ProjectParser.parse(json.getJSONObject("parent")) : null)
                 .build();
     }
-    
+
     private LocalDateTime parseDateTime(String dateTime) {
         if (dateTime == null) {
             return null;

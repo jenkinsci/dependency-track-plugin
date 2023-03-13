@@ -32,7 +32,6 @@ import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import hudson.util.VersionNumber;
 import java.io.Serializable;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
@@ -73,7 +72,7 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
 
     private static final long serialVersionUID = -2018722914973282748L;
 
-    private transient final ApiClientFactory clientFactory;
+    private final transient ApiClientFactory clientFactory;
 
     /**
      * Specifies the base URL to Dependency-Track v3 or higher.
@@ -195,7 +194,7 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
         }
         return result
                 .includeEmptyValue()
-                .includeAs(ACL.SYSTEM, item, StringCredentials.class, Collections.emptyList())
+                .includeAs(ACL.SYSTEM, item, StringCredentials.class, List.of())
                 .includeCurrentValue(credentialsId);
     }
 
@@ -264,18 +263,21 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
         if (doCheckDependencyTrackUrl(url, item).kind == FormValidation.Kind.OK && StringUtils.isNotBlank(apiKey)) {
             try {
                 final ApiClient apiClient = getClient(url, apiKey);
+                final var poweredBy = apiClient.testConnection();
+                if (!poweredBy.startsWith("Dependency-Track v")) {
+                    return FormValidation.error(Messages.Publisher_ConnectionTest_Error(poweredBy));
+                }
                 final VersionNumber version = apiClient.getVersion();
-                return version.isNewerThanOrEqualTo(new VersionNumber("4.4.0")) ? checkTeamPermissions(apiClient, version, autoCreateProjects, synchronous, updateProjectProperties) : testConnectionLegacy(apiClient);
+                final var requiredVersion = new VersionNumber("4.7.0");
+                if (version.isOlderThan(requiredVersion)) {
+                    return FormValidation.warning(Messages.Publisher_ConnectionTest_VersionWarning(version, requiredVersion));
+                }
+                return checkTeamPermissions(apiClient, version, autoCreateProjects, synchronous, updateProjectProperties);
             } catch (ApiClientException e) {
                 return FormValidation.error(e, Messages.Publisher_ConnectionTest_Error(e.getMessage()));
             }
         }
-        return FormValidation.error(Messages.Publisher_ConnectionTest_Warning());
-    }
-
-    private FormValidation testConnectionLegacy(final ApiClient apiClient) throws ApiClientException {
-        final String result = apiClient.testConnection();
-        return result.startsWith("Dependency-Track v") ? FormValidation.ok(Messages.Publisher_ConnectionTest_Success(result)) : FormValidation.error(Messages.Publisher_ConnectionTest_Error(result));
+        return FormValidation.error(Messages.Publisher_ConnectionTest_InputError());
     }
 
     private FormValidation checkTeamPermissions(final ApiClient apiClient,
@@ -405,7 +407,7 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
     }
 
     private String lookupApiKey(final String credentialId, final Item item) {
-        return CredentialsProvider.lookupCredentials(StringCredentials.class, item, ACL.SYSTEM, Collections.emptyList()).stream()
+        return CredentialsProvider.lookupCredentials(StringCredentials.class, item, ACL.SYSTEM, List.of()).stream()
                 .filter(c -> c.getId().equals(credentialId))
                 .map(StringCredentials::getSecret)
                 .map(Secret::getPlainText)
