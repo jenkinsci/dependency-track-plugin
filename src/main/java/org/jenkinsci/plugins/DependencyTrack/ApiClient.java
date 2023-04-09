@@ -51,15 +51,21 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 public class ApiClient {
 
     private static final String API_URL = "/api/v1";
+    static final String ACL_MAPPING_URL = API_URL + "/acl/mapping";
+    static final String ACL_MAPPING_TEAM_PARAM = "team";
+    static final String ACL_MAPPING_PROJECT_PARAM = "project";
     static final String API_KEY_HEADER = "X-Api-Key";
     static final String PROJECT_FINDINGS_URL = API_URL + "/finding/project";
     static final String BOM_URL = API_URL + "/bom";
     static final String BOM_TOKEN_URL = BOM_URL + "/token";
+    static final String NAME_PARAM = "name";
     static final String PROJECT_URL = API_URL + "/project";
     static final String PROJECT_LOOKUP_URL = PROJECT_URL + "/lookup";
     static final String PROJECT_LOOKUP_NAME_PARAM = "name";
     static final String PROJECT_LOOKUP_VERSION_PARAM = "version";
-    static final String TEAM_SELF_URL = API_URL + "/team/self";
+    static final String TEAM_URL = API_URL + "/team";
+    static final String TEAM_SELF_URL = TEAM_URL + "/self";
+    static final String UUID_PARAM = "uuid";
     static final String VERSION_URL = "/api/version";
 
     /**
@@ -384,6 +390,54 @@ public class ApiClient {
             throw new ApiClientException(Messages.ApiClient_Error_Canceled(), e);
         }
     }
+
+    public String lookupTeam(@NonNull final String teamName) throws ApiClientException {
+        try {
+            final var request = createRequest(URI.create(TEAM_URL));
+            final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+            final var body = response.body();
+            final int status = response.statusCode();
+            if (status == HTTP_UNAUTHORIZED) {
+                logger.log(Messages.Builder_Unauthorized());
+            }
+            final var teams = JSONArray.fromObject(body).stream()
+                    .map(JSONObject.class::cast)
+                    .collect(Collectors.toList());
+            for (JSONObject jsonTeam : teams) {
+                if (jsonTeam.getString(NAME_PARAM).equals(teamName)) {
+                    return jsonTeam.getString(UUID_PARAM);
+                }
+            }
+            return null;
+        } catch (ApiClientException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new ApiClientException(Messages.ApiClient_Error_Canceled(), e);
+        }
+    }
+
+    public void mapProjectToTeam(@NonNull final String projectUuid, @NonNull final String teamUuid) throws IOException, InterruptedException {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.element(ACL_MAPPING_PROJECT_PARAM, projectUuid);
+        jsonObject.element(ACL_MAPPING_TEAM_PARAM, teamUuid);
+        final var request = createRequest(URI.create(ACL_MAPPING_URL), "PUT", HttpRequest.BodyPublishers.ofString(jsonObject.toString()));
+        final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
+        final var body = response.body();
+        final int status = response.statusCode();
+        switch (status) {
+        case HTTP_UNAUTHORIZED:
+            logger.log(Messages.Builder_Unauthorized());
+            break;
+        case HTTP_NOT_FOUND:
+            logger.log(Messages.Builder_Project_NotFound());
+            break;
+        default:
+            break;
+        }
+  }
 
     private HttpRequest createRequest(final URI uri) {
         return createRequest(uri, "GET", HttpRequest.BodyPublishers.noBody());

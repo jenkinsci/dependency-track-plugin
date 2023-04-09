@@ -82,6 +82,11 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     private final String artifact;
 
     /**
+     * Name of the team to map the project to. This is a per-build config item.
+     */
+    private String teamName;
+
+    /**
      * Retrieves whether synchronous mode is enabled or not. This is a per-build
      * config item.
      */
@@ -279,6 +284,16 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         logger.log(Messages.Builder_Success(String.format("%s/projects/%s", getEffectiveFrontendUrl(), StringUtils.isNotBlank(projectId) ? projectId : StringUtils.EMPTY)));
         
         updateProjectProperties(logger, apiClient, effectiveProjectName, effectiveProjectVersion);
+
+        if (!StringUtils.isBlank(teamName)) {
+            String teamUuid = apiClient.lookupTeam(teamName);
+            if (teamUuid == null) {
+                logger.log(Messages.Builder_Team_NotFound(teamName));
+            } else {
+                apiClient.mapProjectToTeam(lookupProjectId(logger, apiClient, effectiveProjectName, effectiveProjectVersion), teamUuid);
+                logger.log(Messages.Builder_Team_Assigned(teamName));
+            }
+        }
 
         if (synchronous && StringUtils.isNotBlank(uploadResult.getToken())) {
             publishAnalysisResult(logger, apiClient, uploadResult.getToken(), run, effectiveProjectName, effectiveProjectVersion);
