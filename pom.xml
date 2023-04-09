@@ -208,7 +208,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-scm-plugin</artifactId>
-                <version>2.0.0-M3</version>
+                <version>2.0.0</version>
                 <configuration>
                     <pushChanges>false</pushChanges>
                     <message>[maven-scm-plugin] updating package.json</message>
