@@ -395,12 +395,11 @@ public class ApiClient {
         try {
             final var request = createRequest(URI.create(TEAM_URL));
             final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            final var body = response.body();
             final int status = response.statusCode();
             if (status == HTTP_UNAUTHORIZED) {
                 logger.log(Messages.Builder_Unauthorized());
             }
-            final var teams = JSONArray.fromObject(body).stream()
+            final var teams = JSONArray.fromObject(response.body()).stream()
                     .map(JSONObject.class::cast)
                     .collect(Collectors.toList());
             for (JSONObject jsonTeam : teams) {
@@ -425,7 +424,6 @@ public class ApiClient {
         jsonObject.element(ACL_MAPPING_TEAM_PARAM, teamUuid);
         final var request = createRequest(URI.create(ACL_MAPPING_URL), "PUT", HttpRequest.BodyPublishers.ofString(jsonObject.toString()));
         final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        final var body = response.body();
         final int status = response.statusCode();
         switch (status) {
         case HTTP_UNAUTHORIZED:
