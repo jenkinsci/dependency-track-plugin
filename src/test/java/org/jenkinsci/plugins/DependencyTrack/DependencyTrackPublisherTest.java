@@ -329,4 +329,75 @@ class DependencyTrackPublisherTest {
         }
     }
 
+    @Test
+    void testPerformSyncWithoutTeamAssignment(@TempDir Path tmpWork) throws IOException, InterruptedException {
+        File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
+        FilePath workDir = new FilePath(tmpWork.toFile());
+        DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
+        uut.setProjectName("name-1");
+        uut.setProjectVersion("version-1");
+        uut.setDependencyTrackApiKey(apikeyId);
+        uut.setAutoCreateProjects(Boolean.TRUE);
+        uut.setProjectProperties(new ProjectProperties());
+
+        when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(true))).thenReturn(new UploadResult(true, "token-1"));
+        when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
+        when(client.getFindings("uuid-1")).thenReturn(List.of());
+        when(client.lookupProject("name-1", "version-1")).thenReturn(Project.builder().uuid("uuid-1").build());
+        when(client.lookupTeam("team-1")).thenReturn("team-1-uuid");
+
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
+        verify(client, times(0)).lookupTeam("team-1");
+        verify(client, times(0)).mapProjectToTeam(any(), any());
+    }
+
+    @Test
+    void testPerformSyncWithExistingTeamAssignment(@TempDir Path tmpWork) throws IOException, InterruptedException {
+        File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
+        FilePath workDir = new FilePath(tmpWork.toFile());
+        DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
+        uut.setProjectName("name-1");
+        uut.setProjectVersion("version-1");
+        uut.setDependencyTrackApiKey(apikeyId);
+        uut.setAutoCreateProjects(Boolean.TRUE);
+        uut.setProjectProperties(new ProjectProperties());
+        uut.setTeamName("team-1");
+
+        when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(true))).thenReturn(new UploadResult(true, "token-1"));
+        when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
+        when(client.getFindings("uuid-1")).thenReturn(List.of());
+        when(client.lookupProject("name-1", "version-1")).thenReturn(Project.builder().uuid("uuid-1").build());
+        when(client.lookupTeam("team-1")).thenReturn("team-1-uuid");
+
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
+        verify(client).lookupTeam("team-1");
+        verify(client).mapProjectToTeam(any(), any());
+    }
+
+    @Test
+    void testPerformSyncWithNonExistingTeamAssignment(@TempDir Path tmpWork) throws IOException, InterruptedException {
+        File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
+        FilePath workDir = new FilePath(tmpWork.toFile());
+        DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
+        uut.setProjectName("name-1");
+        uut.setProjectVersion("version-1");
+        uut.setDependencyTrackApiKey(apikeyId);
+        uut.setAutoCreateProjects(Boolean.TRUE);
+        uut.setProjectProperties(new ProjectProperties());
+        uut.setTeamName("team-1");
+
+        when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(true))).thenReturn(new UploadResult(true, "token-1"));
+        when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
+        when(client.getFindings("uuid-1")).thenReturn(List.of());
+        when(client.lookupProject("name-1", "version-1")).thenReturn(Project.builder().uuid("uuid-1").build());
+        when(client.lookupTeam("team-1")).thenReturn(null);
+
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
+        verify(client).lookupTeam("team-1");
+        verify(client, times(0)).mapProjectToTeam(any(), any());
+    }
+
 }
