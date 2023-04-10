@@ -435,7 +435,7 @@ public class ApiClient {
         default:
             break;
         }
-  }
+    }
 
     private HttpRequest createRequest(final URI uri) {
         return createRequest(uri, "GET", HttpRequest.BodyPublishers.noBody());
