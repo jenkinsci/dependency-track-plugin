@@ -5,6 +5,12 @@
 ### ⭐ New Features
 ### 🐞 Bugs Fixed
 
+## v4.3.1 - 2022-04-12
+### ⚠ Breaking
+### ⭐ New Features
+### 🐞 Bugs Fixed
+- Remove usages of `l:css` ([#160](https://github.com/jenkinsci/dependency-track-plugin/issues/160))
+
 ## v4.3.0 - 2022-02-20
 ### ⚠ Breaking
 ### ⭐ New Features
