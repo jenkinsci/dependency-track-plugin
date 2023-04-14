@@ -15,7 +15,7 @@ limitations under the License.
 -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:st="jelly:stapler" xmlns:d="jelly:define" xmlns:l="/lib/layout" xmlns:t="/lib/hudson" xmlns:f="/lib/form" xmlns:c="/lib/credentials">
-    <l:css src="plugin/dependency-track/css/global.css" />
+    <link rel="stylesheet" href="${rootURL}/plugin/dependency-track/css/global.css" type="text/css" />
 
     <f:section title="Dependency-Track">
         <f:entry title="${%dependencytrack.url}" field="dependencyTrackUrl">
