@@ -15,7 +15,7 @@ limitations under the License.
 -->
 <?jelly escape-by-default='true'?>
 <j:jelly xmlns:j="jelly:core" xmlns:f="/lib/form" xmlns:c="/lib/credentials" xmlns:l="/lib/layout">
-    <l:css src="plugin/dependency-track/css/config.css" />
+    <link rel="stylesheet" href="${rootURL}/plugin/dependency-track/css/config.css" type="text/css" />
 
     <f:section title="${%publishToDependencytrack}">
         <f:entry title="${%projectId}" field="projectId">
