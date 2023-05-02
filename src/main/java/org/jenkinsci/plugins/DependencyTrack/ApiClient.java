@@ -61,15 +61,22 @@ public class ApiClient {
     private static final String MEDIATYPE_JSON = "application/json";
     private static final String API_URL = "/api/v1";
     private static final int MS_TO_S_FACTOR = 1000;
+
+    static final String ACL_MAPPING_URL = API_URL + "/acl/mapping";
+    static final String ACL_MAPPING_TEAM_PARAM = "team";
+    static final String ACL_MAPPING_PROJECT_PARAM = "project";
     static final String API_KEY_HEADER = "X-Api-Key";
     static final String PROJECT_FINDINGS_URL = API_URL + "/finding/project";
     static final String BOM_URL = API_URL + "/bom";
     static final String BOM_TOKEN_URL = BOM_URL + "/token";
+    static final String NAME_PARAM = "name";
     static final String PROJECT_URL = API_URL + "/project";
     static final String PROJECT_LOOKUP_URL = PROJECT_URL + "/lookup";
     static final String PROJECT_LOOKUP_NAME_PARAM = "name";
     static final String PROJECT_LOOKUP_VERSION_PARAM = "version";
-    static final String TEAM_SELF_URL = API_URL + "/team/self";
+    static final String TEAM_URL = API_URL + "/team";
+    static final String TEAM_SELF_URL = TEAM_URL + "/self";
+    static final String UUID_PARAM = "uuid";
     static final String VERSION_URL = "/api/version";
 
     /**
@@ -403,6 +410,59 @@ public class ApiClient {
             throw e;
         } catch (IOException e) {
             throw new ApiClientException(Messages.ApiClient_Error_TokenProcessing(StringUtils.EMPTY, StringUtils.EMPTY), e);
+        }
+    }
+
+    public String lookupTeam(@NonNull final String teamName) throws ApiClientException {
+        try {
+            final HttpURLConnection conn = createConnection(TEAM_URL);
+            conn.connect();
+            if (conn.getResponseCode() == HTTP_UNAUTHORIZED) {
+                logger.log(Messages.Builder_Unauthorized());
+            }
+            final JSONArray teams;
+            try (InputStream in = new BufferedInputStream(conn.getInputStream())) {
+                teams = JSONArray.fromObject(getResponseBody(in));
+            }
+            for (Object jsonTeam : teams) {
+                if (((JSONObject) jsonTeam).getString(NAME_PARAM).equals(teamName)) {
+                    return ((JSONObject) jsonTeam).getString(UUID_PARAM);
+                }
+            }
+            return null;
+        } catch (ApiClientException e) {
+            throw e;
+        } catch (IOException e) {
+            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+        }
+    }
+
+    public void mapProjectToTeam(@NonNull final String projectUuid, @NonNull final String teamUuid) throws IOException, InterruptedException {
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.element(ACL_MAPPING_PROJECT_PARAM, projectUuid);
+        jsonObject.element(ACL_MAPPING_TEAM_PARAM, teamUuid);
+        byte[] payloadBytes = jsonObject.toString().getBytes(StandardCharsets.UTF_8);
+        final HttpURLConnection conn = createConnection(ACL_MAPPING_URL);
+        conn.setDoOutput(true);
+        conn.setRequestMethod("PUT");
+        conn.setRequestProperty("Content-Length", Integer.toString(payloadBytes.length));
+        conn.setRequestProperty(HEADER_CONTENT_TYPE, MEDIATYPE_JSON);
+        conn.connect();
+        // Sends the payload bytes
+        try (OutputStream os = new BufferedOutputStream(conn.getOutputStream())) {
+            os.write(payloadBytes);
+            os.flush();
+        }
+        final int status = conn.getResponseCode();
+        switch (status) {
+        case HTTP_UNAUTHORIZED:
+            logger.log(Messages.Builder_Unauthorized());
+            break;
+        case HTTP_NOT_FOUND:
+            logger.log(Messages.Builder_Project_NotFound());
+            break;
+        default:
+            break;
         }
     }
 
