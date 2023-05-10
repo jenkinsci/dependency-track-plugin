@@ -52,6 +52,7 @@ VULNERABILITY_ANALYSIS | :ballot_box_with_check: | needed to perform dependency 
 PROJECT_CREATION_UPLOAD | :grey_question: | needed to create non-existing projects during BOM upload
 VIEW_VULNERABILITY | :grey_question: | needed in synchronous publishing mode to retrieve analysis results
 PORTFOLIO_MANAGEMENT | :grey_question: | needed for updating project properties such as tags
+ACCESS_MANAGEMENT | :grey_question: | needed to map the project to a team-portfolio (currently still in beta in Dependeny-Track)
 
 ## Job Configuration
 Once configured with a valid URL and API key, simply configure a job to publish the artifact.
@@ -63,6 +64,8 @@ Once configured with a valid URL and API key, simply configure a job to publish 
 **Dependency-Track project name**: Specifies the name of the project for automatic creation of project during the upload process. This is an alternative to specifying the unique ID. It must be used together with a project version. Only avaible if "Auto Create projects" is enabled. The use of environment variables in the form `${VARIABLE}` is supported here.
 
 **Dependency-Track project version**: Specifies the version of the project for automatic creation of project during the upload process. This is an alternative to specifying the unique ID. It must be used together with a project name. Only avaible if "Auto Create projects" is enabled. The use of environment variables in the form `${VARIABLE}` is supported here.
+
+**Team-Name:** Specifies the name of the team to whose portfolio the project should be added. The provided API key requires the `ACCESS_MANAGEMENT` permission to use this feature!
 
 **Artifact:** Specifies the file to upload. Paths are relative from the Jenkins workspace. The use of environment variables in the form `${VARIABLE}` is supported here.
 
