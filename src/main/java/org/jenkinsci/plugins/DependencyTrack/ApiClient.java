@@ -390,7 +390,7 @@ public class ApiClient {
     }
 
     private HttpRequest createRequest(final URI uri, final String method, final HttpRequest.BodyPublisher bodyPublisher) {
-        final var builder = HttpRequest.newBuilder(URI.create(baseUrl).resolve(uri))
+        final var builder = HttpRequest.newBuilder(URI.create(baseUrl + uri))
                 .header(API_KEY_HEADER, apiKey)
                 .header(ACCEPT, APPLICATION_JSON_VALUE)
                 .timeout(readTimeout)

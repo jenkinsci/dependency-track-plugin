@@ -585,4 +585,20 @@ class ApiClientTest {
         assertThat(Thread.currentThread().isInterrupted()).as("current Thread isInterrupted").isTrue();
     }
 
+    @Test
+    void testWithContextPath() {
+        server = HttpServer.create()
+                .host("localhost")
+                .port(0)
+                .route(routes -> routes.get("/ctx" + ApiClient.PROJECT_URL, (request, response) -> response.status(HttpResponseStatus.INTERNAL_SERVER_ERROR).sendString(Mono.just("something went wrong"))))
+                .bindNow();
+
+        ApiClient uut = new ApiClient(String.format("http://%s:%d/ctx", server.host(), server.port()), API_KEY, logger, 1, 1);
+
+        assertThatCode(() -> uut.testConnection()).isInstanceOf(ApiClientException.class)
+                .hasNoCause()
+                // if context path would be ignores, the server would return 404 instead of 500
+                .hasMessage(Messages.ApiClient_Error_Connection(HttpResponseStatus.INTERNAL_SERVER_ERROR.code(), HttpResponseStatus.INTERNAL_SERVER_ERROR.reasonPhrase()));
+    }
+
 }
