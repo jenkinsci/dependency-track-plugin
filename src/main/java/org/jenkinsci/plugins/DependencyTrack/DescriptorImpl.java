@@ -271,7 +271,7 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
                 final VersionNumber version = apiClient.getVersion();
                 final var requiredVersion = new VersionNumber("4.7.0");
                 if (version.isOlderThan(requiredVersion)) {
-                    return FormValidation.warning(Messages.Publisher_ConnectionTest_VersionWarning(version, requiredVersion));
+                    return FormValidation.error(Messages.Publisher_ConnectionTest_VersionWarning(version, requiredVersion));
                 }
                 return checkTeamPermissions(apiClient, poweredBy, autoCreateProjects, synchronous, updateProjectProperties);
             } catch (ApiClientException e) {

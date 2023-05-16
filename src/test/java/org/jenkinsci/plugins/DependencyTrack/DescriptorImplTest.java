@@ -142,7 +142,7 @@ class DescriptorImplTest {
             uut = new DescriptorImpl(factory);
 
             assertThat(uut.doTestConnectionGlobal("http:///url.tld", credentialsid, false, null))
-                    .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.WARNING)
+                    .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                     .hasMessage(Messages.Publisher_ConnectionTest_VersionWarning("3.8.0", "4.7.0"))
                     .hasNoCause();
 
