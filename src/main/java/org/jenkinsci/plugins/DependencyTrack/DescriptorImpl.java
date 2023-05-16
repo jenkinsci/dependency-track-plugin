@@ -35,6 +35,7 @@ import java.io.Serializable;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
@@ -272,7 +273,7 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
                 if (version.isOlderThan(requiredVersion)) {
                     return FormValidation.warning(Messages.Publisher_ConnectionTest_VersionWarning(version, requiredVersion));
                 }
-                return checkTeamPermissions(apiClient, version, autoCreateProjects, synchronous, updateProjectProperties);
+                return checkTeamPermissions(apiClient, poweredBy, autoCreateProjects, synchronous, updateProjectProperties);
             } catch (ApiClientException e) {
                 return FormValidation.error(e, Messages.Publisher_ConnectionTest_Error(e.getMessage()));
             }
@@ -280,7 +281,7 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
         return FormValidation.error(Messages.Publisher_ConnectionTest_InputError());
     }
 
-    private FormValidation checkTeamPermissions(final ApiClient apiClient, final VersionNumber version, final boolean autoCreateProjects, final boolean synchronous, final boolean projectProperties) throws ApiClientException {
+    private FormValidation checkTeamPermissions(final ApiClient apiClient, final String poweredBy, final boolean autoCreateProjects, final boolean synchronous, final boolean projectProperties) throws ApiClientException {
         final Set<String> requiredPermissions = Stream.of(BOM_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS).map(Enum::toString).collect(Collectors.toSet());
         final Set<String> optionalPermissions = new HashSet<>();
 
@@ -304,7 +305,7 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
         final Set<String> allPermissions = new TreeSet<>(team.getPermissions());
         allPermissions.addAll(requiredPermissions);
         allPermissions.addAll(optionalPermissions);
-        final StringBuilder sb = new StringBuilder(Messages.Publisher_ConnectionTest_Success("Dependency-Track v" + version));
+        final var sb = new StringBuilder();
         sb.append("<p class=\"team\">");
         sb.append(Messages.Publisher_PermissionTest_Team(Util.escape(team.getName())));
         sb.append("</p><ul>");
@@ -330,7 +331,18 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
             }
         }
         sb.append("</ul>");
-        return FormValidation.respond(worst, sb.toString());
+        switch (worst) {
+            case OK:
+                sb.insert(0, Messages.Publisher_ConnectionTest_Success(poweredBy));
+                break;
+            case WARNING:
+                sb.insert(0, Messages.Publisher_ConnectionTest_Warning(poweredBy));
+                break;
+            case ERROR:
+                sb.insert(0, Messages.Publisher_ConnectionTest_Error(poweredBy));
+                break;
+        }
+        return FormValidation.respond(worst, String.format("<div class=\"%s\">%s</div>", worst.name().toLowerCase(Locale.ENGLISH), sb));
     }
 
     /**

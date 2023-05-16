@@ -226,7 +226,8 @@ class DescriptorImplTest {
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
         };
-        when(client.testConnection()).thenReturn("Dependency-Track v4.7.0");
+        final var poweredBy = "Dependency-Track v4.7.0";
+        when(client.testConnection()).thenReturn(poweredBy);
         when(client.getVersion()).thenReturn(new VersionNumber("4.7.0"));
         when(client.getTeamPermissions()).thenReturn(team);
         try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
@@ -237,6 +238,7 @@ class DescriptorImplTest {
                     .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
                     .hasNoCause()
                     .extracting(FormValidation::renderHtml).asString()
+                    .contains(Messages.Publisher_ConnectionTest_Success(poweredBy))
                     .contains(Messages.Publisher_PermissionTest_Team(team.getName()))
                     .contains(Messages.Publisher_PermissionTest_Okay(BOM_UPLOAD))
                     .contains(Messages.Publisher_PermissionTest_Okay(VIEW_PORTFOLIO))
@@ -263,7 +265,8 @@ class DescriptorImplTest {
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
         };
-        when(client.testConnection()).thenReturn("Dependency-Track v4.7.0");
+        final var poweredBy = "Dependency-Track v4.7.0";
+        when(client.testConnection()).thenReturn(poweredBy);
         when(client.getVersion()).thenReturn(new VersionNumber("4.7.0"));
         when(client.getTeamPermissions()).thenReturn(team);
         try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
@@ -274,6 +277,8 @@ class DescriptorImplTest {
                     .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                     .hasNoCause()
                     .extracting(FormValidation::renderHtml).asString()
+                    .contains(Messages.Publisher_ConnectionTest_Error(poweredBy))
+                    .contains(Messages.Publisher_PermissionTest_Team(team.getName()))
                     .contains(Messages.Publisher_PermissionTest_Okay(BOM_UPLOAD))
                     .contains(Messages.Publisher_PermissionTest_Okay(VIEW_PORTFOLIO))
                     .contains(Messages.Publisher_PermissionTest_Okay(VULNERABILITY_ANALYSIS))
@@ -299,7 +304,8 @@ class DescriptorImplTest {
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
         };
-        when(client.testConnection()).thenReturn("Dependency-Track v4.7.0");
+        final var poweredBy = "Dependency-Track v4.7.0";
+        when(client.testConnection()).thenReturn(poweredBy);
         when(client.getVersion()).thenReturn(new VersionNumber("4.7.0"));
         when(client.getTeamPermissions()).thenReturn(team);
         try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
@@ -310,6 +316,8 @@ class DescriptorImplTest {
                     .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.WARNING)
                     .hasNoCause()
                     .extracting(FormValidation::renderHtml).asString()
+                    .contains(Messages.Publisher_ConnectionTest_Warning(poweredBy))
+                    .contains(Messages.Publisher_PermissionTest_Team(team.getName()))
                     .contains(Messages.Publisher_PermissionTest_Okay(BOM_UPLOAD))
                     .contains(Messages.Publisher_PermissionTest_Okay(VIEW_PORTFOLIO))
                     .contains(Messages.Publisher_PermissionTest_Okay(VULNERABILITY_ANALYSIS))
