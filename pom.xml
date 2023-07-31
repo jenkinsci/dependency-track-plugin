@@ -39,7 +39,7 @@
     <properties>
         <jenkins.version>2.375.2</jenkins.version>
         <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
-        <configuration-as-code.version>1625.v27444588cc3d</configuration-as-code.version>
+        <configuration-as-code.version>1670.v564dc8b_982d0</configuration-as-code.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.javadoc.skip>true</maven.javadoc.skip>
