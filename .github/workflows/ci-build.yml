@@ -48,7 +48,7 @@ jobs:
       - name: Build without Sonar
         if: steps.build_sonar.conclusion == 'skipped'
         run: mvn -B clean test verify package
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         if: success()
         with:
           path: target/dependency-track.hpi
