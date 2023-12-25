@@ -20,7 +20,7 @@ jobs:
           java-version: ${{ matrix.java }}
           distribution: 'zulu'
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 'lts/Hydrogen'
       - name: Cache Maven packages
