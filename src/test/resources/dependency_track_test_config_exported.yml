@@ -1,0 +1,8 @@
+dependencyTrackApiKey: "R4nD0m"
+dependencyTrackAutoCreateProjects: false
+dependencyTrackConnectionTimeout: 1
+dependencyTrackFrontendUrl: "https://ui.example.org"
+dependencyTrackPollingInterval: 1
+dependencyTrackPollingTimeout: 5
+dependencyTrackReadTimeout: 3
+dependencyTrackUrl: "https://example.org/deptrack"

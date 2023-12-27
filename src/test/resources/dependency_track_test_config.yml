@@ -1,10 +1,10 @@
 unclassified:
   dependencyTrackPublisher:
-    dependencyTrackUrl: https://example.org/deptrack
-    dependencyTrackFrontendUrl: https://ui.example.org
-    dependencyTrackApiKey: R4nD0m
+    dependencyTrackApiKey: "R4nD0m"
     dependencyTrackAutoCreateProjects: false
-    dependencyTrackPollingTimeout: 5
-    dependencyTrackPollingInterval: 1
     dependencyTrackConnectionTimeout: 1
+    dependencyTrackFrontendUrl: "https://ui.example.org"
+    dependencyTrackPollingInterval: 1
+    dependencyTrackPollingTimeout: 5
     dependencyTrackReadTimeout: 3
+    dependencyTrackUrl: "https://example.org/deptrack"

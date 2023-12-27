@@ -37,9 +37,10 @@
     </licenses>
 
     <properties>
-        <jenkins.version>2.375.2</jenkins.version>
+        <jenkins.version>2.414.1</jenkins.version>
         <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
-        <configuration-as-code.version>1625.v27444588cc3d</configuration-as-code.version>
+        <configuration-as-code.version>1756.v2b_7eea_874392</configuration-as-code.version>
+        <byte-buddy.version>1.14.10</byte-buddy.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.javadoc.skip>true</maven.javadoc.skip>
@@ -83,7 +84,7 @@
                                 </goals>
                                 <phase>initialize</phase>
                                 <configuration>
-                                    <nodeVersion>v16.19.1</nodeVersion>
+                                    <nodeVersion>v20.10.0</nodeVersion>
                                     <nodeDownloadRoot>https://repo.jenkins-ci.org/nodejs-dist/</nodeDownloadRoot>
                                     <npmRegistryURL>https://repo.jenkins-ci.org/api/npm/npm/</npmRegistryURL>
                                     <installDirectory>${project.build.directory}</installDirectory>
@@ -362,17 +363,31 @@
         </snapshotRepository>
     </distributionManagement>
 
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy</artifactId>
+                <version>${byte-buddy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.bytebuddy</groupId>
+                <artifactId>byte-buddy-agent</artifactId>
+                <version>${byte-buddy.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <dependencies>
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.26</version>
+            <version>1.18.30</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>credentials</artifactId>
-            <version>1224.vc23ca_a_9a_2cb_0</version>
+            <version>1311.vcf0a_900b_37c2</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
