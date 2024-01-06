@@ -1,29 +1,33 @@
 [
-	{
-		"component": {
-			"uuid": "uuid-1",
-			"name": "name-1",
-			"group": "group-1",
-			"version": "version-1",
-			"purl": "purl-1"
-		},
-		"vulnerability": {
-			"uuid": "uuid-1",
-			"source": "source-1",
-			"vulnId": "vulnId-1",
-			"title": "title-1",
-			"subtitle": "subtitle-1",
-			"description": "description-1",
-			"recommendation": "recommendation-1",
-			"severity": "CRITICAL",
-			"severityRank": 1,
-			"cweId": 2,
-			"cweName": "cweName-1"
-		},
-		"analysis": {
-			"state": "state-1",
-			"isSuppressed": false
-		},
-		"matrix": "matrix-1"
-	}
+    {
+        "component": {
+            "uuid": "uuid-1",
+            "name": "name-1",
+            "group": "group-1",
+            "version": "version-1",
+            "purl": "purl-1"
+        },
+        "vulnerability": {
+            "uuid": "uuid-1",
+            "source": "source-1",
+            "vulnId": "vulnId-1",
+            "title": "title-1",
+            "subtitle": "subtitle-1",
+            "description": "description-1",
+            "recommendation": "recommendation-1",
+            "severity": "CRITICAL",
+            "severityRank": 1,
+            "cwes": [
+                {
+                    "cweId": 2,
+                    "name": "cweName-1"
+                }
+            ]
+        },
+        "analysis": {
+            "state": "state-1",
+            "isSuppressed": false
+        },
+        "matrix": "matrix-1"
+    }
 ]

@@ -16,6 +16,8 @@
 package org.jenkinsci.plugins.DependencyTrack;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import net.sf.json.JSONArray;
@@ -64,10 +66,11 @@ class FindingParser {
         final String subtitle = getKeyOrNull(json, "subtitle");
         final String description = getKeyOrNull(json, "description");
         final String recommendation = getKeyOrNull(json, "recommendation");
-        final Severity severity = Severity.valueOf(json.optString("severity"));
+        final Severity severity = json.has("severity") ? Severity.valueOf(json.getString("severity")) : null;
         final Integer severityRank = json.optInt("severityRank");
-        final Integer cweId = json.optInt("cweId");
-        final String cweName = getKeyOrNull(json, "cweName");
+        final var cwe = Optional.ofNullable(json.optJSONArray("cwes")).map(a -> a.optJSONObject(0)).filter(Predicate.not(JSONNull.class::isInstance));
+        final Integer cweId = cwe.map(o -> o.optInt("cweId")).orElse(null);
+        final String cweName = cwe.map(o -> getKeyOrNull(o, "name")).orElse(null);
         return new Vulnerability(uuid, source, vulnId, title, subtitle, description, recommendation, severity, severityRank, cweId, cweName);
     }
 
