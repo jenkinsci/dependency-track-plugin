@@ -44,7 +44,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
           SONAR_ORGANIZATION: ${{ secrets.SONARCLOUD_ORGANIZATION }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: mvn -B clean test verify package org.sonarsource.scanner.maven:sonar-maven-plugin:3.10.0.2594:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.projectKey=org.jenkins-ci.plugins:dependency-track -Dsonar.organization=$SONAR_ORGANIZATION -Dsonar.login=$SONAR_TOKEN
+        run: mvn -B clean test verify package org.sonarsource.scanner.maven:sonar-maven-plugin:3.10.0.2594:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.projectKey=org.jenkins-ci.plugins:dependency-track -Dsonar.organization=$SONAR_ORGANIZATION -Dsonar.token=$SONAR_TOKEN
       - name: Build without Sonar
         if: steps.build_sonar.conclusion == 'skipped'
         run: mvn -B clean test verify package
