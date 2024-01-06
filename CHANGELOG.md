@@ -8,6 +8,7 @@
 
 ### ⭐ New Features
 - Allow `overrideGlobals` to override global timeout and interval settings ([#182](https://github.com/jenkinsci/dependency-track-plugin/issues/182))
+- Use the proxy that is configured in Jenkins ([#181](https://github.com/jenkinsci/dependency-track-plugin/issues/181))
 
 ### 🐞 Bugs Fixed
 
