@@ -7,7 +7,6 @@ import io.jenkins.plugins.casc.misc.JenkinsConfiguredWithCodeRule;
 import org.jenkinsci.plugins.DependencyTrack.DescriptorImpl;
 import org.junit.ClassRule;
 import org.junit.Test;
-import org.yaml.snakeyaml.Yaml;
 
 import static io.jenkins.plugins.casc.misc.Util.getUnclassifiedRoot;
 import static io.jenkins.plugins.casc.misc.Util.toYamlString;
@@ -45,7 +44,7 @@ public class ConfigurationAsCodeTest {
 
         try (var res = getClass().getClassLoader().getResourceAsStream("dependency_track_test_config_exported.yml")) {
             var expected = new String(res.readAllBytes());
-            assertThat(exported).isEqualTo(expected);
+            assertThat(exported).isEqualToNormalizingNewlines(expected);
         }
     }
 }
