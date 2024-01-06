@@ -39,7 +39,7 @@ jobs:
         shell: bash
       - name: Build with Sonar
         id: build_sonar
-        if: matrix.java == '11' && steps.check_sonar.outcome == 'success' && !startsWith(github.head_ref, 'dependabot/')
+        if: matrix.java == '17' && steps.check_sonar.outcome == 'success' && !startsWith(github.head_ref, 'dependabot/')
         env:
           SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
           SONAR_ORGANIZATION: ${{ secrets.SONARCLOUD_ORGANIZATION }}
