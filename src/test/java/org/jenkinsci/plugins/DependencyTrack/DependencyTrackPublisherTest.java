@@ -266,6 +266,10 @@ class DependencyTrackPublisherTest {
         uut.setAutoCreateProjects(Boolean.TRUE);
         uut.setDependencyTrackUrl("http://test.tld");
         uut.setDependencyTrackApiKey(apikeyId);
+        uut.setDependencyTrackPollingInterval(1);
+        uut.setDependencyTrackPollingTimeout(1);
+        uut.setDependencyTrackConnectionTimeout(1);
+        uut.setDependencyTrackReadTimeout(1);
 
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(true)))
                 .thenReturn(new UploadResult(false));
@@ -282,6 +286,10 @@ class DependencyTrackPublisherTest {
         uut.setDependencyTrackUrl("foo");
         uut.setDependencyTrackFrontendUrl("foo-ui");
         uut.setDependencyTrackApiKey("bar");
+        uut.setDependencyTrackPollingInterval(1);
+        uut.setDependencyTrackPollingTimeout(1);
+        uut.setDependencyTrackConnectionTimeout(1);
+        uut.setDependencyTrackReadTimeout(1);
         uut.setOverrideGlobals(false);
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
@@ -295,6 +303,10 @@ class DependencyTrackPublisherTest {
                 assertThat(actual.getDependencyTrackFrontendUrl()).isNull();
                 assertThat(actual.getDependencyTrackApiKey()).isNull();
                 assertThat(actual.getAutoCreateProjects()).isNull();
+                assertThat(actual.getDependencyTrackPollingInterval()).isNull();
+                assertThat(actual.getDependencyTrackPollingTimeout()).isNull();
+                assertThat(actual.getDependencyTrackConnectionTimeout()).isNull();
+                assertThat(actual.getDependencyTrackReadTimeout()).isNull();
                 assertThat(actual.isOverrideGlobals()).isFalse();
             });
         }
@@ -309,6 +321,10 @@ class DependencyTrackPublisherTest {
         uut.setDependencyTrackUrl("foo");
         uut.setDependencyTrackFrontendUrl("foo-ui");
         uut.setDependencyTrackApiKey("bar");
+        uut.setDependencyTrackPollingInterval(1);
+        uut.setDependencyTrackPollingTimeout(1);
+        uut.setDependencyTrackConnectionTimeout(1);
+        uut.setDependencyTrackReadTimeout(1);
         uut.setOverrideGlobals(true);
         uut.setProjectProperties(new ProjectProperties());
 
@@ -323,6 +339,10 @@ class DependencyTrackPublisherTest {
                 assertThat(actual.getDependencyTrackFrontendUrl()).isEqualTo("foo-ui");
                 assertThat(actual.getDependencyTrackApiKey()).isEqualTo("bar");
                 assertThat(actual.getAutoCreateProjects()).isTrue();
+                assertThat(actual.getDependencyTrackPollingInterval()).isOne();
+                assertThat(actual.getDependencyTrackPollingTimeout()).isOne();
+                assertThat(actual.getDependencyTrackConnectionTimeout()).isOne();
+                assertThat(actual.getDependencyTrackReadTimeout()).isOne();
                 assertThat(actual.isOverrideGlobals()).isTrue();
                 assertThat(actual.getProjectProperties()).isNotNull();
             });
