@@ -104,6 +104,28 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     private String dependencyTrackApiKey;
 
     /**
+     * Specifies the maximum number of minutes to wait for synchronous jobs to
+     * complete.
+     */
+    private Integer dependencyTrackPollingTimeout;
+
+    /**
+     * Defines the number of seconds to wait between two checks for
+     * Dependency-Track to process a job (Synchronous Publishing Mode).
+     */
+    private Integer dependencyTrackPollingInterval;
+
+    /**
+     * the connection-timeout in seconds for every call to DT
+     */
+    private Integer dependencyTrackConnectionTimeout;
+
+    /**
+     * the read-timeout in seconds for every call to DT
+     */
+    private Integer dependencyTrackReadTimeout;
+
+    /**
      * Specifies whether the API key provided has the PROJECT_CREATION_UPLOAD
      * permission.
      */
@@ -262,7 +284,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         final String effectiveUrl = getEffectiveUrl();
         final String effectiveApiKey = getEffectiveApiKey(run);
         logger.log(Messages.Builder_Publishing(effectiveUrl));
-        final ApiClient apiClient = clientFactory.create(effectiveUrl, effectiveApiKey, logger, descriptor.getDependencyTrackConnectionTimeout(), descriptor.getDependencyTrackReadTimeout());
+        final ApiClient apiClient = clientFactory.create(effectiveUrl, effectiveApiKey, logger, getEffectiveConnectionTimeout(), getEffectiveReadTimeout());
         final UploadResult uploadResult = apiClient.upload(projectId, effectiveProjectName, effectiveProjectVersion,
                 artifactFilePath, effectiveAutocreate);
 
@@ -286,8 +308,8 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     }
 
     private void publishAnalysisResult(final ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build, final String effectiveProjectName, final String effectiveProjectVersion) throws InterruptedException, ApiClientException, AbortException {
-        final long timeout = System.currentTimeMillis() + (60000L * descriptor.getDependencyTrackPollingTimeout());
-        final long interval = 1000L * descriptor.getDependencyTrackPollingInterval();
+        final long timeout = System.currentTimeMillis() + (60000L * getEffectivePollingTimeout());
+        final long interval = 1000L * getEffectivePollingInterval();
         logger.log(Messages.Builder_Polling());
         Thread.sleep(interval);
         while (apiClient.isTokenBeingProcessed(token)) {
@@ -382,6 +404,10 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
             dependencyTrackFrontendUrl = null;
             dependencyTrackApiKey = null;
             autoCreateProjects = null;
+            dependencyTrackPollingTimeout = null;
+            dependencyTrackPollingInterval = null;
+            dependencyTrackConnectionTimeout = null;
+            dependencyTrackReadTimeout = null;
         }
         if (!isEffectiveAutoCreateProjects()) {
             projectName = null;
@@ -431,6 +457,38 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      */
     public boolean isEffectiveAutoCreateProjects() {
         return Optional.ofNullable(autoCreateProjects).orElseGet(descriptor::isDependencyTrackAutoCreateProjects);
+    }
+
+    /**
+     * @return effective dependencyTrackPollingTimeout
+     */
+    @NonNull
+    private int getEffectivePollingTimeout() {
+        return Optional.ofNullable(dependencyTrackPollingTimeout).filter(v -> v > 0).orElseGet(descriptor::getDependencyTrackPollingTimeout);
+    }
+
+    /**
+     * @return effective dependencyTrackPollingInterval
+     */
+    @NonNull
+    private int getEffectivePollingInterval() {
+        return Optional.ofNullable(dependencyTrackPollingInterval).filter(v -> v > 0).orElseGet(descriptor::getDependencyTrackPollingInterval);
+    }
+
+    /**
+     * @return effective dependencyTrackConnectionTimeout
+     */
+    @NonNull
+    private int getEffectiveConnectionTimeout() {
+        return Optional.ofNullable(dependencyTrackConnectionTimeout).filter(v -> v >= 0).orElseGet(descriptor::getDependencyTrackConnectionTimeout);
+    }
+
+    /**
+     * @return effective dependencyTrackReadTimeout
+     */
+    @NonNull
+    private int getEffectiveReadTimeout() {
+        return Optional.ofNullable(dependencyTrackReadTimeout).filter(v -> v >= 0).orElseGet(descriptor::getDependencyTrackReadTimeout);
     }
 
     /**

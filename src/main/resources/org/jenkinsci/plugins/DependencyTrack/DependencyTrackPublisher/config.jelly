@@ -54,6 +54,18 @@ limitations under the License.
             <f:entry title="${%dependencytrack.autocreate}" field="autoCreateProjects">
                 <f:checkbox id="dependencytrack.autocreate" />
             </f:entry>
+            <f:entry title="${%dependencytrack.polling.timeout}" field="dependencyTrackPollingTimeout">
+                <f:number id="dependencytrack.polling.timeout" clazz="positive-number" min="1" />
+            </f:entry>
+            <f:entry title="${%dependencytrack.polling.interval}" field="dependencyTrackPollingInterval">
+                <f:number id="dependencytrack.polling.interval" clazz="positive-number" min="1" />
+            </f:entry>
+            <f:entry title="${%dependencytrack.connection.timeout}" field="dependencyTrackConnectionTimeout">
+                <f:number id="dependencytrack.connection.timeout" clazz="non-negative-number" min="0" />
+            </f:entry>
+            <f:entry title="${%dependencytrack.read.timeout}" field="dependencyTrackReadTimeout">
+                <f:number id="dependencytrack.read.timeout" clazz="non-negative-number" min="0" />
+            </f:entry>
             <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnectionJob" with="dependencyTrackUrl,dependencyTrackApiKey,autoCreateProjects,synchronous,projectProperties" />
         </f:optionalBlock>
     </f:section>

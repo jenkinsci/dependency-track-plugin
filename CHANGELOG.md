@@ -7,6 +7,8 @@
 - require Dependency-Track 4.9 or newer
 
 ### ⭐ New Features
+- Allow `overrideGlobals` to override global timeout and interval settings ([#182](https://github.com/jenkinsci/dependency-track-plugin/issues/182))
+
 ### 🐞 Bugs Fixed
 
 ## v4.3.1 - 2022-04-12
