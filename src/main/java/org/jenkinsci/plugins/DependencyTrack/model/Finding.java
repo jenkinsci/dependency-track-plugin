@@ -15,10 +15,13 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.model;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
 import java.io.Serializable;
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 
 @Value
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Finding implements Serializable {
 
     private static final long serialVersionUID = 5309487290800777874L;
@@ -26,6 +29,33 @@ public class Finding implements Serializable {
     private final Component component;
     private final Vulnerability vulnerability;
     private final Analysis analysis;
+
+    // includes uuid of project, component and vulnerability delimited by colon
+    @EqualsAndHashCode.Include
     private final String matrix;
+
+    /**
+     * checks whether this finding is an alias of the given other finding
+     *
+     * @param other the other finding to check against
+     * @return {@code true} if the finding {@code other} is for the same
+     * {@link #component} as this one and this
+     * {@link #vulnerability} {@link Vulnerability#isAliasOf(org.jenkinsci.plugins.DependencyTrack.model.Vulnerability) is an alias of the other one}
+     */
+    public boolean isAliasOf(@NonNull final Finding other) {
+        return vulnerability != null && component.equals(other.component) && other.getVulnerability() != null && vulnerability.isAliasOf(other.getVulnerability());
+    }
+
+    /**
+     * checks whether the given other finding is an alias of this finding
+     *
+     * @param alias the possible alias to check
+     * @return {@code true} if the finding {@code alias} is for the same
+     * {@link #component} as this one and this
+     * {@link #vulnerability} {@link Vulnerability#hasAlias(org.jenkinsci.plugins.DependencyTrack.model.Vulnerability) has the others one's vulnerability as an alias}
+     */
+    public boolean hasAlias(@NonNull final Finding alias) {
+        return vulnerability != null && component.equals(alias.component) && alias.getVulnerability() != null && vulnerability.hasAlias(alias.getVulnerability());
+    }
 
 }

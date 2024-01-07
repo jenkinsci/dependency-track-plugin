@@ -54,6 +54,7 @@
                                     <b-form-checkbox value="component.group">${%filter.value.group}</b-form-checkbox>
                                     <b-form-checkbox value="vulnerability.vulnId">${%filter.value.vuln}</b-form-checkbox>
                                     <b-form-checkbox value="vulnerability.severityRank">${%filter.value.severity}</b-form-checkbox>
+                                    <b-form-checkbox value="vulnerability.aliases">${%filter.value.aliases}</b-form-checkbox>
                                     <b-form-checkbox value="vulnerability.cweId">${%filter.value.cwe}</b-form-checkbox>
                                 </b-form-checkbox-group>
                                 </b-form-group>
@@ -130,6 +131,9 @@
                         <b-card-text v-if="row.item.vulnerability.recommendation">{{ row.item.vulnerability.recommendation }}</b-card-text>
                         <b-card-footer v-if="row.item.analysis.state"><b>${%analysis.state.title}:</b> {{ row.item.analysis.state }}</b-card-footer>
                     </b-card>
+                </template>
+                <template slot="cell(vulnerability.aliases)" slot-scope="data" v-if="data.value?.length">
+                    <ul class="list-unstyled"><li v-for="alias in data.value">{{alias}}</li></ul>
                 </template>
             </b-table>
             <b-pagination

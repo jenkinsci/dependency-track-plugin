@@ -16,13 +16,16 @@
 package org.jenkinsci.plugins.DependencyTrack.model;
 
 import java.io.Serializable;
+import lombok.EqualsAndHashCode;
 import lombok.Value;
 
 @Value
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Component implements Serializable {
 
     private static final long serialVersionUID = -4825926766668357091L;
 
+    @EqualsAndHashCode.Include
     private final String uuid;
     private final String name;
     private final String group;
