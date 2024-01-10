@@ -43,7 +43,7 @@ class ResultLinkActionTest {
     @Test
     void testWithUrlAndProjectId() {
         ResultLinkAction uut = new ResultLinkAction("http://foo.bar", "an-id\"");
-        assertThat(uut.getUrlName()).isEqualTo("http://foo.bar/project/?uuid=an-id%22");
+        assertThat(uut.getUrlName()).isEqualTo("http://foo.bar/projects/an-id%22");
         assertThat(uut.getDisplayName()).isNotEmpty();
         assertThat(uut.getIconFileName()).isNotEmpty();
     }
