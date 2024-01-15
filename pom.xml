@@ -419,6 +419,11 @@
             <version>143.v1b_df8b_d3b_e48</version>
         </dependency>
         <dependency>
+            <groupId>io.jenkins.plugins</groupId>
+            <artifactId>okhttp-api</artifactId>
+            <version>4.11.0-157.v6852a_a_fa_ec11</version>
+        </dependency>
+        <dependency>
             <groupId>io.jenkins</groupId>
             <artifactId>configuration-as-code</artifactId>
             <version>${configuration-as-code.version}</version>

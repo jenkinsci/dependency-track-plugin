@@ -25,7 +25,6 @@ import io.netty.handler.codec.http.QueryStringDecoder;
 import java.io.File;
 import java.io.IOException;
 import java.net.ConnectException;
-import java.net.http.HttpClient;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -37,6 +36,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import net.sf.json.JSONObject;
+import okhttp3.OkHttpClient;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
@@ -44,11 +44,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.io.TempDir;
+import org.jvnet.hudson.test.JenkinsRule;
+import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
 import reactor.netty.DisposableServer;
 import reactor.netty.http.server.HttpServer;
+import reactor.netty.http.server.HttpServerRequest;
 
 import static org.assertj.core.api.Assertions.as;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -66,6 +69,7 @@ import static org.mockito.Mockito.when;
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
 @ExtendWith(MockitoExtension.class)
+@WithJenkins
 class ApiClientTest {
 
     private static final String API_KEY = "api-key";
@@ -86,19 +90,36 @@ class ApiClientTest {
         return new ApiClient(String.format("http://%s:%d", server.host(), server.port()), API_KEY, logger, 1, 1);
     }
 
-    private ApiClient createClient(HttpClient httpClient) {
-        return new ApiClient("http://host.tld", API_KEY, logger, 1, () -> httpClient);
+    private ApiClient createClient(OkHttpClient httpClient) {
+        return new ApiClient("http://host.tld", API_KEY, logger, () -> httpClient);
+    }
+
+    private void assertCommonHeaders(HttpServerRequest request) {
+        assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false))
+                .describedAs("Header '%s' must have value '%s'", ApiClient.API_KEY_HEADER, API_KEY)
+                .isTrue();
+        assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true))
+                .describedAs("Header '%s' must have value '%s'", HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON)
+                .isTrue();
+    }
+
+    private void assertPOSTHeaders(HttpServerRequest request) {
+        assertThat(request.requestHeaders().get(HttpHeaderNames.CONTENT_TYPE))
+                .describedAs("Header '%s' must start with value '%s'", HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON)
+                .startsWithIgnoringCase(HttpHeaderValues.APPLICATION_JSON);
+        assertThat(request.requestHeaders().getInt(HttpHeaderNames.CONTENT_LENGTH))
+                .describedAs("Header '%s' must be present with value greater than zero", HttpHeaderNames.CONTENT_LENGTH)
+                .isPositive();
     }
 
     @Test
-    void testConnectionTest() throws ApiClientException {
+    void testConnectionTest(JenkinsRule r) throws ApiClientException {
         server = HttpServer.create()
                 // no ipv6 due to https://bugs.openjdk.java.net/browse/JDK-8220663
                 .host("localhost")
                 .port(0)
                 .route(routes -> routes.get(ApiClient.PROJECT_URL, (request, response) -> {
-            assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
-            assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
+            assertCommonHeaders(request);
             return response.addHeader("X-Powered-By", "Dependency-Track v3.8.0").send();
         }))
                 .bindNow();
@@ -109,24 +130,21 @@ class ApiClientTest {
     }
 
     @Test
-    void testConnectionTestWithErrors() throws IOException, InterruptedException {
-        final var httpClient = mock(HttpClient.class);
+    void testConnectionTestWithErrors() throws IOException {
+        final var httpClient = mock(OkHttpClient.class);
+        final var call = mock(okhttp3.Call.class);
         final var uut = createClient(httpClient);
-        doThrow(new ConnectException("oops"), new InterruptedException("oops"))
-                .when(httpClient).send(any(), any());
+        when(httpClient.newCall(any(okhttp3.Request.class))).thenReturn(call);
+        doThrow(new ConnectException("oops"))
+                .when(call).execute();
 
         assertThatCode(() -> uut.testConnection())
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
-
-        assertThatCode(() -> uut.testConnection())
-                .hasMessage(Messages.ApiClient_Error_Canceled())
-                .hasCauseInstanceOf(InterruptedException.class);
-        assertThat(Thread.currentThread().isInterrupted()).as("current Thread isInterrupted").isTrue();
     }
 
     @Test
-    void testConnectionTestInternalError() {
+    void testConnectionTestInternalError(JenkinsRule r) {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
@@ -143,13 +161,12 @@ class ApiClientTest {
     }
 
     @Test()
-    void getProjectsTest() throws ApiClientException {
+    void getProjectsTest(JenkinsRule r) throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
                 .route(routes -> routes.get(ApiClient.PROJECT_URL, (request, response) -> {
-            assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
-            assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
+            assertCommonHeaders(request);
             QueryStringDecoder query = new QueryStringDecoder(request.uri());
             assertThat(query.parameters())
                     .contains(entry("limit", List.of("500")), entry("excludeInactive", List.of("true")))
@@ -181,32 +198,28 @@ class ApiClientTest {
     }
 
     @Test
-    void getProjectsTestWithErrors() throws IOException, InterruptedException {
-        final var httpClient = mock(HttpClient.class);
+    void getProjectsTestWithErrors() throws IOException {
+        final var httpClient = mock(OkHttpClient.class);
+        final var call = mock(okhttp3.Call.class);
         final var uut = createClient(httpClient);
-        doThrow(new ConnectException("oops"), new InterruptedException("oops"))
-                .when(httpClient).send(any(), any());
+        when(httpClient.newCall(any(okhttp3.Request.class))).thenReturn(call);
+        doThrow(new ConnectException("oops"))
+                .when(call).execute();
 
         assertThatCode(() -> uut.getProjects())
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
-
-        assertThatCode(() -> uut.getProjects())
-                .hasMessage(Messages.ApiClient_Error_Canceled())
-                .hasCauseInstanceOf(InterruptedException.class);
-        assertThat(Thread.currentThread().isInterrupted()).as("current Thread isInterrupted").isTrue();
     }
 
     @Test
-    void lookupProjectTest() throws ApiClientException {
+    void lookupProjectTest(JenkinsRule r) throws ApiClientException {
         String projectName = "test-project";
         String projectVersion = "1.2.3";
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
                 .route(routes -> routes.get(ApiClient.PROJECT_LOOKUP_URL, (request, response) -> {
-            assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
-            assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
+            assertCommonHeaders(request);
             QueryStringDecoder query = new QueryStringDecoder(request.uri());
             assertThat(query.parameters())
                     .containsExactly(
@@ -230,30 +243,26 @@ class ApiClientTest {
     }
 
     @Test
-    void lookupProjectTestWithErrors() throws IOException, InterruptedException {
-        final var httpClient = mock(HttpClient.class);
+    void lookupProjectTestWithErrors() throws IOException {
+        final var httpClient = mock(OkHttpClient.class);
+        final var call = mock(okhttp3.Call.class);
         final var uut = createClient(httpClient);
-        doThrow(new ConnectException("oops"), new InterruptedException("oops"))
-                .when(httpClient).send(any(), any());
+        when(httpClient.newCall(any(okhttp3.Request.class))).thenReturn(call);
+        doThrow(new ConnectException("oops"))
+                .when(call).execute();
 
         assertThatCode(() -> uut.lookupProject("", ""))
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
-
-        assertThatCode(() -> uut.lookupProject("", ""))
-                .hasMessage(Messages.ApiClient_Error_Canceled())
-                .hasCauseInstanceOf(InterruptedException.class);
-        assertThat(Thread.currentThread().isInterrupted()).as("current Thread isInterrupted").isTrue();
     }
 
     @Test
-    void getFindingsTest() throws ApiClientException {
+    void getFindingsTest(JenkinsRule r) throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
                 .route(routes -> routes.get(ApiClient.PROJECT_FINDINGS_URL + "/{uuid}", (request, response) -> {
-            assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
-            assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
+            assertCommonHeaders(request);
             assertThat(request.param("uuid")).isNotEmpty();
             String uuid = request.param("uuid");
             switch (uuid) {
@@ -275,24 +284,21 @@ class ApiClientTest {
     }
 
     @Test
-    void getFindingsTestWithErrors() throws IOException, InterruptedException {
-        final var httpClient = mock(HttpClient.class);
+    void getFindingsTestWithErrors() throws IOException {
+        final var httpClient = mock(OkHttpClient.class);
+        final var call = mock(okhttp3.Call.class);
         final var uut = createClient(httpClient);
-        doThrow(new ConnectException("oops"), new InterruptedException("oops"))
-                .when(httpClient).send(any(), any());
+        when(httpClient.newCall(any(okhttp3.Request.class))).thenReturn(call);
+        doThrow(new ConnectException("oops"))
+                .when(call).execute();
 
         assertThatCode(() -> uut.getFindings("foo"))
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
-
-        assertThatCode(() -> uut.getFindings("foo"))
-                .hasMessage(Messages.ApiClient_Error_Canceled())
-                .hasCauseInstanceOf(InterruptedException.class);
-        assertThat(Thread.currentThread().isInterrupted()).as("current Thread isInterrupted").isTrue();
     }
 
     @Test
-    void uploadTestWithUuid(@TempDir Path tmp) throws IOException, InterruptedException {
+    void uploadTestWithUuid(@TempDir Path tmp, JenkinsRule r) throws IOException, InterruptedException {
         Path bom = tmp.resolve("bom.xml");
         Files.writeString(bom, "<test />", Charset.defaultCharset());
         final AtomicReference<String> requestBody = new AtomicReference<>();
@@ -301,10 +307,8 @@ class ApiClientTest {
                 .host("localhost")
                 .port(0)
                 .route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> {
-            assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
-            assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-            assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-            assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_LENGTH)).isTrue();
+            assertCommonHeaders(request);
+            assertPOSTHeaders(request);
             return response.sendString(
                     request.receive().asString(StandardCharsets.UTF_8)
                             .doOnNext(body -> requestBody.set(body))
@@ -327,7 +331,7 @@ class ApiClientTest {
     }
 
     @Test
-    void uploadTestWithName(@TempDir Path tmp) throws IOException, InterruptedException {
+    void uploadTestWithName(@TempDir Path tmp, JenkinsRule r) throws IOException, InterruptedException {
         Path bom = tmp.resolve("bom.xml");
         Files.writeString(bom, "<test />", Charset.defaultCharset());
         final AtomicReference<String> requestBody = new AtomicReference<>();
@@ -336,10 +340,8 @@ class ApiClientTest {
                 .host("localhost")
                 .port(0)
                 .route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> {
-            assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
-            assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-            assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-            assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_LENGTH)).isTrue();
+            assertCommonHeaders(request);
+            assertPOSTHeaders(request);
             return response.sendString(
                     request.receive().asString(StandardCharsets.UTF_8)
                             .doOnNext(body -> requestBody.set(body))
@@ -357,7 +359,7 @@ class ApiClientTest {
     }
 
     @Test
-    void uploadTestWithErrors(@TempDir Path tmp) throws IOException, InterruptedException {
+    void uploadTestWithErrors(@TempDir Path tmp, JenkinsRule r) throws IOException {
         ApiClient uut;
         File bom = tmp.resolve("bom.xml").toFile();
         bom.createNewFile();
@@ -394,13 +396,12 @@ class ApiClientTest {
     }
 
     @Test
-    void isTokenBeingProcessedTest() throws ApiClientException {
+    void isTokenBeingProcessedTest(JenkinsRule r) throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
                 .route(routes -> routes.get(ApiClient.BOM_TOKEN_URL + "/{uuid}", (request, response) -> {
-            assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
-            assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
+            assertCommonHeaders(request);
             assertThat(request.param("uuid")).isNotEmpty();
             String uuid = request.param("uuid");
             switch (uuid) {
@@ -423,24 +424,21 @@ class ApiClientTest {
     }
 
     @Test
-    void isTokenBeingProcessedTestWithErrors() throws IOException, InterruptedException {
-        final var httpClient = mock(HttpClient.class);
+    void isTokenBeingProcessedTestWithErrors() throws IOException {
+        final var httpClient = mock(OkHttpClient.class);
+        final var call = mock(okhttp3.Call.class);
         final var uut = createClient(httpClient);
-        doThrow(new ConnectException("oops"), new InterruptedException("oops"))
-                .when(httpClient).send(any(), any());
+        when(httpClient.newCall(any(okhttp3.Request.class))).thenReturn(call);
+        doThrow(new ConnectException("oops"))
+                .when(call).execute();
 
         assertThatCode(() -> uut.isTokenBeingProcessed("foo"))
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
-
-        assertThatCode(() -> uut.isTokenBeingProcessed("foo"))
-                .hasMessage(Messages.ApiClient_Error_Canceled())
-                .hasCauseInstanceOf(InterruptedException.class);
-        assertThat(Thread.currentThread().isInterrupted()).as("current Thread isInterrupted").isTrue();
     }
 
     @Test
-    void updateProjectPropertiesTest() throws ApiClientException, InterruptedException {
+    void updateProjectPropertiesTest(JenkinsRule r) throws ApiClientException, InterruptedException {
         final AtomicReference<String> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
@@ -448,10 +446,8 @@ class ApiClientTest {
                 .port(0)
                 .route(routes -> routes
                 .route(request -> request.uri().equals(ApiClient.PROJECT_URL + "/uuid-3") && request.method().equals(HttpMethod.PATCH), (request, response) -> {
-                    assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER, API_KEY, false)).isTrue();
-                    assertThat(request.requestHeaders().contains(HttpHeaderNames.ACCEPT, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-                    assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_TYPE, HttpHeaderValues.APPLICATION_JSON, true)).isTrue();
-                    assertThat(request.requestHeaders().contains(HttpHeaderNames.CONTENT_LENGTH)).isTrue();
+                    assertCommonHeaders(request);
+                    assertPOSTHeaders(request);
                     return response.sendString(
                             request.receive().asString(StandardCharsets.UTF_8)
                                     .doOnNext(body -> requestBody.set(body))
@@ -488,24 +484,21 @@ class ApiClientTest {
     }
 
     @Test
-    void updateProjectPropertiesTestWithErrorsOnUpdate() throws IOException, InterruptedException {
-        final var httpClient = mock(HttpClient.class);
+    void updateProjectPropertiesTestWithErrorsOnUpdate() throws IOException {
+        final var httpClient = mock(OkHttpClient.class);
+        final var call = mock(okhttp3.Call.class);
         final var uut = createClient(httpClient);
-        doThrow(new ConnectException("oops"), new InterruptedException("oops"))
-                .when(httpClient).send(any(), any());
+        when(httpClient.newCall(any(okhttp3.Request.class))).thenReturn(call);
+        doThrow(new ConnectException("oops"))
+                .when(call).execute();
 
         assertThatCode(() -> uut.updateProjectProperties("foo", new ProjectProperties()))
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
-
-        assertThatCode(() -> uut.updateProjectProperties("foo", new ProjectProperties()))
-                .hasMessage(Messages.ApiClient_Error_Canceled())
-                .hasCauseInstanceOf(InterruptedException.class);
-        assertThat(Thread.currentThread().isInterrupted()).as("current Thread isInterrupted").isTrue();
     }
 
     @Test
-    void getTeamPermissionsTest() throws ApiClientException {
+    void getTeamPermissionsTest(JenkinsRule r) throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
@@ -530,24 +523,21 @@ class ApiClientTest {
     }
 
     @Test
-    void getTeamPermissionsTestWithErrors() throws IOException, InterruptedException {
-        final var httpClient = mock(HttpClient.class);
+    void getTeamPermissionsTestWithErrors() throws IOException {
+        final var httpClient = mock(OkHttpClient.class);
+        final var call = mock(okhttp3.Call.class);
         final var uut = createClient(httpClient);
-        doThrow(new ConnectException("oops"), new InterruptedException("oops"))
-                .when(httpClient).send(any(), any());
+        when(httpClient.newCall(any(okhttp3.Request.class))).thenReturn(call);
+        doThrow(new ConnectException("oops"))
+                .when(call).execute();
 
         assertThatCode(() -> uut.getTeamPermissions())
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
-
-        assertThatCode(() -> uut.getTeamPermissions())
-                .hasMessage(Messages.ApiClient_Error_Canceled())
-                .hasCauseInstanceOf(InterruptedException.class);
-        assertThat(Thread.currentThread().isInterrupted()).as("current Thread isInterrupted").isTrue();
     }
 
     @Test
-    void testGetVersion() throws ApiClientException {
+    void testGetVersion(JenkinsRule r) throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
@@ -569,24 +559,21 @@ class ApiClientTest {
     }
 
     @Test
-    void testGetVersionWithErrors() throws IOException, InterruptedException {
-        final var httpClient = mock(HttpClient.class);
+    void testGetVersionWithErrors() throws IOException {
+        final var httpClient = mock(OkHttpClient.class);
+        final var call = mock(okhttp3.Call.class);
         final var uut = createClient(httpClient);
-        doThrow(new ConnectException("oops"), new InterruptedException("oops"))
-                .when(httpClient).send(any(), any());
+        when(httpClient.newCall(any(okhttp3.Request.class))).thenReturn(call);
+        doThrow(new ConnectException("oops"))
+                .when(call).execute();
 
         assertThatCode(() -> uut.getVersion())
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
-
-        assertThatCode(() -> uut.getVersion())
-                .hasMessage(Messages.ApiClient_Error_Canceled())
-                .hasCauseInstanceOf(InterruptedException.class);
-        assertThat(Thread.currentThread().isInterrupted()).as("current Thread isInterrupted").isTrue();
     }
 
     @Test
-    void testWithContextPath() {
+    void testWithContextPath(JenkinsRule r) {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
