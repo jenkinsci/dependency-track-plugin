@@ -61,6 +61,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -141,6 +142,7 @@ class ApiClientTest {
         assertThatCode(() -> uut.testConnection())
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
+        verify(httpClient, times(2)).newCall(any(okhttp3.Request.class));
     }
 
     @Test
@@ -209,6 +211,7 @@ class ApiClientTest {
         assertThatCode(() -> uut.getProjects())
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
+        verify(httpClient, times(2)).newCall(any(okhttp3.Request.class));
     }
 
     @Test
@@ -254,6 +257,7 @@ class ApiClientTest {
         assertThatCode(() -> uut.lookupProject("", ""))
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
+        verify(httpClient, times(2)).newCall(any(okhttp3.Request.class));
     }
 
     @Test
@@ -295,6 +299,7 @@ class ApiClientTest {
         assertThatCode(() -> uut.getFindings("foo"))
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
+        verify(httpClient, times(2)).newCall(any(okhttp3.Request.class));
     }
 
     @Test
@@ -435,6 +440,7 @@ class ApiClientTest {
         assertThatCode(() -> uut.isTokenBeingProcessed("foo"))
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
+        verify(httpClient, times(2)).newCall(any(okhttp3.Request.class));
     }
 
     @Test
@@ -495,6 +501,7 @@ class ApiClientTest {
         assertThatCode(() -> uut.updateProjectProperties("foo", new ProjectProperties()))
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
+        verify(httpClient, times(2)).newCall(any(okhttp3.Request.class));
     }
 
     @Test
@@ -534,6 +541,7 @@ class ApiClientTest {
         assertThatCode(() -> uut.getTeamPermissions())
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
+        verify(httpClient, times(2)).newCall(any(okhttp3.Request.class));
     }
 
     @Test
@@ -570,6 +578,7 @@ class ApiClientTest {
         assertThatCode(() -> uut.getVersion())
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
+        verify(httpClient, times(2)).newCall(any(okhttp3.Request.class));
     }
 
     @Test

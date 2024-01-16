@@ -40,6 +40,12 @@ import org.jenkinsci.plugins.DependencyTrack.model.Project;
 import org.jenkinsci.plugins.DependencyTrack.model.Team;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
 import org.springframework.http.HttpStatus;
+import org.springframework.retry.RetryPolicy;
+import org.springframework.retry.backoff.UniformRandomBackOffPolicy;
+import org.springframework.retry.policy.BinaryExceptionClassifierRetryPolicy;
+import org.springframework.retry.policy.CompositeRetryPolicy;
+import org.springframework.retry.policy.MaxAttemptsRetryPolicy;
+import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
@@ -105,59 +111,65 @@ public class ApiClient {
     @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification = "Returns a non-null value if this response was passed to Callback.onResponse or returned from Call.execute")
     public VersionNumber getVersion() throws ApiClientException {
         final var request = createRequest(URI.create(VERSION_URL));
-        try (var response = httpClient.newCall(request).execute()) {
-            final var body = response.body().string();
-            if (!response.isSuccessful()) {
-                final int status = response.code();
-                logger.log(body);
-                throw new ApiClientException(Messages.ApiClient_Error_Connection(status, HttpStatus.valueOf(status).getReasonPhrase()));
+        return executeWithRetry(() -> {
+            try (var response = httpClient.newCall(request).execute()) {
+                final var body = response.body().string();
+                if (!response.isSuccessful()) {
+                    final int status = response.code();
+                    logger.log(body);
+                    throw new ApiClientException(Messages.ApiClient_Error_Connection(status, HttpStatus.valueOf(status).getReasonPhrase()));
+                }
+                final var jsonObject = JSONObject.fromObject(body);
+                return new VersionNumber(jsonObject.getString("version"));
+            } catch (ApiClientException e) {
+                throw e;
+            } catch (IOException e) {
+                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
             }
-            final var jsonObject = JSONObject.fromObject(body);
-            return new VersionNumber(jsonObject.getString("version"));
-        } catch (ApiClientException e) {
-            throw e;
-        } catch (IOException e) {
-            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
-        }
+        });
     }
 
     @NonNull
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public String testConnection() throws ApiClientException {
         final var request = createRequest(URI.create(PROJECT_URL));
-        try (var response = httpClient.newCall(request).execute()) {
-            if (response.isSuccessful()) {
-                return StringUtils.trim(response.header("X-Powered-By", StringUtils.EMPTY));
-            } else {
-                final int status = response.code();
-                logger.log(response.body().string());
-                throw new ApiClientException(Messages.ApiClient_Error_Connection(status, HttpStatus.valueOf(status).getReasonPhrase()));
+        return executeWithRetry(() -> {
+            try (var response = httpClient.newCall(request).execute()) {
+                if (response.isSuccessful()) {
+                    return StringUtils.trim(response.header("X-Powered-By", StringUtils.EMPTY));
+                } else {
+                    final int status = response.code();
+                    logger.log(response.body().string());
+                    throw new ApiClientException(Messages.ApiClient_Error_Connection(status, HttpStatus.valueOf(status).getReasonPhrase()));
+                }
+            } catch (ApiClientException e) {
+                throw e;
+            } catch (IOException e) {
+                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
             }
-        } catch (ApiClientException e) {
-            throw e;
-        } catch (IOException e) {
-            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
-        }
+        });
     }
 
     @NonNull
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public Team getTeamPermissions() throws ApiClientException {
         final var request = createRequest(URI.create(TEAM_SELF_URL));
-        try (var response = httpClient.newCall(request).execute()) {
-            final var body = response.body().string();
-            if (!response.isSuccessful()) {
-                final int status = response.code();
-                logger.log(body);
-                throw new ApiClientException(Messages.ApiClient_Error_Connection(status, HttpStatus.valueOf(status).getReasonPhrase()));
+        return executeWithRetry(() -> {
+            try (var response = httpClient.newCall(request).execute()) {
+                final var body = response.body().string();
+                if (!response.isSuccessful()) {
+                    final int status = response.code();
+                    logger.log(body);
+                    throw new ApiClientException(Messages.ApiClient_Error_Connection(status, HttpStatus.valueOf(status).getReasonPhrase()));
+                }
+                final var jsonObject = JSONObject.fromObject(body);
+                return TeamParser.parse(jsonObject);
+            } catch (ApiClientException e) {
+                throw e;
+            } catch (IOException e) {
+                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
             }
-            final var jsonObject = JSONObject.fromObject(body);
-            return TeamParser.parse(jsonObject);
-        } catch (ApiClientException e) {
-            throw e;
-        } catch (IOException e) {
-            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
-        }
+        });
     }
 
     @NonNull
@@ -182,17 +194,19 @@ public class ApiClient {
                 .queryParam("page", "{page}")
                 .build(500, true, page);
         final var request = createRequest(uri);
-        try (var response = httpClient.newCall(request).execute()) {
-            if (response.isSuccessful()) {
-                return JSONArray.fromObject(response.body().string()).stream()
-                        .map(JSONObject.class::cast)
-                        .map(ProjectParser::parse)
-                        .collect(Collectors.toList());
+        return executeWithRetry(() -> {
+            try (var response = httpClient.newCall(request).execute()) {
+                if (response.isSuccessful()) {
+                    return JSONArray.fromObject(response.body().string()).stream()
+                            .map(JSONObject.class::cast)
+                            .map(ProjectParser::parse)
+                            .collect(Collectors.toList());
+                }
+                return List.of();
+            } catch (IOException e) {
+                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
             }
-        } catch (IOException e) {
-            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
-        }
-        return List.of();
+        });
     }
 
     @NonNull
@@ -203,27 +217,29 @@ public class ApiClient {
                 .queryParam(PROJECT_LOOKUP_VERSION_PARAM, "{version}")
                 .build(projectName, projectVersion);
         final var request = createRequest(uri);
-        try (var response = httpClient.newCall(request).execute()) {
-            final var body = response.body().string();
-            if (!response.isSuccessful()) {
-                final int status = response.code();
-                logger.log(body);
-                throw new ApiClientException(Messages.ApiClient_Error_ProjectLookup(projectName, projectVersion, status, HttpStatus.valueOf(status).getReasonPhrase()));
+        return executeWithRetry(() -> {
+            try (var response = httpClient.newCall(request).execute()) {
+                final var body = response.body().string();
+                if (!response.isSuccessful()) {
+                    final int status = response.code();
+                    logger.log(body);
+                    throw new ApiClientException(Messages.ApiClient_Error_ProjectLookup(projectName, projectVersion, status, HttpStatus.valueOf(status).getReasonPhrase()));
+                }
+                final var jsonObject = JSONObject.fromObject(body);
+                final var version = jsonObject.getString("version");
+                final var builder = Project.builder()
+                        .name(jsonObject.getString("name"))
+                        .uuid(jsonObject.getString("uuid"));
+                if (StringUtils.isNotBlank(version) && !"null".equalsIgnoreCase(version)) {
+                    builder.version(version);
+                }
+                return builder.build();
+            } catch (ApiClientException e) {
+                throw e;
+            } catch (IOException e) {
+                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
             }
-            final var jsonObject = JSONObject.fromObject(body);
-            final var version = jsonObject.getString("version");
-            final var builder = Project.builder()
-                    .name(jsonObject.getString("name"))
-                    .uuid(jsonObject.getString("uuid"));
-            if (StringUtils.isNotBlank(version) && !"null".equalsIgnoreCase(version)) {
-                builder.version(version);
-            }
-            return builder.build();
-        } catch (ApiClientException e) {
-            throw e;
-        } catch (IOException e) {
-            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
-        }
+        });
     }
 
     @NonNull
@@ -231,19 +247,21 @@ public class ApiClient {
     public List<Finding> getFindings(@NonNull final String projectUuid) throws ApiClientException {
         final var uri = UriComponentsBuilder.fromUriString(PROJECT_FINDINGS_URL).pathSegment("{uuid}").build(projectUuid);
         final var request = createRequest(uri);
-        try (var response = httpClient.newCall(request).execute()) {
-            final var body = response.body().string();
-            if (!response.isSuccessful()) {
-                final int status = response.code();
-                logger.log(body);
-                throw new ApiClientException(Messages.ApiClient_Error_RetrieveFindings(status, HttpStatus.valueOf(status).getReasonPhrase()));
+        return executeWithRetry(() -> {
+            try (var response = httpClient.newCall(request).execute()) {
+                final var body = response.body().string();
+                if (!response.isSuccessful()) {
+                    final int status = response.code();
+                    logger.log(body);
+                    throw new ApiClientException(Messages.ApiClient_Error_RetrieveFindings(status, HttpStatus.valueOf(status).getReasonPhrase()));
+                }
+                return FindingParser.parse(body);
+            } catch (ApiClientException e) {
+                throw e;
+            } catch (IOException e) {
+                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
             }
-            return FindingParser.parse(body);
-        } catch (ApiClientException e) {
-            throw e;
-        } catch (IOException e) {
-            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
-        }
+        });
     }
 
     @NonNull
@@ -268,34 +286,37 @@ public class ApiClient {
                     .element("autoCreate", autoCreateProject);
         }
         final var request = createRequest(URI.create(BOM_URL), "PUT", RequestBody.create(jsonObject.toString(), okhttp3.MediaType.parse(APPLICATION_JSON_VALUE)));
-        try (var response = httpClient.newCall(request).execute()) {
-            final var body = response.body().string();
-            final int status = response.code();
-            // Checks the server response
-            switch (status) {
-                case HTTP_OK:
-                    if (StringUtils.isNotBlank(body)) {
-                        final var json = JSONObject.fromObject(body);
-                        return new UploadResult(true, StringUtils.trimToNull(json.getString("token")));
-                    } else {
-                        return new UploadResult(true);
-                    }
-                case HTTP_BAD_REQUEST:
-                    logger.log(Messages.Builder_Payload_Invalid());
-                    break;
-                case HTTP_UNAUTHORIZED:
-                    logger.log(Messages.Builder_Unauthorized());
-                    break;
-                case HTTP_NOT_FOUND:
-                    logger.log(Messages.Builder_Project_NotFound());
-                    break;
-                default:
-                    logger.log(Messages.ApiClient_Error_Connection(status, HttpStatus.valueOf(status).getReasonPhrase()));
-                    break;
+        return executeWithRetry(() -> {
+            try (var response = httpClient.newCall(request).execute()) {
+                final var body = response.body().string();
+                final int status = response.code();
+                // Checks the server response
+                switch (status) {
+                    case HTTP_OK:
+                        if (StringUtils.isNotBlank(body)) {
+                            final var json = JSONObject.fromObject(body);
+                            return new UploadResult(true, StringUtils.trimToNull(json.getString("token")));
+                        } else {
+                            return new UploadResult(true);
+                        }
+                    case HTTP_BAD_REQUEST:
+                        logger.log(Messages.Builder_Payload_Invalid());
+                        break;
+                    case HTTP_UNAUTHORIZED:
+                        logger.log(Messages.Builder_Unauthorized());
+                        break;
+                    case HTTP_NOT_FOUND:
+                        logger.log(Messages.Builder_Project_NotFound());
+                        break;
+                    default:
+                        logger.log(Messages.ApiClient_Error_Connection(status, HttpStatus.valueOf(status).getReasonPhrase()));
+                        break;
+                }
+                logger.log(body);
+                return new UploadResult(false);
             }
-            logger.log(body);
-            return new UploadResult(false);
-        }
+        });
+
     }
 
     public void updateProjectProperties(@NonNull final String projectUuid, @NonNull final ProjectProperties properties) throws ApiClientException {
@@ -327,38 +348,43 @@ public class ApiClient {
     private void updateProject(@NonNull final String projectUuid, @NonNull final JSONObject project) throws ApiClientException {
         final var uri = UriComponentsBuilder.fromUriString(PROJECT_URL).pathSegment("{uuid}").build(projectUuid);
         final var request = createRequest(uri, "PATCH", RequestBody.create(project.toString(), okhttp3.MediaType.parse(APPLICATION_JSON_VALUE)));
-        try (var response = httpClient.newCall(request).execute()) {
-            final var body = response.body().string();
-            if (!response.isSuccessful()) {
-                final int status = response.code();
-                logger.log(body);
-                throw new ApiClientException(Messages.ApiClient_Error_ProjectUpdate(projectUuid, status, HttpStatus.valueOf(status).getReasonPhrase()));
+        executeWithRetry(() -> {
+            try (var response = httpClient.newCall(request).execute()) {
+                if (!response.isSuccessful()) {
+                    final var body = response.body().string();
+                    final int status = response.code();
+                    logger.log(body);
+                    throw new ApiClientException(Messages.ApiClient_Error_ProjectUpdate(projectUuid, status, HttpStatus.valueOf(status).getReasonPhrase()));
+                }
+                return null;
+            } catch (ApiClientException e) {
+                throw e;
+            } catch (IOException e) {
+                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
             }
-        } catch (ApiClientException e) {
-            throw e;
-        } catch (IOException e) {
-            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
-        }
+        });
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public boolean isTokenBeingProcessed(@NonNull final String token) throws ApiClientException {
         final var uri = UriComponentsBuilder.fromUriString(BOM_TOKEN_URL).pathSegment("{token}").build(token);
         final var request = createRequest(uri);
-        try (var response = httpClient.newCall(request).execute()) {
-            final var body = response.body().string();
-            if (!response.isSuccessful()) {
-                final int status = response.code();
-                logger.log(body);
-                throw new ApiClientException(Messages.ApiClient_Error_TokenProcessing(status, HttpStatus.valueOf(status).getReasonPhrase()));
+        return executeWithRetry(() -> {
+            try (var response = httpClient.newCall(request).execute()) {
+                final var body = response.body().string();
+                if (!response.isSuccessful()) {
+                    final int status = response.code();
+                    logger.log(body);
+                    throw new ApiClientException(Messages.ApiClient_Error_TokenProcessing(status, HttpStatus.valueOf(status).getReasonPhrase()));
+                }
+                final var jsonObject = JSONObject.fromObject(body);
+                return jsonObject.getBoolean("processing");
+            } catch (ApiClientException e) {
+                throw e;
+            } catch (IOException e) {
+                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
             }
-            final var jsonObject = JSONObject.fromObject(body);
-            return jsonObject.getBoolean("processing");
-        } catch (ApiClientException e) {
-            throw e;
-        } catch (IOException e) {
-            throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
-        }
+        });
     }
 
     private Request createRequest(final URI uri) {
@@ -372,5 +398,25 @@ public class ApiClient {
                 .addHeader(ACCEPT, APPLICATION_JSON_VALUE)
                 .method(method, bodyPublisher)
                 .build();
+    }
+
+    private <T, E extends IOException> T executeWithRetry(RetryAction<T, E> action) throws E {
+        final var exceptionClassifier = new ApiClientExceptionClassifier();
+        final var retryPolicy = new CompositeRetryPolicy();
+        final var backOffPolicy = new UniformRandomBackOffPolicy();
+        final var template = new RetryTemplate();
+
+        backOffPolicy.setMinBackOffPeriod(50);
+        backOffPolicy.setMaxBackOffPeriod(500);
+        retryPolicy.setPolicies(new RetryPolicy[]{new MaxAttemptsRetryPolicy(2), new BinaryExceptionClassifierRetryPolicy(exceptionClassifier)});
+        template.setBackOffPolicy(backOffPolicy);
+        template.setRetryPolicy(retryPolicy);
+
+        return template.execute(ctx -> action.doWithRetry());
+    }
+
+    private interface RetryAction<T, E extends IOException> {
+
+        T doWithRetry() throws E;
     }
 }
