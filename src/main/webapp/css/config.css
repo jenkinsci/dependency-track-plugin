@@ -1,7 +1,7 @@
 [descriptorid="org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher"] .dependency-track.multi-line-input-row {
     display: grid;
     grid-template-rows: auto;
-    grid-template-columns: auto auto auto auto;
+    grid-template-columns: auto auto auto auto auto;
     grid-column-gap: .5em;
 }
 [descriptorid="org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher"] fieldset.dependency-track {

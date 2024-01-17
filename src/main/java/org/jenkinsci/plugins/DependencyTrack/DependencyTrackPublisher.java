@@ -154,6 +154,11 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     private Integer unstableTotalLow;
 
     /**
+     * Threshold level for total number of unassigned findings for job status UNSTABLE
+     */
+    private Integer unstableTotalUnassigned;
+
+    /**
      * Threshold level for total number of critical findings for job status
      * FAILED
      */
@@ -173,6 +178,11 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      * Threshold level for total number of low findings for job status FAILED
      */
     private Integer failedTotalLow;
+
+    /**
+     * Threshold level for total number of unassigned findings for job status FAILED
+     */
+    private Integer failedTotalUnassigned;
 
     /**
      * Threshold level for number of new critical findings for job status
@@ -196,6 +206,11 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     private Integer unstableNewLow;
 
     /**
+     * Threshold level for number of new unassigned findings for job status UNSTABLE
+     */
+    private Integer unstableNewUnassigned;
+
+    /**
      * Threshold level for number of new critical findings for job status FAILED
      */
     private Integer failedNewCritical;
@@ -214,6 +229,11 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      * Threshold level for number of new low findings for job status FAILED
      */
     private Integer failedNewLow;
+
+    /**
+     * Threshold level for number of new unassigned findings for job status FAILED
+     */
+    private Integer failedNewUnassigned;
 
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
@@ -516,19 +536,23 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         thresholds.totalFindings.unstableHigh = unstableTotalHigh;
         thresholds.totalFindings.unstableMedium = unstableTotalMedium;
         thresholds.totalFindings.unstableLow = unstableTotalLow;
+        thresholds.totalFindings.unstableUnassigned = unstableTotalUnassigned;
         thresholds.totalFindings.failedCritical = failedTotalCritical;
         thresholds.totalFindings.failedHigh = failedTotalHigh;
         thresholds.totalFindings.failedMedium = failedTotalMedium;
         thresholds.totalFindings.failedLow = failedTotalLow;
+        thresholds.totalFindings.failedUnassigned = failedTotalUnassigned;
 
         thresholds.newFindings.unstableCritical = unstableNewCritical;
         thresholds.newFindings.unstableHigh = unstableNewHigh;
         thresholds.newFindings.unstableMedium = unstableNewMedium;
         thresholds.newFindings.unstableLow = unstableNewLow;
+        thresholds.newFindings.unstableUnassigned = unstableNewUnassigned;
         thresholds.newFindings.failedCritical = failedNewCritical;
         thresholds.newFindings.failedHigh = failedNewHigh;
         thresholds.newFindings.failedMedium = failedNewMedium;
         thresholds.newFindings.failedLow = failedNewLow;
+        thresholds.newFindings.failedUnassigned = failedNewUnassigned;
         return thresholds;
     }
     
