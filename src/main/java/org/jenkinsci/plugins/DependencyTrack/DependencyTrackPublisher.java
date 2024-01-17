@@ -340,13 +340,17 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         final SeverityDistribution previousSeverityDistribution = Optional.ofNullable(getPreviousBuildWithAnalysisResult(build))
                 .map(previousBuild -> previousBuild.getAction(ResultAction.class))
                 .map(ResultAction::getSeverityDistribution)
-                .orElseGet(() -> new SeverityDistribution(0));
+                .orElse(null);
 
         evaluateRiskGates(build, logger, severityDistribution, previousSeverityDistribution);
     }
 
     private void evaluateRiskGates(final Run<?, ?> build, final ConsoleLogger logger, final SeverityDistribution currentDistribution, final SeverityDistribution previousDistribution) throws AbortException {
-        logger.log(Messages.Builder_Threshold_ComparingTo(previousDistribution.getBuildNumber()));
+        if (previousDistribution != null) {
+            logger.log(Messages.Builder_Threshold_ComparingTo(previousDistribution.getBuildNumber()));
+        } else {
+            logger.log(Messages.Builder_Threshold_NoComparison());
+        }
         final RiskGate riskGate = new RiskGate(getThresholds());
         final Result result = riskGate.evaluate(currentDistribution, previousDistribution);
         if (result.isWorseOrEqualTo(Result.UNSTABLE) && result.isCompleteBuild()) {
