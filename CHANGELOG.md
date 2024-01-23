@@ -2,17 +2,23 @@
 
 ## Unreleased
 ### ⚠ Breaking
-### ⭐ New Features
-### 🐞 Bugs Fixed
-
-## 5.0.0 - Unreleased
-### ⚠ Breaking
-- require Jenkins 2.375.2 or newer
+- require Jenkins 2.414.1 or newer
 - require Java 11 or newer ([required since Jenkins 2.361.1](https://www.jenkins.io/blog/2022/06/28/require-java-11/))
-- require Dependency-Track 4.7 or newer
+- require Dependency-Track 4.9 or newer
+- New findings are only evaluated from the second build onwards ([#113](https://github.com/jenkinsci/dependency-track-plugin/issues/113))
 
 ### ⭐ New Features
+- Allow `overrideGlobals` to override global timeout and interval settings ([#182](https://github.com/jenkinsci/dependency-track-plugin/issues/182))
+- Use the proxy that is configured in Jenkins ([#181](https://github.com/jenkinsci/dependency-track-plugin/issues/181))
+- Support threshold for unassigned findings ([#158](https://github.com/jenkinsci/dependency-track-plugin/issues/158))
+
 ### 🐞 Bugs Fixed
+
+## v4.3.1 - 2022-04-12
+### ⚠ Breaking
+### ⭐ New Features
+### 🐞 Bugs Fixed
+- Remove usages of `l:css` ([#160](https://github.com/jenkinsci/dependency-track-plugin/issues/160))
 
 ## v4.3.0 - 2022-02-20
 ### ⚠ Breaking

@@ -143,7 +143,7 @@ class DescriptorImplTest {
 
             assertThat(uut.doTestConnectionGlobal("http:///url.tld", credentialsid, false, null))
                     .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
-                    .hasMessage(Messages.Publisher_ConnectionTest_VersionWarning("3.8.0", "4.7.0"))
+                    .hasMessage(Messages.Publisher_ConnectionTest_VersionWarning("3.8.0", "4.9.0"))
                     .hasNoCause();
 
             assertThat(uut.doTestConnectionGlobal("http:///url.tld/", credentialsid, false, null))
@@ -196,8 +196,8 @@ class DescriptorImplTest {
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
         };
-        when(client.testConnection()).thenReturn("Dependency-Track v4.7.0");
-        when(client.getVersion()).thenReturn(new VersionNumber("4.7.0"));
+        when(client.testConnection()).thenReturn("Dependency-Track v4.9.0");
+        when(client.getVersion()).thenReturn(new VersionNumber("4.9.0"));
         when(client.getTeamPermissions()).thenReturn(Team.builder().name("my-team").permissions(requiredPermissions).build());
         try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
             CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
@@ -226,9 +226,9 @@ class DescriptorImplTest {
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
         };
-        final var poweredBy = "Dependency-Track v4.7.0";
+        final var poweredBy = "Dependency-Track v4.9.0";
         when(client.testConnection()).thenReturn(poweredBy);
-        when(client.getVersion()).thenReturn(new VersionNumber("4.7.0"));
+        when(client.getVersion()).thenReturn(new VersionNumber("4.9.0"));
         when(client.getTeamPermissions()).thenReturn(team);
         try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
             CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
@@ -245,7 +245,7 @@ class DescriptorImplTest {
                     .contains(Messages.Publisher_PermissionTest_Okay(VULNERABILITY_ANALYSIS))
                     .contains(Messages.Publisher_PermissionTest_Okay(PROJECT_CREATION_UPLOAD))
                     .contains(Messages.Publisher_PermissionTest_Optional(PORTFOLIO_MANAGEMENT))
-                    .contains(team.getPermissions().toArray(new String[0]));
+                    .contains(team.getPermissions().toArray(String[]::new));
         }
     }
 
@@ -265,9 +265,9 @@ class DescriptorImplTest {
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
         };
-        final var poweredBy = "Dependency-Track v4.7.0";
+        final var poweredBy = "Dependency-Track v4.9.0";
         when(client.testConnection()).thenReturn(poweredBy);
-        when(client.getVersion()).thenReturn(new VersionNumber("4.7.0"));
+        when(client.getVersion()).thenReturn(new VersionNumber("4.9.0"));
         when(client.getTeamPermissions()).thenReturn(team);
         try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
             CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
@@ -286,7 +286,7 @@ class DescriptorImplTest {
                     .contains(Messages.Publisher_PermissionTest_Missing(PORTFOLIO_MANAGEMENT))
                     .contains(Messages.Publisher_PermissionTest_Missing(VIEW_VULNERABILITY))
                     .contains(Messages.Publisher_PermissionTest_Optional(VIEW_POLICY_VIOLATION))
-                .contains(team.getPermissions().toArray(new String[0]));
+                    .contains(team.getPermissions().toArray(String[]::new));
         }
     }
 
@@ -305,9 +305,9 @@ class DescriptorImplTest {
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
         };
-        final var poweredBy = "Dependency-Track v4.7.0";
+        final var poweredBy = "Dependency-Track v4.9.0";
         when(client.testConnection()).thenReturn(poweredBy);
-        when(client.getVersion()).thenReturn(new VersionNumber("4.7.0"));
+        when(client.getVersion()).thenReturn(new VersionNumber("4.9.0"));
         when(client.getTeamPermissions()).thenReturn(team);
         try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
             CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
@@ -324,7 +324,7 @@ class DescriptorImplTest {
                     .contains(Messages.Publisher_PermissionTest_Okay(VULNERABILITY_ANALYSIS))
                     .contains(Messages.Publisher_PermissionTest_Okay(PROJECT_CREATION_UPLOAD))
                     .contains(Messages.Publisher_PermissionTest_Warning("DUMMY_PERM"))
-                    .contains(team.getPermissions().toArray(new String[0]));
+                    .contains(team.getPermissions().toArray(String[]::new));
         }
     }
 

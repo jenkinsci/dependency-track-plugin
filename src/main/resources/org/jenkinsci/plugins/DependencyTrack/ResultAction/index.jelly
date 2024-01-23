@@ -23,8 +23,8 @@
 
         <l:main-panel>
             <h1>${%page.title(it.displayName, it.run.parent.displayName, it.run.displayName)}</h1>
-            <div class="alert alert-warning" role="alert">
-                ${%page.globalwarning.1} <j:if test="${it.dependencyTrackUrl != null and !it.dependencyTrackUrl.isEmpty()}">${%page.globalwarning.2(it.dependencyTrackUrl + '/project/?uuid=' + it.projectId, 'alert-link')}</j:if>
+            <div class="alert alert-warning dt-warning" role="alert">
+                ${%page.globalwarning.1} <j:if test="${it.dependencyTrackUrl != null and !it.dependencyTrackUrl.isEmpty()}">${%page.globalwarning.2(it.dependencyTrackUrl + '/projects/' + it.projectId, 'alert-link')}</j:if>
             </div>
 
             <!-- TODO copy this for policy violations + do more -->
@@ -55,6 +55,7 @@
                                     <b-form-checkbox value="component.group">${%filter.value.group}</b-form-checkbox>
                                     <b-form-checkbox value="vulnerability.vulnId">${%filter.value.vuln}</b-form-checkbox>
                                     <b-form-checkbox value="vulnerability.severityRank">${%filter.value.severity}</b-form-checkbox>
+                                    <b-form-checkbox value="vulnerability.aliases">${%filter.value.aliases}</b-form-checkbox>
                                     <b-form-checkbox value="vulnerability.cweId">${%filter.value.cwe}</b-form-checkbox>
                                 </b-form-checkbox-group>
                                 </b-form-group>
@@ -100,7 +101,11 @@
                     <a v-if="data.item.vulnerability.source === 'NVD'" :href="'https://nvd.nist.gov/vuln/detail/'+data.value" title="${%link.title('NVD')}" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
                     <a v-else-if="data.item.vulnerability.source === 'OSSINDEX'" :href="'https://ossindex.sonatype.org/vuln/'+data.value" title="${%link.title('Sonatype OSS INDEX')}" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
                     <a v-else-if="data.item.vulnerability.source === 'NPM'" :href="'https://www.npmjs.com/advisories/'+data.value" title="${%link.title('npm')}" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
-                    <a v-else-if="data.item.vulnerability.source === 'GITHUB'" :href="'https://github.com/advisories/'+data.value" title="${%link.title('GitHub')}" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
+                    <a v-else-if="data.item.vulnerability.source === 'GITHUB'" :href="'https://github.com/advisories/'+data.value" title="${%link.title('GitHub Advisories')}" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
+                    <a v-else-if="data.item.vulnerability.source === 'VULNDB'" :href="'https://vulndb.cyberriskanalytics.com/vulnerabilities/'+data.value" title="${%link.title('VulnDB')}" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
+                    <a v-else-if="data.item.vulnerability.source === 'SNYK'" :href="'https://security.snyk.io/vuln/'+data.value" title="${%link.title('Snyk')}" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
+                    <a v-else-if="data.item.vulnerability.source === 'OSV'" :href="'https://osv.dev/vulnerability/'+data.value" title="${%link.title('Open Source Vulnerabilities')}" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
+                    <a v-else-if="data.item.vulnerability.source === 'GSD'" :href="'https://gsd.id/'+data.value" title="${%link.title('Global Security Database')}" class="font-weight-normal" rel="noopener noreferrer" referrerpolicy="no-referrer">{{data.value}}</a>
                     <template v-else="v-else">{{data.value}}</template>
                 </j:whitespace></template>
                 <template slot="cell(vulnerability.severityRank)" slot-scope="data"><j:whitespace>
@@ -131,6 +136,9 @@
                         <b-card-text v-if="row.item.vulnerability.recommendation">{{ row.item.vulnerability.recommendation }}</b-card-text>
                         <b-card-footer v-if="row.item.analysis.state"><b>${%analysis.state.title}:</b> {{ row.item.analysis.state }}</b-card-footer>
                     </b-card>
+                </template>
+                <template slot="cell(vulnerability.aliases)" slot-scope="data" v-if="data.value?.length">
+                    <ul class="list-unstyled"><li v-for="alias in data.value">{{alias}}</li></ul>
                 </template>
             </b-table>
             <b-pagination

@@ -18,6 +18,7 @@ package org.jenkinsci.plugins.DependencyTrack;
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.FilePath;
+import hudson.ProxyConfiguration;
 import hudson.util.VersionNumber;
 import java.io.IOException;
 import java.net.URI;
@@ -90,7 +91,7 @@ public class ApiClient {
      * @param readTimeout the read-timeout in seconds for every call to DT
      */
     public ApiClient(@NonNull final String baseUrl, @NonNull final String apiKey, @NonNull final ConsoleLogger logger, final int connectionTimeout, final int readTimeout) {
-        this(baseUrl, apiKey, logger, readTimeout, () -> HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(connectionTimeout)).build());
+        this(baseUrl, apiKey, logger, readTimeout, () -> ProxyConfiguration.newHttpClientBuilder().connectTimeout(Duration.ofSeconds(connectionTimeout)).build());
     }
 
     ApiClient(@NonNull final String baseUrl, @NonNull final String apiKey, @NonNull final ConsoleLogger logger, final int readTimeout, @NonNull final HttpClientFactory factory) {

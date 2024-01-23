@@ -36,10 +36,12 @@ public class Thresholds implements Serializable {
         public Integer unstableHigh;
         public Integer unstableMedium;
         public Integer unstableLow;
+        public Integer unstableUnassigned;
         public Integer failedCritical;
         public Integer failedHigh;
         public Integer failedMedium;
         public Integer failedLow;
+        public Integer failedUnassigned;
     }
 
     @EqualsAndHashCode
@@ -50,10 +52,12 @@ public class Thresholds implements Serializable {
         public Integer unstableHigh;
         public Integer unstableMedium;
         public Integer unstableLow;
+        public Integer unstableUnassigned;
         public Integer failedCritical;
         public Integer failedHigh;
         public Integer failedMedium;
         public Integer failedLow;
+        public Integer failedUnassigned;
     }
 
     @EqualsAndHashCode

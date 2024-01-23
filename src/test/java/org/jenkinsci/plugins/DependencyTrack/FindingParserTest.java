@@ -17,6 +17,7 @@ package org.jenkinsci.plugins.DependencyTrack;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import org.assertj.core.util.Files;
 import org.jenkinsci.plugins.DependencyTrack.model.Analysis;
 import org.jenkinsci.plugins.DependencyTrack.model.Component;
@@ -38,10 +39,21 @@ class FindingParserTest {
         assertThat(FindingParser.parse("[]")).isEmpty();
 
         File findings = new File("src/test/resources/findings.json");
-        Component c1 = Component.of("uuid-1", "name-1", "group-1", "version-1", "purl-1");
-        Vulnerability v1 = new Vulnerability("uuid-1", "source-1", "vulnId-1", "title-1", "subtitle-1", "description-1", "recommendation-1", Severity.CRITICAL, 1, 2, "cweName-1");
+
+        Component c1 = new Component("uuid-1", "name-1", "group-1", "version-1", "purl-1");
+        var aliases1 = List.of("GHSA-abcd-abcd-abcd", "FOO-12345");
+        var v1 = new Vulnerability("uuid-1", "NVD", "vulnId-1", "title-1", "subtitle-1", "description-1", "recommendation-1", Severity.CRITICAL, 1, 2, "cweName-1", aliases1);
         Analysis a1 = new Analysis("state-1", false);
         Finding f1 = new Finding(c1, v1, a1, "matrix-1");
-        assertThat(FindingParser.parse(Files.contentOf(findings, StandardCharsets.UTF_8))).containsExactly(f1);
+
+        var c2 = new Component("uuid-2", "name-2", "group-2", "version-2", "purl-2");
+        var v2 = new Vulnerability("uuid-2", "GITHUB", "GHSA-abcd-abcd-abcd", "title-1", "subtitle-1", "description-1", "recommendation-1", Severity.CRITICAL, 1, 2, "cweName-1", null);
+        var f2 = new Finding(c2, v2, a1, "matrix-3");
+
+        var c3 = new Component("uuid-3", "name-3", "group-3", "version-3", "purl-3");
+        var v3 = new Vulnerability("uuid-3", "FOO", "FOO-78945", "title-3", "subtitle-3", "description-3", "recommendation-3", Severity.CRITICAL, 1, 2, "cweName-1", null);
+        var f3 = new Finding(c3, v3, a1, "matrix-4");
+
+        assertThat(FindingParser.parse(Files.contentOf(findings, StandardCharsets.UTF_8))).containsExactly(f1, f2, f3);
     }
 }
