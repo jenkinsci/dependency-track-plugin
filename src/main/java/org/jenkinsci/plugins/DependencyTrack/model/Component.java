@@ -15,13 +15,13 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.model;
 
-import java.io.Serializable;
-
 import lombok.EqualsAndHashCode;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
-@AllArgsConstructor(staticName = "of")
+import java.io.Serializable;
+
+@RequiredArgsConstructor
 @Value
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 public class Component implements Serializable {

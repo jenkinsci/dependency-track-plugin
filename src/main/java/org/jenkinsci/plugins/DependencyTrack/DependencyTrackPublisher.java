@@ -469,12 +469,8 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
                                  final SeverityDistribution previousDistribution,
                                  final ViolationDistribution currentViolationDistribution,
                                  final ViolationDistribution previousViolationDistribution) throws AbortException {
-      if (previousDistribution != null) {
-        logger.log(Messages.Builder_Threshold_ComparingTo(previousDistribution.getBuildNumber()));
-      } else {
-        logger.log(Messages.Builder_Threshold_NoComparison());
-      }
-        final RiskGate riskGate = new RiskGate(getThresholds());
+      logger.log(Messages.Builder_Threshold_ComparingTo(previousDistribution.getBuildNumber()));
+      final RiskGate riskGate = new RiskGate(getThresholds());
       final Result result =
               riskGate
                       .evaluate(
