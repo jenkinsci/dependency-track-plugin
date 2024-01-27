@@ -332,6 +332,7 @@ class ApiClientTest {
         assertThat(uut.upload(null, "p1", "v1", fileWithError, true)).isEqualTo(new UploadResult(false));
         String expectedBody = "{\"bom\":\"PHRlc3QgLz4=\",\"project\":\"uuid-1\"}";
         completionSignal.await(5, TimeUnit.SECONDS);
+        assertThat(completionSignal.getCount()).isZero();
         assertThat(requestBody.get()).isEqualTo(expectedBody);
     }
 
@@ -360,6 +361,7 @@ class ApiClientTest {
         assertThat(uut.upload(null, "p1", "v1", new FilePath(bom.toFile()), false)).isEqualTo(new UploadResult(true));
         String expectedBody = "{\"bom\":\"PHRlc3QgLz4=\",\"projectName\":\"p1\",\"projectVersion\":\"v1\",\"autoCreate\":false}";
         completionSignal.await(5, TimeUnit.SECONDS);
+        assertThat(completionSignal.getCount()).isZero();
         assertThat(requestBody.get()).isEqualTo(expectedBody);
     }
 
@@ -474,6 +476,7 @@ class ApiClientTest {
 
         assertThatCode(() -> uut.updateProjectProperties("uuid-3", props)).doesNotThrowAnyException();
         completionSignal.await(5, TimeUnit.SECONDS);
+        assertThat(completionSignal.getCount()).isZero();
         final JSONObject updatedProject = JSONObject.fromObject(requestBody.get());
         final Project project = ProjectParser.parse(updatedProject);
         assertThat(project.getTags()).containsExactlyInAnyOrderElementsOf(props.getTags());
@@ -487,6 +490,27 @@ class ApiClientTest {
                 .hasMessage(Messages.ApiClient_Error_ProjectUpdate("uuid-unknown", HttpResponseStatus.NOT_FOUND.code(), HttpResponseStatus.NOT_FOUND.reasonPhrase()))
                 .hasNoCause();
         verify(logger).log("");
+    }
+
+    @Test
+    void updateProjectPropertiesTestWithStatus304(JenkinsRule r) throws ApiClientException, InterruptedException {
+        final CountDownLatch completionSignal = new CountDownLatch(1);
+        server = HttpServer.create()
+                .host("localhost")
+                .port(0)
+                .route(routes -> routes
+                .route(request -> request.uri().equals(ApiClient.PROJECT_URL + "/uuid-3") && request.method().equals(HttpMethod.PATCH), (request, response) -> {
+                    completionSignal.countDown();
+                    return response.status(HttpResponseStatus.NOT_MODIFIED).send();
+                })
+                )
+                .bindNow();
+
+        ApiClient uut = createClient();
+
+        assertThatCode(() -> uut.updateProjectProperties("uuid-3", new ProjectProperties())).doesNotThrowAnyException();
+        completionSignal.await(5, TimeUnit.SECONDS);
+        assertThat(completionSignal.getCount()).isZero();
     }
 
     @Test

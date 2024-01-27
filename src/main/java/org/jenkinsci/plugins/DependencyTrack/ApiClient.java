@@ -350,7 +350,7 @@ public class ApiClient {
         final var request = createRequest(uri, "PATCH", RequestBody.create(project.toString(), okhttp3.MediaType.parse(APPLICATION_JSON_VALUE)));
         executeWithRetry(() -> {
             try (var response = httpClient.newCall(request).execute()) {
-                if (!response.isSuccessful()) {
+                if (!response.isSuccessful() && response.code() != HttpStatus.NOT_MODIFIED.value()) {
                     final var body = response.body().string();
                     final int status = response.code();
                     logger.log(body);
