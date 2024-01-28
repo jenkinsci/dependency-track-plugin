@@ -11,6 +11,8 @@
 - Allow `overrideGlobals` to override global timeout and interval settings ([#182](https://github.com/jenkinsci/dependency-track-plugin/issues/182))
 - Use the proxy that is configured in Jenkins ([#181](https://github.com/jenkinsci/dependency-track-plugin/issues/181))
 - Support threshold for unassigned findings ([#158](https://github.com/jenkinsci/dependency-track-plugin/issues/158))
+- Supports HTTP/2
+- In the event of an unexpected exception, each call to Dependency-Track is retried within an uniformly distributed, randomly generated period in the range of 50-500ms.
 
 ### 🐞 Bugs Fixed
 

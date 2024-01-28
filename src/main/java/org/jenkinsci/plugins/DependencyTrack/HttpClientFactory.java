@@ -15,7 +15,7 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
-import java.net.http.HttpClient;
+import okhttp3.OkHttpClient;
 
 /**
  *
@@ -24,5 +24,5 @@ import java.net.http.HttpClient;
 @FunctionalInterface
 interface HttpClientFactory {
 
-    HttpClient create();
+    OkHttpClient create();
 }
