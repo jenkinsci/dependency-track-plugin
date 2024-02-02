@@ -15,7 +15,10 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import net.sf.json.JSONArray;
@@ -37,7 +40,13 @@ class FindingParser
         return jsonArray.stream()
                 .map(JSONObject.class::cast)
                 .map(FindingParser::parseFinding)
-                .collect(Collectors.toList());
+                .collect(ArrayList<Finding>::new, (findings, finding) -> {
+                    // filter duplicates based on aliases
+                    // add if is not already included and if it is not an alias of an already present finding/vulnerability
+                    if (!findings.contains(finding) && findings.stream().noneMatch(finding::isAliasOf)) {
+                        findings.add(finding);
+                    }
+                }, List::addAll);
     }
 
     private Finding parseFinding(JSONObject json) {
@@ -56,11 +65,13 @@ class FindingParser
         final String subtitle = getKeyOrNull(json, "subtitle");
         final String description = getKeyOrNull(json, "description");
         final String recommendation = getKeyOrNull(json, "recommendation");
-        final Severity severity = Severity.valueOf(json.optString("severity"));
+        final Severity severity = json.has("severity") ? Severity.valueOf(json.getString("severity")) : null;
         final Integer severityRank = json.optInt("severityRank");
-        final Integer cweId = json.optInt("cweId");
-        final String cweName = getKeyOrNull(json, "cweName");
-        return new Vulnerability(uuid, source, vulnId, title, subtitle, description, recommendation, severity, severityRank, cweId, cweName);
+        final var cwe = Optional.ofNullable(json.optJSONArray("cwes")).map(a -> a.optJSONObject(0)).filter(Predicate.not(JSONNull.class::isInstance));
+        final Integer cweId = cwe.map(o -> o.optInt("cweId")).orElse(null);
+        final String cweName = cwe.map(o -> getKeyOrNull(o, "name")).orElse(null);
+        final var aliases = parseAliases(json, vulnId);
+        return new Vulnerability(uuid, source, vulnId, title, subtitle, description, recommendation, severity, severityRank, cweId, cweName, aliases);
     }
 
     private Analysis parseAnalysis(JSONObject json) {
@@ -69,13 +80,26 @@ class FindingParser
         return new Analysis(state, isSuppressed);
     }
 
+    private List<String> parseAliases(JSONObject json, String vulnId) {
+        final var aliases = json.optJSONArray("aliases");
+        return aliases != null ? aliases.stream()
+                .map(JSONObject.class::cast)
+                .flatMap(alias -> alias.names().stream()
+                .map(String.class::cast)
+                .map(alias::getString)
+                .filter(Predicate.not(vulnId::equalsIgnoreCase)))
+                .distinct()
+                .collect(Collectors.toList())
+                : null;
+    }
+
     private String getKeyOrNull(JSONObject json, String key) {
         // key can be null. but it may also be JSONNull!
         // optString and getString do not check if v is JSONNull. instead they return just v.toString() which will be "null"!
-        Object v = json.opt(key);
-        if (v instanceof JSONNull) {
-            v = null;
-        }
-        return v == null ? null : StringUtils.trimToNull(v.toString());
+        return Optional.ofNullable(json.opt(key))
+                .filter(Predicate.not(JSONNull.class::isInstance))
+                .map(Object::toString)
+                .map(StringUtils::trimToNull)
+                .orElse(null);
     }
 }

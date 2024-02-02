@@ -15,20 +15,22 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.model;
 
-import java.io.Serializable;
-
-import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
+import lombok.RequiredArgsConstructor;
 import lombok.Value;
 
-@AllArgsConstructor(staticName = "of")
-@Value
-public class Component implements Serializable
-{
-    private static final long serialVersionUID = -4825926766668357091L;
+import java.io.Serializable;
 
-    String uuid;
-    String name;
-    String group;
-    String version;
-    String purl;
+@RequiredArgsConstructor
+@Value
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+public class Component implements Serializable {
+  private static final long serialVersionUID = -4825926766668357091L;
+
+  @EqualsAndHashCode.Include
+  String uuid;
+  String name;
+  String group;
+  String version;
+  String purl;
 }

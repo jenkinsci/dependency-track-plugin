@@ -52,15 +52,7 @@ public class ParserUtil
     return null;
   }
 
-  Component parseComponent(final JSONObject json)
-  {
-    return
-            Component
-                    .of(
-                            getKeyOrNull(json, "uuid"),
-                            getKeyOrNull(json, "name"),
-                            getKeyOrNull(json, "group"),
-                            getKeyOrNull(json, "version"),
-                            getKeyOrNull(json, "purl"));
+  Component parseComponent(final JSONObject json) {
+    return new Component(getKeyOrNull(json, "uuid"), getKeyOrNull(json, "name"), getKeyOrNull(json, "group"), getKeyOrNull(json, "version"), getKeyOrNull(json, "purl"));
   }
 }

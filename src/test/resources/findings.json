@@ -1,29 +1,149 @@
 [
-	{
-		"component": {
-			"uuid": "uuid-1",
-			"name": "name-1",
-			"group": "group-1",
-			"version": "version-1",
-			"purl": "purl-1"
-		},
-		"vulnerability": {
-			"uuid": "uuid-1",
-			"source": "source-1",
-			"vulnId": "vulnId-1",
-			"title": "title-1",
-			"subtitle": "subtitle-1",
-			"description": "description-1",
-			"recommendation": "recommendation-1",
-			"severity": "CRITICAL",
-			"severityRank": 1,
-			"cweId": 2,
-			"cweName": "cweName-1"
-		},
-		"analysis": {
-			"state": "state-1",
-			"isSuppressed": false
-		},
-		"matrix": "matrix-1"
-	}
+    {
+        "component": {
+            "uuid": "uuid-1",
+            "name": "name-1",
+            "group": "group-1",
+            "version": "version-1",
+            "purl": "purl-1"
+        },
+        "vulnerability": {
+            "uuid": "uuid-1",
+            "source": "NVD",
+            "vulnId": "vulnId-1",
+            "title": "title-1",
+            "subtitle": "subtitle-1",
+            "description": "description-1",
+            "recommendation": "recommendation-1",
+            "severity": "CRITICAL",
+            "severityRank": 1,
+            "cwes": [
+                {
+                    "cweId": 2,
+                    "name": "cweName-1"
+                }
+            ],
+            "aliases": [
+                {
+                    // API is kind of weird, each vulnerability contains its own ID
+                    "cveId": "vulnId-1",
+                    "ghsaId": "GHSA-abcd-abcd-abcd"
+                },
+                {
+                    "cveId": "vulnId-1",
+                    "fooId": "FOO-12345"
+                }
+            ]
+        },
+        "analysis": {
+            "state": "state-1",
+            "isSuppressed": false
+        },
+        "matrix": "matrix-1"
+    },
+    {
+        "component": {
+            "uuid": "uuid-1",
+            "name": "name-1",
+            "group": "group-1",
+            "version": "version-1",
+            "purl": "purl-1"
+        },
+        "vulnerability": {
+            "uuid": "uuid-2",
+            "source": "GITHUB",
+            "vulnId": "GHSA-abcd-abcd-abcd",
+            "title": "title-1",
+            "subtitle": "subtitle-1",
+            "description": "description-1",
+            "recommendation": "recommendation-1",
+            "severity": "CRITICAL",
+            "severityRank": 1,
+            "cwes": [
+                {
+                    "cweId": 2,
+                    "name": "cweName-1"
+                }
+            ],
+            "aliases": [
+                {
+                    "ghsaId": "GHSA-abcd-abcd-abcd",
+                    "cveId": "vulnId-1"
+                },
+                {
+                    "ghsaId": "GHSA-abcd-abcd-abcd",
+                    "fooId": "FOO-12345"
+                }
+            ]
+        },
+        "analysis": {
+            "state": "state-1",
+            "isSuppressed": false
+        },
+        "matrix": "matrix-2"
+    },
+    {
+        "component": {
+            "uuid": "uuid-2",
+            "name": "name-2",
+            "group": "group-2",
+            "version": "version-2",
+            "purl": "purl-2"
+        },
+        "vulnerability": {
+            "uuid": "uuid-2",
+            "source": "GITHUB",
+            "vulnId": "GHSA-abcd-abcd-abcd",
+            "title": "title-1",
+            "subtitle": "subtitle-1",
+            "description": "description-1",
+            "recommendation": "recommendation-1",
+            "severity": "CRITICAL",
+            "severityRank": 1,
+            "cwes": [
+                {
+                    "cweId": 2,
+                    "name": "cweName-1"
+                }
+            ],
+            "aliases": [
+                {
+                    "cveId": "CVE-1234-123456",
+                    "ghsaId": "GHSA-abcd-abcd-abcd"
+                }
+            ]
+        },
+        "analysis": {
+            "state": "state-1",
+            "isSuppressed": false
+        },
+        "matrix": "matrix-3"
+    },
+    {
+        "component": {
+            "uuid": "uuid-3",
+            "name": "name-3",
+            "group": "group-3",
+            "version": "version-3",
+            "purl": "purl-3"
+        },
+        "vulnerability": {
+            "uuid": "uuid-3",
+            "source": "FOO",
+            "vulnId": "FOO-78945",
+            "title": "title-3",
+            "subtitle": "subtitle-3",
+            "description": "description-3",
+            "recommendation": "recommendation-3",
+            "severity": "CRITICAL",
+            "severityRank": 1,
+            "cwes": null,
+            "aliases": null
+        },
+        "analysis": {
+            "state": "state-1",
+            "isSuppressed": false
+        },
+        "matrix": "matrix-4"
+    }
 ]

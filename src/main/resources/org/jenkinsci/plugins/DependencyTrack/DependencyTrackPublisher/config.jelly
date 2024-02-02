@@ -54,6 +54,18 @@ limitations under the License.
             <f:entry title="${%dependencytrack.autocreate}" field="autoCreateProjects">
                 <f:checkbox id="dependencytrack.autocreate" />
             </f:entry>
+            <f:entry title="${%dependencytrack.polling.timeout}" field="dependencyTrackPollingTimeout">
+                <f:number id="dependencytrack.polling.timeout" clazz="positive-number" min="1" />
+            </f:entry>
+            <f:entry title="${%dependencytrack.polling.interval}" field="dependencyTrackPollingInterval">
+                <f:number id="dependencytrack.polling.interval" clazz="positive-number" min="1" />
+            </f:entry>
+            <f:entry title="${%dependencytrack.connection.timeout}" field="dependencyTrackConnectionTimeout">
+                <f:number id="dependencytrack.connection.timeout" clazz="non-negative-number" min="0" />
+            </f:entry>
+            <f:entry title="${%dependencytrack.read.timeout}" field="dependencyTrackReadTimeout">
+                <f:number id="dependencytrack.read.timeout" clazz="non-negative-number" min="0" />
+            </f:entry>
             <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnectionJob" with="dependencyTrackUrl,dependencyTrackApiKey,autoCreateProjects,synchronous,projectProperties" />
         </f:optionalBlock>
     </f:section>
@@ -71,6 +83,7 @@ limitations under the License.
                     <f:entry field="unstableTotalHigh" title="${%High}"><f:number clazz="positive-number" min="1"/></f:entry>
                     <f:entry field="unstableTotalMedium" title="${%Medium}"><f:number clazz="positive-number" min="1"/></f:entry>
                     <f:entry field="unstableTotalLow" title="${%Low}"><f:number clazz="positive-number" min="1"/></f:entry>
+                    <f:entry field="unstableTotalUnassigned" title="${%Unassigned}"><f:number clazz="positive-number" min="1"/></f:entry>
                 </div>
             </fieldset>
             <fieldset class="dependency-track">
@@ -80,6 +93,7 @@ limitations under the License.
                     <f:entry field="failedTotalHigh" title="${%High}"><f:number clazz="positive-number" min="1"/></f:entry>
                     <f:entry field="failedTotalMedium" title="${%Medium}"><f:number clazz="positive-number" min="1"/></f:entry>
                     <f:entry field="failedTotalLow" title="${%Low}"><f:number clazz="positive-number" min="1"/></f:entry>
+                    <f:entry field="failedTotalUnassigned" title="${%Unassigned}"><f:number clazz="positive-number" min="1"/></f:entry>
                 </div>
             </fieldset>
         </f:section>
@@ -98,6 +112,7 @@ limitations under the License.
                     <f:entry field="unstableNewHigh" title="${%High}"><f:number clazz="positive-number" min="1"/></f:entry>
                     <f:entry field="unstableNewMedium" title="${%Medium}"><f:number clazz="positive-number" min="1"/></f:entry>
                     <f:entry field="unstableNewLow" title="${%Low}"><f:number clazz="positive-number" min="1"/></f:entry>
+                    <f:entry field="unstableNewUnassigned" title="${%Unassigned}"><f:number clazz="positive-number" min="1"/></f:entry>
                 </div>
             </fieldset>
             <fieldset class="dependency-track">
@@ -107,6 +122,7 @@ limitations under the License.
                     <f:entry field="failedNewHigh" title="${%High}"><f:number clazz="positive-number" min="1"/></f:entry>
                     <f:entry field="failedNewMedium" title="${%Medium}"><f:number clazz="positive-number" min="1"/></f:entry>
                     <f:entry field="failedNewLow" title="${%Low}"><f:number clazz="positive-number" min="1"/></f:entry>
+                    <f:entry field="failedNewUnassigned" title="${%Unassigned}"><f:number clazz="positive-number" min="1"/></f:entry>
                 </div>
             </fieldset>
         </f:section>

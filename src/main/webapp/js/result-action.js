@@ -85,6 +85,7 @@
                 { key: 'component.version', label: 'Version', sortable: true },
                 { key: 'component.group', label: 'Group', sortable: true },
                 { key: 'vulnerability.vulnId', label: 'Vulnerability', sortable: true },
+                { key: 'vulnerability.aliases', label: 'Aliases', sortable: false },
                 { key: 'vulnerability.severityRank', label: 'Severity', sortable: true },
                 { key: 'vulnerability.cweId', label: 'CWE', sortable: true },
             ],
@@ -245,6 +246,7 @@
         app.fields.find(field => field.key === 'component.version').label = i18n['filter.value.version'];
         app.fields.find(field => field.key === 'component.group').label = i18n['filter.value.group'];
         app.fields.find(field => field.key === 'vulnerability.vulnId').label = i18n['filter.value.vuln'];
+        app.fields.find(field => field.key === 'vulnerability.aliases').label = i18n['filter.value.aliases'];
         app.fields.find(field => field.key === 'vulnerability.severityRank').label = i18n['filter.value.severity'];
         app.fields.find(field => field.key === 'vulnerability.cweId').label = i18n['filter.value.cwe'];
 

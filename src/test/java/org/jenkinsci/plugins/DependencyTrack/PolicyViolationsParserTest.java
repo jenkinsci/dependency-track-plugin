@@ -33,7 +33,7 @@ public class PolicyViolationsParserTest
 
         final File policyViolations = new File("src/test/resources/policyViolations.json");
 
-        final Component component = Component.of("uuid-1", "name-1", "group-1", "version-1", "purl-1");
+        final Component component = new Component("uuid-1", "name-1", "group-1", "version-1", "purl-1");
 
         final PolicyCondition policyCondition =
                 PolicyCondition

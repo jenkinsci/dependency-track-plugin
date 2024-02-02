@@ -99,6 +99,28 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     private String dependencyTrackApiKey;
 
     /**
+     * Specifies the maximum number of minutes to wait for synchronous jobs to
+     * complete.
+     */
+    private Integer dependencyTrackPollingTimeout;
+
+    /**
+     * Defines the number of seconds to wait between two checks for
+     * Dependency-Track to process a job (Synchronous Publishing Mode).
+     */
+    private Integer dependencyTrackPollingInterval;
+
+    /**
+     * the connection-timeout in seconds for every call to DT
+     */
+    private Integer dependencyTrackConnectionTimeout;
+
+    /**
+     * the read-timeout in seconds for every call to DT
+     */
+    private Integer dependencyTrackReadTimeout;
+
+    /**
      * Specifies whether the API key provided has the PROJECT_CREATION_UPLOAD
      * permission.
      */
@@ -127,6 +149,11 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     private Integer unstableTotalLow;
 
     /**
+     * Threshold level for total number of unassigned findings for job status UNSTABLE
+     */
+    private Integer unstableTotalUnassigned;
+
+    /**
      * Threshold level for total number of critical findings for job status
      * FAILED
      */
@@ -146,6 +173,11 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      * Threshold level for total number of low findings for job status FAILED
      */
     private Integer failedTotalLow;
+
+    /**
+     * Threshold level for total number of unassigned findings for job status FAILED
+     */
+    private Integer failedTotalUnassigned;
 
     /**
      * Threshold level for number of new critical findings for job status
@@ -169,6 +201,11 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     private Integer unstableNewLow;
 
     /**
+     * Threshold level for number of new unassigned findings for job status UNSTABLE
+     */
+    private Integer unstableNewUnassigned;
+
+    /**
      * Threshold level for number of new critical findings for job status FAILED
      */
     private Integer failedNewCritical;
@@ -187,6 +224,12 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      * Threshold level for number of new low findings for job status FAILED
      */
     private Integer failedNewLow;
+
+    /**
+     * Threshold level for number of new unassigned findings for job status FAILED
+     */
+    private Integer failedNewUnassigned;
+
 
     /**
      * Threshold level for total number of fail violations for job status FAILED
@@ -317,7 +360,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         final String effectiveUrl = getEffectiveUrl();
         final String effectiveApiKey = getEffectiveApiKey(run);
         logger.log(Messages.Builder_Publishing(effectiveUrl));
-        final ApiClient apiClient = clientFactory.create(effectiveUrl, effectiveApiKey, logger, descriptor.getDependencyTrackConnectionTimeout(), descriptor.getDependencyTrackReadTimeout());
+        final ApiClient apiClient = clientFactory.create(effectiveUrl, effectiveApiKey, logger, getEffectiveConnectionTimeout(), getEffectiveReadTimeout());
         final UploadResult uploadResult = apiClient.upload(projectId, effectiveProjectName, effectiveProjectVersion,
                 artifactFilePath, effectiveAutocreate);
 
@@ -345,10 +388,9 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
                                        final String token,
                                        final Run<?, ?> build,
                                        final String effectiveProjectName,
-                                       final String effectiveProjectVersion) throws InterruptedException, ApiClientException, AbortException
-    {
-        final long timeout = System.currentTimeMillis() + (60000L * descriptor.getDependencyTrackPollingTimeout());
-        final long interval = 1000L * descriptor.getDependencyTrackPollingInterval();
+                                       final String effectiveProjectVersion) throws InterruptedException, ApiClientException, AbortException {
+        final long timeout = System.currentTimeMillis() + (60000L * getEffectivePollingTimeout());
+        final long interval = 1000L * getEffectivePollingInterval();
         logger.log(Messages.Builder_Polling());
         Thread.sleep(interval);
         while (apiClient.isTokenBeingProcessed(token)) {
@@ -407,47 +449,41 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
                         .map(ResultAction::getSeverityDistribution)
                         .orElseGet(() -> new SeverityDistribution(0));
 
-        final ViolationDistribution previousViolationDistribution =
-                resultAction
-                        .map(ResultAction::getViolationDistribution)
-                        .orElseGet(() -> new ViolationDistribution(0));
+      final ViolationDistribution previousViolationDistribution =
+              resultAction
+                      .map(ResultAction::getViolationDistribution)
+                      .orElseGet(() -> new ViolationDistribution(0));
 
-        evaluateRiskGates(
-                build,
-                logger,
-                severityDistribution,
-                previousSeverityDistribution,
-                violationDistribution,
-                previousViolationDistribution);
+      evaluateRiskGates(
+              build,
+              logger,
+              severityDistribution,
+              previousSeverityDistribution,
+              violationDistribution,
+              previousViolationDistribution);
     }
 
-    private void evaluateRiskGates(final Run<?, ?> build,
-                                   final ConsoleLogger logger,
-                                   final SeverityDistribution currentDistribution,
-                                   final SeverityDistribution previousDistribution,
-                                   final ViolationDistribution currentViolationDistribution,
-                                   final ViolationDistribution previousViolationDistribution) throws AbortException
-    {
-        logger.log(Messages.Builder_Threshold_ComparingTo(previousDistribution.getBuildNumber()));
-
-        final RiskGate riskGate = new RiskGate(getThresholds());
-        final Result result =
-                riskGate
-                        .evaluate(
-                                currentDistribution,
-                                previousDistribution,
-                                currentViolationDistribution,
-                                previousViolationDistribution);
-
-        if (result.isWorseOrEqualTo(Result.UNSTABLE) && result.isCompleteBuild())
-        {
+  private void evaluateRiskGates(final Run<?, ?> build,
+                                 final ConsoleLogger logger,
+                                 final SeverityDistribution currentDistribution,
+                                 final SeverityDistribution previousDistribution,
+                                 final ViolationDistribution currentViolationDistribution,
+                                 final ViolationDistribution previousViolationDistribution) throws AbortException {
+      logger.log(Messages.Builder_Threshold_ComparingTo(previousDistribution.getBuildNumber()));
+      final RiskGate riskGate = new RiskGate(getThresholds());
+      final Result result =
+              riskGate
+                      .evaluate(
+                              currentDistribution,
+                              previousDistribution,
+                              currentViolationDistribution,
+                              previousViolationDistribution);
+        if (result.isWorseOrEqualTo(Result.UNSTABLE) && result.isCompleteBuild()) {
             logger.log(Messages.Builder_Threshold_Exceed());
             // allow build to proceed, but mark overall build unstable
             build.setResult(result);
         }
-
-        if (result.isWorseThan(Result.UNSTABLE) && result.isCompleteBuild())
-        {
+        if (result.isWorseThan(Result.UNSTABLE) && result.isCompleteBuild()) {
             // attempt to halt the build
             throw new AbortException(Messages.Builder_Threshold_Exceed());
         }
@@ -497,6 +533,10 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
             dependencyTrackFrontendUrl = null;
             dependencyTrackApiKey = null;
             autoCreateProjects = null;
+            dependencyTrackPollingTimeout = null;
+            dependencyTrackPollingInterval = null;
+            dependencyTrackConnectionTimeout = null;
+            dependencyTrackReadTimeout = null;
         }
         if (!isEffectiveAutoCreateProjects()) {
             projectName = null;
@@ -549,6 +589,38 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     }
 
     /**
+     * @return effective dependencyTrackPollingTimeout
+     */
+    @NonNull
+    private int getEffectivePollingTimeout() {
+        return Optional.ofNullable(dependencyTrackPollingTimeout).filter(v -> v > 0).orElseGet(descriptor::getDependencyTrackPollingTimeout);
+    }
+
+    /**
+     * @return effective dependencyTrackPollingInterval
+     */
+    @NonNull
+    private int getEffectivePollingInterval() {
+        return Optional.ofNullable(dependencyTrackPollingInterval).filter(v -> v > 0).orElseGet(descriptor::getDependencyTrackPollingInterval);
+    }
+
+    /**
+     * @return effective dependencyTrackConnectionTimeout
+     */
+    @NonNull
+    private int getEffectiveConnectionTimeout() {
+        return Optional.ofNullable(dependencyTrackConnectionTimeout).filter(v -> v >= 0).orElseGet(descriptor::getDependencyTrackConnectionTimeout);
+    }
+
+    /**
+     * @return effective dependencyTrackReadTimeout
+     */
+    @NonNull
+    private int getEffectiveReadTimeout() {
+        return Optional.ofNullable(dependencyTrackReadTimeout).filter(v -> v >= 0).orElseGet(descriptor::getDependencyTrackReadTimeout);
+    }
+
+    /**
      * Returns the last build that was actually built and has an analysis result ({@link ResultAction}) 
      * @param run the build from where to start (the one running now)
      * @return the last build that was actually built and has an analysis result, or {@code null} if none was found
@@ -569,19 +641,23 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         thresholds.totalFindings.unstableHigh = unstableTotalHigh;
         thresholds.totalFindings.unstableMedium = unstableTotalMedium;
         thresholds.totalFindings.unstableLow = unstableTotalLow;
+        thresholds.totalFindings.unstableUnassigned = unstableTotalUnassigned;
         thresholds.totalFindings.failedCritical = failedTotalCritical;
         thresholds.totalFindings.failedHigh = failedTotalHigh;
         thresholds.totalFindings.failedMedium = failedTotalMedium;
         thresholds.totalFindings.failedLow = failedTotalLow;
+        thresholds.totalFindings.failedUnassigned = failedTotalUnassigned;
 
         thresholds.newFindings.unstableCritical = unstableNewCritical;
         thresholds.newFindings.unstableHigh = unstableNewHigh;
         thresholds.newFindings.unstableMedium = unstableNewMedium;
         thresholds.newFindings.unstableLow = unstableNewLow;
+        thresholds.newFindings.unstableUnassigned = unstableNewUnassigned;
         thresholds.newFindings.failedCritical = failedNewCritical;
         thresholds.newFindings.failedHigh = failedNewHigh;
         thresholds.newFindings.failedMedium = failedNewMedium;
         thresholds.newFindings.failedLow = failedNewLow;
+        thresholds.newFindings.failedUnassigned = failedNewUnassigned;
 
         thresholds.totalViolations.unstableFail = unstableTotalFail;
         thresholds.totalViolations.unstableWarn = unstableTotalWarn;
@@ -597,7 +673,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         thresholds.newViolations.failedWarn = failedNewWarn;
         thresholds.newViolations.failedInfo = failedNewInfo;
 
-        return thresholds;
+      return thresholds;
     }
     
     private void updateProjectProperties(final ConsoleLogger logger, final ApiClient apiClient, final String effectiveProjectName, final String effectiveProjectVersion) throws ApiClientException {

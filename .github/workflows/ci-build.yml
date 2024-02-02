@@ -11,20 +11,20 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        java: [11]
+        java: [11,17,21]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: Set up JDK ${{ matrix.java }}
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: ${{ matrix.java }}
           distribution: 'zulu'
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
-          node-version: 'lts/Hydrogen'
+          node-version: 'lts/*'
       - name: Cache Maven packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
@@ -39,17 +39,17 @@ jobs:
         shell: bash
       - name: Build with Sonar
         id: build_sonar
-        if: matrix.java == '11' && steps.check_sonar.outcome == 'success' && !startsWith(github.head_ref, 'dependabot/')
+        if: matrix.java == '17' && steps.check_sonar.outcome == 'success' && !startsWith(github.head_ref, 'dependabot/')
         env:
           SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
           SONAR_ORGANIZATION: ${{ secrets.SONARCLOUD_ORGANIZATION }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: mvn -B clean test verify package org.sonarsource.scanner.maven:sonar-maven-plugin:3.9.1.2184:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.projectKey=org.jenkins-ci.plugins:dependency-track -Dsonar.organization=$SONAR_ORGANIZATION -Dsonar.login=$SONAR_TOKEN
+        run: mvn -B clean test verify package org.sonarsource.scanner.maven:sonar-maven-plugin:3.10.0.2594:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.projectKey=org.jenkins-ci.plugins:dependency-track -Dsonar.organization=$SONAR_ORGANIZATION -Dsonar.token=$SONAR_TOKEN
       - name: Build without Sonar
         if: steps.build_sonar.conclusion == 'skipped'
         run: mvn -B clean test verify package
-      - uses: actions/upload-artifact@v3
-        if: success()
+      - uses: actions/upload-artifact@v4
+        if: matrix.java == '11' && success()
         with:
           path: target/dependency-track.hpi
           name: dependency-track.hpi

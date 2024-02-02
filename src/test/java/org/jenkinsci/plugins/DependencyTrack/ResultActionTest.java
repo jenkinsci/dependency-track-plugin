@@ -61,7 +61,7 @@ class ResultActionTest {
     void getVersionHashTest(JenkinsRule j) {
         final ResultAction uut = new ResultAction(null, null, null, null);
         // does not equal sha-256 of empty string
-        assertThat(uut.getVersionHash()).matches("[a-f0-9]{64}").isNotEqualTo("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+        assertThat(uut.getVersionHash()).describedAs("hashed Version should not be empty").matches("[a-f0-9]{64}").isNotEqualTo("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
     }
 
     @Test
