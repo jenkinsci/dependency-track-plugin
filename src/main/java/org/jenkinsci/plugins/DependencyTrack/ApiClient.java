@@ -35,10 +35,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import org.apache.commons.lang.StringUtils;
-import org.jenkinsci.plugins.DependencyTrack.model.Finding;
-import org.jenkinsci.plugins.DependencyTrack.model.Project;
-import org.jenkinsci.plugins.DependencyTrack.model.Team;
-import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
+import org.jenkinsci.plugins.DependencyTrack.model.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.retry.RetryPolicy;
 import org.springframework.retry.backoff.UniformRandomBackOffPolicy;
@@ -266,26 +263,25 @@ public class ApiClient {
     }
 
     @NonNull
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public List<PolicyViolation> getPolicyViolation(@NonNull final String projectUuid) throws ApiClientException {
-        try {
-            final var uri = UriComponentsBuilder.fromUriString(PROJECT_POLICY_VIOLATION_URL).pathSegment("{uuid}").build(projectUuid);
-            final var request = createRequest(uri);
-            final var response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-            final var body = response.body();
-            final int status = response.statusCode();
-            if (status != HTTP_OK) {
-                logger.log(body);
-                throw new ApiClientException(Messages.ApiClient_Error_RetrievePolicyViolations(status, HttpStatus.valueOf(status).getReasonPhrase()));
+        final var uri = UriComponentsBuilder.fromUriString(PROJECT_POLICY_VIOLATION_URL).pathSegment("{uuid}").build(projectUuid);
+        final var request = createRequest(uri);
+        return executeWithRetry(() -> {
+            try (var response = httpClient.newCall(request).execute()) {
+                final var body = response.body().string();
+                if (!response.isSuccessful()) {
+                    final int status = response.code();
+                    logger.log(body);
+                    throw new ApiClientException(Messages.ApiClient_Error_RetrieveFindings(status, HttpStatus.valueOf(status).getReasonPhrase()));
+                }
+                return PolicyViolationsParser.parse(body);
+            } catch (ApiClientException e) {
+                throw e;
+            } catch (IOException e) {
+                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
             }
-            return PolicyViolationsParser.parse(body);
-        } catch (ApiClientException e) {
-            throw e;
-        } catch (IOException e) {
-            throw new ApiClientException(Messages.ApiClient_Error_RetrievePolicyViolations(StringUtils.EMPTY, StringUtils.EMPTY), e);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-            throw new ApiClientException(Messages.ApiClient_Error_Canceled(), e);
-        }
+        });
     }
 
     @NonNull
