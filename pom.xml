@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>4.76</version>
+        <version>4.77</version>
         <relativePath />
     </parent>
 
@@ -39,7 +39,7 @@
     <properties>
         <jenkins.version>2.414.1</jenkins.version>
         <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
-        <configuration-as-code.version>1756.v2b_7eea_874392</configuration-as-code.version>
+        <configuration-as-code.version>1775.v810dc950b_514</configuration-as-code.version>
         <byte-buddy.version>1.14.11</byte-buddy.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -411,12 +411,22 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>credentials</artifactId>
-            <version>1311.vcf0a_900b_37c2</version>
+            <version>1319.v7eb_51b_3a_c97b_</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>plain-credentials</artifactId>
             <version>143.v1b_df8b_d3b_e48</version>
+        </dependency>
+        <dependency>
+            <groupId>io.jenkins.plugins</groupId>
+            <artifactId>okhttp-api</artifactId>
+            <version>4.11.0-157.v6852a_a_fa_ec11</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.retry</groupId>
+            <artifactId>spring-retry</artifactId>
+            <version>1.3.4</version>
         </dependency>
         <dependency>
             <groupId>io.jenkins</groupId>
