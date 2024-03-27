@@ -285,6 +285,7 @@ class DescriptorImplTest {
                     .contains(Messages.Publisher_PermissionTest_Okay(PROJECT_CREATION_UPLOAD))
                     .contains(Messages.Publisher_PermissionTest_Missing(PORTFOLIO_MANAGEMENT))
                     .contains(Messages.Publisher_PermissionTest_Missing(VIEW_VULNERABILITY))
+                    .contains(Messages.Publisher_PermissionTest_Optional(VIEW_POLICY_VIOLATION))
                     .contains(team.getPermissions().toArray(String[]::new));
         }
     }

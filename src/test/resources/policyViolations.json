@@ -1,0 +1,66 @@
+[
+  {
+    "type": "LICENSE",
+    "project": {
+      "group": "group-1",
+      "name": "name-1",
+      "version": "version-1",
+      "classifier": "APPLICATION",
+      "directDependencies": "[]",
+      "uuid": "uuid-1",
+      "tags": [
+        {
+          "name": "trunk"
+        }
+      ],
+      "lastBomImport": 0,
+      "lastBomImportFormat": "CycloneDX 1.4",
+      "lastInheritedRiskScore": 0.0,
+      "active": true
+    },
+    "component": {
+      "group": "group-1",
+      "name": "name-1",
+      "version": "version-1",
+      "classifier": "LIBRARY",
+      "purl": "purl-1",
+      "purlCoordinates": "purl-1",
+      "project": {
+        "group": "group-1",
+        "name": "name-1",
+        "version": "version-1",
+        "classifier": "APPLICATION",
+        "directDependencies": "[]",
+        "uuid": "uuid-1",
+        "tags": [
+          {
+            "name": "trunk"
+          }
+        ],
+        "lastBomImport": 0,
+        "lastBomImportFormat": "CycloneDX 1.4",
+        "lastInheritedRiskScore": 0.0,
+        "active": true
+      },
+      "lastInheritedRiskScore": 0.0,
+      "uuid": "uuid-1",
+      "usedBy": 0,
+      "isInternal": false
+    },
+    "policyCondition": {
+      "policy": {
+        "name": "name-1",
+        "operator": "ANY",
+        "violationState": "FAIL",
+        "uuid": "uuid-1",
+        "global": true
+      },
+      "operator": "NUMERIC_LESS_THAN",
+      "subject": "VERSION",
+      "value": "latest",
+      "uuid": "uuid-1"
+    },
+    "timestamp": 0,
+    "uuid": "uuid-1"
+  }
+]

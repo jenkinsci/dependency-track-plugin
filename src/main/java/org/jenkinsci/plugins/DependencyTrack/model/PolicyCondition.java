@@ -15,17 +15,17 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.model;
 
-import java.util.Set;
-import lombok.Builder;
+import lombok.AllArgsConstructor;
 import lombok.Value;
 
-/**
- *
- * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
- */
+import java.io.Serializable;
+
+@AllArgsConstructor(staticName = "of")
 @Value
-@Builder
-public class Team {
-    String name;
-    Set<String> permissions;
+public class PolicyCondition implements Serializable
+{
+  private static final long serialVersionUID = 3181011438478413504L;
+
+  String uuid;
+  Policy policy;
 }

@@ -15,17 +15,9 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.model;
 
-import java.util.Set;
-import lombok.Builder;
-import lombok.Value;
-
-/**
- *
- * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
- */
-@Value
-@Builder
-public class Team {
-    String name;
-    Set<String> permissions;
+public enum Type
+{
+  LICENSE,
+  SECURITY,
+  OPERATIONAL
 }

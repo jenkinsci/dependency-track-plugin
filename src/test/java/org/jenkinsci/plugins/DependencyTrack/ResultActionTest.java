@@ -29,8 +29,7 @@ import java.util.List;
 import net.sf.json.JSONArray;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.util.Files;
-import org.jenkinsci.plugins.DependencyTrack.model.Finding;
-import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
+import org.jenkinsci.plugins.DependencyTrack.model.*;
 import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
@@ -52,9 +51,15 @@ class ResultActionTest {
         return FindingParser.parse(Files.contentOf(findings, StandardCharsets.UTF_8));
     }
 
+    private List<PolicyViolation> getTestPolicyViolations()
+    {
+        final File PolicyViolations = new File("src/test/resources/policyViolations.json");
+        return PolicyViolationsParser.parse(Files.contentOf(PolicyViolations, StandardCharsets.UTF_8));
+    }
+
     @Test
     void getVersionHashTest(JenkinsRule j) {
-        final ResultAction uut = new ResultAction(null, null);
+        final ResultAction uut = new ResultAction(null, null, null, null);
         // does not equal sha-256 of empty string
         assertThat(uut.getVersionHash()).describedAs("hashed Version should not be empty").matches("[a-f0-9]{64}").isNotEqualTo("e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
     }
@@ -71,7 +76,7 @@ class ResultActionTest {
             project = j.createFreeStyleProject();
         }
         final FreeStyleBuild b1 = new FreeStyleBuild(project);
-        final ResultAction uut = new ResultAction(getTestFindings(), new SeverityDistribution(1));
+        final ResultAction uut = new ResultAction(getTestFindings(), new SeverityDistribution(1), null, new ViolationDistribution(1));
         uut.onLoad(b1);
 
         final User anonymous = User.getOrCreateByIdOrFullName(ACL.ANONYMOUS_USERNAME);
@@ -91,15 +96,31 @@ class ResultActionTest {
     void getFindingsJson(JenkinsRule j) throws IOException {
         final FreeStyleProject project = j.createFreeStyleProject();
         final FreeStyleBuild b1 = new FreeStyleBuild(project);
-        final ResultAction uut = new ResultAction(getTestFindings(), new SeverityDistribution(1));
+        final ResultAction uut = new ResultAction(getTestFindings(), new SeverityDistribution(1), null, new ViolationDistribution(1));
         uut.onLoad(b1);
         Assertions.<JSONArray>assertThat(uut.getFindingsJson()).isEqualTo(JSONArray.fromObject(getTestFindings()));
     }
 
     @Test
+    void getPolicyViolationsJson(JenkinsRule j) throws IOException {
+        final FreeStyleProject project = j.createFreeStyleProject();
+        final FreeStyleBuild b1 = new FreeStyleBuild(project);
+        final ResultAction uut = new ResultAction(null, new SeverityDistribution(1), getTestPolicyViolations(), new ViolationDistribution(1));
+        uut.onLoad(b1);
+        Assertions.<JSONArray>assertThat(uut.getPolicyViolationsJson()).isEqualTo(JSONArray.fromObject(getTestPolicyViolations()));
+    }
+
+    @Test
     void hasFindingsTest() {
-        assertThat(new ResultAction(null, new SeverityDistribution(1)).hasFindings()).isFalse();
-        assertThat(new ResultAction(List.of(), new SeverityDistribution(1)).hasFindings()).isFalse();
-        assertThat(new ResultAction(getTestFindings(), new SeverityDistribution(1)).hasFindings()).isTrue();
+        assertThat(new ResultAction(null, new SeverityDistribution(1), null, new ViolationDistribution(1)).hasFindings()).isFalse();
+        assertThat(new ResultAction(List.of(), new SeverityDistribution(1), null, new ViolationDistribution(1)).hasFindings()).isFalse();
+        assertThat(new ResultAction(getTestFindings(), new SeverityDistribution(1), null, new ViolationDistribution(1)).hasFindings()).isTrue();
+    }
+
+    @Test
+    void hasPolicyViolationsTest() {
+        assertThat(new ResultAction(null, new SeverityDistribution(1), null, new ViolationDistribution(1)).hasFindings()).isFalse();
+        assertThat(new ResultAction(null, new SeverityDistribution(1), List.of(), new ViolationDistribution(1)).hasPolicyViolations()).isFalse();
+        assertThat(new ResultAction(null, new SeverityDistribution(1), getTestPolicyViolations(), new ViolationDistribution(1)).hasPolicyViolations()).isTrue();
     }
 }
