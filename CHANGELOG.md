@@ -22,7 +22,7 @@
 ### 🐞 Bugs Fixed
 - The settings for the threshold values are now only visible when synchronous mode is enabled. This will hopefully avoid misunderstandings/misconfigurations.
 
-## v4.3.1 - 2022-04-12
+## v4.3.1 - 2023-04-12
 ### ⚠ Breaking
 ### ⭐ New Features
 ### 🐞 Bugs Fixed
