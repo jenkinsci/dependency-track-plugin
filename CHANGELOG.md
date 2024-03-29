@@ -2,6 +2,11 @@
 
 ## Unreleased
 ### ⚠ Breaking
+### ⭐ New Features
+### 🐞 Bugs Fixed
+
+## v5.0.0 - 2024-??-??
+### ⚠ Breaking
 - require Jenkins 2.440.1 or newer
 - require Java 11 or newer ([required since Jenkins 2.361.1](https://www.jenkins.io/blog/2022/06/28/require-java-11/))
 - require Dependency-Track 4.9 or newer
@@ -15,6 +20,7 @@
 - In the event of an unexpected exception, each call to Dependency-Track is retried within an uniformly distributed, randomly generated period in the range of 50-500ms.
 
 ### 🐞 Bugs Fixed
+- The settings for the threshold values are now only visible when synchronous mode is enabled. This will hopefully avoid misunderstandings/misconfigurations.
 
 ## v4.3.1 - 2022-04-12
 ### ⚠ Breaking

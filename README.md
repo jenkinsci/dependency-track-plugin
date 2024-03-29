@@ -79,7 +79,7 @@ Once configured with a valid URL and API key, simply configure a job to publish 
 
 ### Thresholds
 
-When Synchronous mode is enabled, thresholds can be defined which can optionally put the job into an UNSTABLE or FAILURE state.
+When synchronous mode is enabled, thresholds can be defined which can optionally put the job into an UNSTABLE or FAILURE state.
 
 ![risk thresholds](docs/images/jenkins-job-thresholds.png)
 

@@ -35,10 +35,6 @@ limitations under the License.
             <f:textbox id="artifact"/>
         </f:entry>
 
-        <f:entry title="${%enable.synchronous}" field="synchronous">
-            <f:checkbox name="synchronous" checked="${instance.isSynchronous()}"/>
-        </f:entry>
-
         <f:optionalProperty field="projectProperties" title="${%projectProperties}" />
 
         <f:optionalBlock inline="true" field="overrideGlobals" title="${%overrideGlobals}">
@@ -70,62 +66,64 @@ limitations under the License.
         </f:optionalBlock>
     </f:section>
 
-    <f:advanced title="${%riskGateThresholds} - ${%totalFindings}" align="left">
-        <f:section title="${%riskGateThresholds} - ${%totalFindings}">
-            <f:description>
-                <f:helpLink url="/descriptor/org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher/help/thresholds-total" featureName="${%riskGateThresholds} - ${%totalFindings}" />
-                <f:helpArea />
-            </f:description>
-            <fieldset class="dependency-track">
-                <legend><img src="${resURL}/plugin/dependency-track/icons/yellow.svg" /> ${%Unstable}</legend>
-                <div class="dependency-track multi-line-input-row">
-                    <f:entry field="unstableTotalCritical" title="${%Critical}"><f:number clazz="positive-number" min="1"/></f:entry>
-                    <f:entry field="unstableTotalHigh" title="${%High}"><f:number clazz="positive-number" min="1"/></f:entry>
-                    <f:entry field="unstableTotalMedium" title="${%Medium}"><f:number clazz="positive-number" min="1"/></f:entry>
-                    <f:entry field="unstableTotalLow" title="${%Low}"><f:number clazz="positive-number" min="1"/></f:entry>
-                    <f:entry field="unstableTotalUnassigned" title="${%Unassigned}"><f:number clazz="positive-number" min="1"/></f:entry>
-                </div>
-            </fieldset>
-            <fieldset class="dependency-track">
-                <legend><img src="${resURL}/plugin/dependency-track/icons/red.svg" /> ${%Failure}</legend>
-                <div class="dependency-track multi-line-input-row">
-                    <f:entry field="failedTotalCritical" title="${%Critical}"><f:number clazz="positive-number" min="1"/></f:entry>
-                    <f:entry field="failedTotalHigh" title="${%High}"><f:number clazz="positive-number" min="1"/></f:entry>
-                    <f:entry field="failedTotalMedium" title="${%Medium}"><f:number clazz="positive-number" min="1"/></f:entry>
-                    <f:entry field="failedTotalLow" title="${%Low}"><f:number clazz="positive-number" min="1"/></f:entry>
-                    <f:entry field="failedTotalUnassigned" title="${%Unassigned}"><f:number clazz="positive-number" min="1"/></f:entry>
-                </div>
-            </fieldset>
-        </f:section>
-    </f:advanced>
+    <f:optionalBlock inline="true" field="synchronous" title="${%enable.synchronous}">
+        <f:advanced title="${%riskGateThresholds} - ${%totalFindings}" align="left">
+            <f:section title="${%riskGateThresholds} - ${%totalFindings}">
+                <f:description>
+                    <f:helpLink url="/descriptor/org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher/help/thresholds-total" featureName="${%riskGateThresholds} - ${%totalFindings}" />
+                    <f:helpArea />
+                </f:description>
+                <fieldset class="dependency-track">
+                    <legend><img src="${resURL}/plugin/dependency-track/icons/yellow.svg" /> ${%Unstable}</legend>
+                    <div class="dependency-track multi-line-input-row">
+                        <f:entry field="unstableTotalCritical" title="${%Critical}"><f:number clazz="positive-number" min="1"/></f:entry>
+                        <f:entry field="unstableTotalHigh" title="${%High}"><f:number clazz="positive-number" min="1"/></f:entry>
+                        <f:entry field="unstableTotalMedium" title="${%Medium}"><f:number clazz="positive-number" min="1"/></f:entry>
+                        <f:entry field="unstableTotalLow" title="${%Low}"><f:number clazz="positive-number" min="1"/></f:entry>
+                        <f:entry field="unstableTotalUnassigned" title="${%Unassigned}"><f:number clazz="positive-number" min="1"/></f:entry>
+                    </div>
+                </fieldset>
+                <fieldset class="dependency-track">
+                    <legend><img src="${resURL}/plugin/dependency-track/icons/red.svg" /> ${%Failure}</legend>
+                    <div class="dependency-track multi-line-input-row">
+                        <f:entry field="failedTotalCritical" title="${%Critical}"><f:number clazz="positive-number" min="1"/></f:entry>
+                        <f:entry field="failedTotalHigh" title="${%High}"><f:number clazz="positive-number" min="1"/></f:entry>
+                        <f:entry field="failedTotalMedium" title="${%Medium}"><f:number clazz="positive-number" min="1"/></f:entry>
+                        <f:entry field="failedTotalLow" title="${%Low}"><f:number clazz="positive-number" min="1"/></f:entry>
+                        <f:entry field="failedTotalUnassigned" title="${%Unassigned}"><f:number clazz="positive-number" min="1"/></f:entry>
+                    </div>
+                </fieldset>
+            </f:section>
+        </f:advanced>
 
-    <f:advanced title="${%riskGateThresholds} - ${%newFindings}" align="left">
-        <f:section title="${%riskGateThresholds} - ${%newFindings}">
-            <f:description>
-                <f:helpLink url="/descriptor/org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher/help/thresholds-new" featureName="${%riskGateThresholds} - ${%newFindings}" />
-                <f:helpArea />
-            </f:description>
-            <fieldset class="dependency-track">
-                <legend><img src="${resURL}/plugin/dependency-track/icons/yellow.svg" /> ${%Unstable}</legend>
-                <div class="dependency-track multi-line-input-row">
-                    <f:entry field="unstableNewCritical" title="${%Critical}"><f:number clazz="positive-number" min="1"/></f:entry>
-                    <f:entry field="unstableNewHigh" title="${%High}"><f:number clazz="positive-number" min="1"/></f:entry>
-                    <f:entry field="unstableNewMedium" title="${%Medium}"><f:number clazz="positive-number" min="1"/></f:entry>
-                    <f:entry field="unstableNewLow" title="${%Low}"><f:number clazz="positive-number" min="1"/></f:entry>
-                    <f:entry field="unstableNewUnassigned" title="${%Unassigned}"><f:number clazz="positive-number" min="1"/></f:entry>
-                </div>
-            </fieldset>
-            <fieldset class="dependency-track">
-                <legend><img src="${resURL}/plugin/dependency-track/icons/red.svg" /> ${%Failure}</legend>
-                <div class="dependency-track multi-line-input-row">
-                    <f:entry field="failedNewCritical" title="${%Critical}"><f:number clazz="positive-number" min="1"/></f:entry>
-                    <f:entry field="failedNewHigh" title="${%High}"><f:number clazz="positive-number" min="1"/></f:entry>
-                    <f:entry field="failedNewMedium" title="${%Medium}"><f:number clazz="positive-number" min="1"/></f:entry>
-                    <f:entry field="failedNewLow" title="${%Low}"><f:number clazz="positive-number" min="1"/></f:entry>
-                    <f:entry field="failedNewUnassigned" title="${%Unassigned}"><f:number clazz="positive-number" min="1"/></f:entry>
-                </div>
-            </fieldset>
-        </f:section>
-    </f:advanced>
+        <f:advanced title="${%riskGateThresholds} - ${%newFindings}" align="left">
+            <f:section title="${%riskGateThresholds} - ${%newFindings}">
+                <f:description>
+                    <f:helpLink url="/descriptor/org.jenkinsci.plugins.DependencyTrack.DependencyTrackPublisher/help/thresholds-new" featureName="${%riskGateThresholds} - ${%newFindings}" />
+                    <f:helpArea />
+                </f:description>
+                <fieldset class="dependency-track">
+                    <legend><img src="${resURL}/plugin/dependency-track/icons/yellow.svg" /> ${%Unstable}</legend>
+                    <div class="dependency-track multi-line-input-row">
+                        <f:entry field="unstableNewCritical" title="${%Critical}"><f:number clazz="positive-number" min="1"/></f:entry>
+                        <f:entry field="unstableNewHigh" title="${%High}"><f:number clazz="positive-number" min="1"/></f:entry>
+                        <f:entry field="unstableNewMedium" title="${%Medium}"><f:number clazz="positive-number" min="1"/></f:entry>
+                        <f:entry field="unstableNewLow" title="${%Low}"><f:number clazz="positive-number" min="1"/></f:entry>
+                        <f:entry field="unstableNewUnassigned" title="${%Unassigned}"><f:number clazz="positive-number" min="1"/></f:entry>
+                    </div>
+                </fieldset>
+                <fieldset class="dependency-track">
+                    <legend><img src="${resURL}/plugin/dependency-track/icons/red.svg" /> ${%Failure}</legend>
+                    <div class="dependency-track multi-line-input-row">
+                        <f:entry field="failedNewCritical" title="${%Critical}"><f:number clazz="positive-number" min="1"/></f:entry>
+                        <f:entry field="failedNewHigh" title="${%High}"><f:number clazz="positive-number" min="1"/></f:entry>
+                        <f:entry field="failedNewMedium" title="${%Medium}"><f:number clazz="positive-number" min="1"/></f:entry>
+                        <f:entry field="failedNewLow" title="${%Low}"><f:number clazz="positive-number" min="1"/></f:entry>
+                        <f:entry field="failedNewUnassigned" title="${%Unassigned}"><f:number clazz="positive-number" min="1"/></f:entry>
+                    </div>
+                </fieldset>
+            </f:section>
+        </f:advanced>
+    </f:optionalBlock>
 
 </j:jelly>
