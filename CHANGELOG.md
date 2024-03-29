@@ -2,7 +2,7 @@
 
 ## Unreleased
 ### ⚠ Breaking
-- require Jenkins 2.414.1 or newer
+- require Jenkins 2.440.1 or newer
 - require Java 11 or newer ([required since Jenkins 2.361.1](https://www.jenkins.io/blog/2022/06/28/require-java-11/))
 - require Dependency-Track 4.9 or newer
 - New findings are only evaluated from the second build onwards ([#113](https://github.com/jenkinsci/dependency-track-plugin/issues/113))

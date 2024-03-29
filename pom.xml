@@ -37,7 +37,7 @@
     </licenses>
 
     <properties>
-        <jenkins.version>2.414.1</jenkins.version>
+        <jenkins.version>2.440.1</jenkins.version>
         <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
         <configuration-as-code.version>1775.v810dc950b_514</configuration-as-code.version>
         <byte-buddy.version>1.14.12</byte-buddy.version>
@@ -411,7 +411,7 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>credentials</artifactId>
-            <version>1319.v7eb_51b_3a_c97b_</version>
+            <version>1337.v60b_d7b_c7b_c9f</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
