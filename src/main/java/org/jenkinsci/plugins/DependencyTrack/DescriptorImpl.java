@@ -281,7 +281,12 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
         return FormValidation.error(Messages.Publisher_ConnectionTest_InputError());
     }
 
-    private FormValidation checkTeamPermissions(final ApiClient apiClient, final String poweredBy, final boolean autoCreateProjects, final boolean synchronous, final boolean projectProperties) throws ApiClientException {
+    private FormValidation checkTeamPermissions(final ApiClient apiClient,
+                                                final String poweredBy,
+                                                final boolean autoCreateProjects,
+                                                final boolean synchronous,
+                                                final boolean projectProperties) throws ApiClientException
+    {
         final Set<String> requiredPermissions = Stream.of(BOM_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS).map(Enum::toString).collect(Collectors.toSet());
         final Set<String> optionalPermissions = new HashSet<>();
 
@@ -295,6 +300,9 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
         } else {
             optionalPermissions.add(VIEW_VULNERABILITY.toString());
         }
+
+        optionalPermissions.add(VIEW_POLICY_VIOLATION.toString());
+
         if (projectProperties) {
             requiredPermissions.add(PORTFOLIO_MANAGEMENT.toString());
         } else {

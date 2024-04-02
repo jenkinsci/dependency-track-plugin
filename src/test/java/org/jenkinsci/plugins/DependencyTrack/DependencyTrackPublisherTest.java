@@ -38,6 +38,7 @@ import java.util.List;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
+import org.jenkinsci.plugins.DependencyTrack.model.ViolationDistribution;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -210,7 +211,13 @@ class DependencyTrackPublisherTest {
         
         Run buildWithResultAction = mock(Run.class);
         when(buildWithResultAction.getResult()).thenReturn(Result.SUCCESS);
-        when(buildWithResultAction.getAction(ResultAction.class)).thenReturn(new ResultAction(List.of(), new SeverityDistribution(42)));
+        when(buildWithResultAction.getAction(ResultAction.class))
+                .thenReturn(
+                        new ResultAction(
+                                List.of(),
+                                new SeverityDistribution(42),
+                                List.of(),
+                                new ViolationDistribution(42)));
         Run buildWithNoResultAction = mock(Run.class);
         when(buildWithNoResultAction.getResult()).thenReturn(Result.SUCCESS);
         when(buildWithNoResultAction.getPreviousSuccessfulBuild()).thenReturn(buildWithResultAction);

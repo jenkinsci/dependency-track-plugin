@@ -15,17 +15,27 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.model;
 
-import java.util.Set;
-import lombok.Builder;
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Value;
 
-/**
- *
- * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
- */
+import java.io.Serializable;
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 @Value
-@Builder
-public class Team {
-    String name;
-    Set<String> permissions;
+public class Policy implements Serializable
+{
+  private static final long serialVersionUID = 3181011438478413504L;
+
+  String uuid;
+  String name;
+
+  ViolationState violationState;
+  int violationStateRank;
+
+  public static Policy of (final String uuid,
+                           final String name,
+                           final ViolationState violationState)
+  {
+    return new Policy(uuid, name, violationState, violationState.getRank());
+  }
 }

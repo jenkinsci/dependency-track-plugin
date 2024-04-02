@@ -16,21 +16,42 @@
 package org.jenkinsci.plugins.DependencyTrack.model;
 
 import lombok.EqualsAndHashCode;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Value;
+import lombok.ToString;
 
 import java.io.Serializable;
 
 @RequiredArgsConstructor
-@Value
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
-public class Component implements Serializable {
-  private static final long serialVersionUID = -4825926766668357091L;
+@EqualsAndHashCode
+@Getter
+@ToString
+public class ViolationDistribution implements Serializable
+{
+    private static final long serialVersionUID = -8075373711367835551L;
 
-  @EqualsAndHashCode.Include
-  String uuid;
-  String name;
-  String group;
-  String version;
-  String purl;
+    private final int buildNumber;
+    private int fail;
+    private int warn;
+    private int info;
+    private int unassigned;
+
+    public void add(final ViolationState violationState)
+    {
+        switch (violationState)
+        {
+            case FAIL:
+                fail++;
+                break;
+            case WARN:
+                warn++;
+                break;
+            case INFO:
+                info++;
+                break;
+            default:
+                unassigned++;
+                break;
+        }
+    }
 }

@@ -36,7 +36,9 @@ import net.sf.json.JSONArray;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
+import org.jenkinsci.plugins.DependencyTrack.model.PolicyViolation;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
+import org.jenkinsci.plugins.DependencyTrack.model.ViolationDistribution;
 import org.kohsuke.stapler.WebApp;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 
@@ -50,6 +52,8 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
     private transient Run<?, ?> run; // transient: see RunAction2, and JENKINS-45892
     private final List<Finding> findings;
     private final SeverityDistribution severityDistribution;
+    private final List<PolicyViolation> policyViolations;
+    private final ViolationDistribution violationDistribution;
 
     /**
      * the URL of the Dependency-Track Server to which these results are
@@ -117,6 +121,17 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
     public JSONArray getFindingsJson() {
         run.checkPermission(hudson.model.Item.READ);
         return JSONArray.fromObject(findings);
+    }
+
+    public boolean hasPolicyViolations()
+    {
+        return policyViolations != null && !policyViolations.isEmpty();
+    }
+
+    @JavaScriptMethod
+    public JSONArray getPolicyViolationsJson() {
+        run.checkPermission(hudson.model.Item.READ);
+        return JSONArray.fromObject(policyViolations);
     }
 
     public String getBindUrl() {

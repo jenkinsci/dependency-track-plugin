@@ -15,17 +15,21 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.model;
 
-import java.util.Set;
-import lombok.Builder;
-import lombok.Value;
+public enum ViolationState
+{
+  INFO(2),
+  WARN(1),
+  FAIL(0);
 
-/**
- *
- * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
- */
-@Value
-@Builder
-public class Team {
-    String name;
-    Set<String> permissions;
+  private final int rank;
+
+  ViolationState(final int _rank)
+  {
+    rank = _rank;
+  }
+
+  public int getRank()
+  {
+    return rank;
+  }
 }

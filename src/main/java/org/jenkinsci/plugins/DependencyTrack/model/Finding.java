@@ -26,13 +26,13 @@ public class Finding implements Serializable {
 
     private static final long serialVersionUID = 5309487290800777874L;
 
-    private final Component component;
-    private final Vulnerability vulnerability;
-    private final Analysis analysis;
+    Component component;
+    Vulnerability vulnerability;
+    Analysis analysis;
 
     // includes uuid of project, component and vulnerability delimited by colon
     @EqualsAndHashCode.Include
-    private final String matrix;
+    String matrix;
 
     /**
      * checks whether this finding is an alias of the given other finding

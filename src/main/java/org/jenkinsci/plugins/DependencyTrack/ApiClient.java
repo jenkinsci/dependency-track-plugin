@@ -35,10 +35,7 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import org.apache.commons.lang.StringUtils;
-import org.jenkinsci.plugins.DependencyTrack.model.Finding;
-import org.jenkinsci.plugins.DependencyTrack.model.Project;
-import org.jenkinsci.plugins.DependencyTrack.model.Team;
-import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
+import org.jenkinsci.plugins.DependencyTrack.model.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.retry.RetryPolicy;
 import org.springframework.retry.backoff.UniformRandomBackOffPolicy;
@@ -60,6 +57,7 @@ public class ApiClient {
     private static final String API_URL = "/api/v1";
     static final String API_KEY_HEADER = "X-Api-Key";
     static final String PROJECT_FINDINGS_URL = API_URL + "/finding/project";
+    static final String PROJECT_POLICY_VIOLATION_URL = API_URL + "/violation/project";
     static final String BOM_URL = API_URL + "/bom";
     static final String BOM_TOKEN_URL = BOM_URL + "/token";
     static final String PROJECT_URL = API_URL + "/project";
@@ -256,6 +254,28 @@ public class ApiClient {
                     throw new ApiClientException(Messages.ApiClient_Error_RetrieveFindings(status, HttpStatus.valueOf(status).getReasonPhrase()));
                 }
                 return FindingParser.parse(body);
+            } catch (ApiClientException e) {
+                throw e;
+            } catch (IOException e) {
+                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+            }
+        });
+    }
+
+    @NonNull
+    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
+    public List<PolicyViolation> getPolicyViolation(@NonNull final String projectUuid) throws ApiClientException {
+        final var uri = UriComponentsBuilder.fromUriString(PROJECT_POLICY_VIOLATION_URL).pathSegment("{uuid}").build(projectUuid);
+        final var request = createRequest(uri);
+        return executeWithRetry(() -> {
+            try (var response = httpClient.newCall(request).execute()) {
+                final var body = response.body().string();
+                if (!response.isSuccessful()) {
+                    final int status = response.code();
+                    logger.log(body);
+                    throw new ApiClientException(Messages.ApiClient_Error_RetrieveFindings(status, HttpStatus.valueOf(status).getReasonPhrase()));
+                }
+                return PolicyViolationsParser.parse(body);
             } catch (ApiClientException e) {
                 throw e;
             } catch (IOException e) {
