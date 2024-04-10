@@ -15,11 +15,11 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.model;
 
+import edu.umd.cs.findbugs.annotations.NonNull;
+import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.model.Result;
-
 import java.io.Serializable;
 import lombok.EqualsAndHashCode;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
@@ -40,7 +40,7 @@ public class RiskGate implements Serializable {
      * @param previousDistribution previousDistribution
      * @return a Result
      */
-    public Result evaluate(@NonNull final SeverityDistribution currentDistribution, final SeverityDistribution previousDistribution) {
+    public Result evaluate(@NonNull final SeverityDistribution currentDistribution, @Nullable final SeverityDistribution previousDistribution) {
 
         Result result = Result.SUCCESS;
         if ((thresholds.totalFindings.failedCritical != null && currentDistribution.getCritical() > 0 && currentDistribution.getCritical() >= thresholds.totalFindings.failedCritical)

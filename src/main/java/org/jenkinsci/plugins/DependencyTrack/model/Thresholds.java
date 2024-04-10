@@ -23,27 +23,17 @@ import lombok.ToString;
 @ToString
 public class Thresholds implements Serializable {
 
-    public final TotalFindings totalFindings = new TotalFindings();
-    public final NewFindings newFindings = new NewFindings();
+    public final ThresholdValues totalFindings = new ThresholdValues();
+    public final ThresholdValues newFindings = new ThresholdValues();
 
-    @EqualsAndHashCode
-    @ToString
-    public static class TotalFindings implements Serializable {
-        public Integer unstableCritical;
-        public Integer unstableHigh;
-        public Integer unstableMedium;
-        public Integer unstableLow;
-        public Integer unstableUnassigned;
-        public Integer failedCritical;
-        public Integer failedHigh;
-        public Integer failedMedium;
-        public Integer failedLow;
-        public Integer failedUnassigned;
+    public boolean hasValues() {
+        return totalFindings.hasValues() || newFindings.hasValues();
     }
 
     @EqualsAndHashCode
     @ToString
-    public static class NewFindings implements Serializable {
+    public static class ThresholdValues implements Serializable {
+
         public Integer unstableCritical;
         public Integer unstableHigh;
         public Integer unstableMedium;
@@ -54,5 +44,25 @@ public class Thresholds implements Serializable {
         public Integer failedMedium;
         public Integer failedLow;
         public Integer failedUnassigned;
+
+        public boolean hasValues() {
+            return hasUnstableValues() || hasFailedValues();
+        }
+
+        private boolean hasUnstableValues() {
+            return unstableCritical != null
+                    || unstableHigh != null
+                    || unstableMedium != null
+                    || unstableLow != null
+                    || unstableUnassigned != null;
+        }
+
+        private boolean hasFailedValues() {
+            return failedCritical != null
+                    || failedHigh != null
+                    || failedMedium != null
+                    || failedLow != null
+                    || failedUnassigned != null;
+        }
     }
 }

@@ -312,7 +312,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
             throw new AbortException(Messages.Builder_Upload_Failed());
         }
 
-        // add ResultLinkAction even if it may not contain a projectId. but we want to store name version for the future.
+        // add ResultLinkAction even if it may not contain a projectId. but we want to store name and version for the future.
         final ResultLinkAction linkAction = new ResultLinkAction(getEffectiveFrontendUrl(), projectId);
         linkAction.setProjectName(effectiveProjectName);
         linkAction.setProjectVersion(effectiveProjectVersion);
@@ -322,12 +322,19 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         
         updateProjectProperties(logger, apiClient, effectiveProjectName, effectiveProjectVersion);
 
+        final var thresholds = getThresholds();
         if (synchronous && StringUtils.isNotBlank(uploadResult.getToken())) {
-            publishAnalysisResult(logger, apiClient, uploadResult.getToken(), run, effectiveProjectName, effectiveProjectVersion);
+            final var severityDistribution = publishAnalysisResult(logger, apiClient, uploadResult.getToken(), run, effectiveProjectName, effectiveProjectVersion);
+            if (thresholds.hasValues()) {
+                evaluateRiskGates(run, logger, severityDistribution, thresholds);
+            }
+        }
+        if (!synchronous && thresholds.hasValues()) {
+            logger.log(Messages.Builder_Threshold_NoSync());
         }
     }
 
-    private void publishAnalysisResult(final ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build, final String effectiveProjectName, final String effectiveProjectVersion) throws InterruptedException, ApiClientException, AbortException {
+    private SeverityDistribution publishAnalysisResult(final ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build, final String effectiveProjectName, final String effectiveProjectVersion) throws InterruptedException, ApiClientException, AbortException {
         final long timeout = System.currentTimeMillis() + (60000L * getEffectivePollingTimeout());
         final long interval = 1000L * getEffectivePollingInterval();
         logger.log(Messages.Builder_Polling());
@@ -356,22 +363,21 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         linkAction.setProjectVersion(effectiveProjectVersion);
         build.addOrReplaceAction(linkAction);
 
+        return severityDistribution;
+    }
+
+    private void evaluateRiskGates(final Run<?, ?> build, final ConsoleLogger logger, final SeverityDistribution currentDistribution, final Thresholds thresholds) throws AbortException {
         // Get previous results and evaluate to thresholds
-        final SeverityDistribution previousSeverityDistribution = Optional.ofNullable(getPreviousBuildWithAnalysisResult(build))
+        final SeverityDistribution previousDistribution = Optional.ofNullable(getPreviousBuildWithAnalysisResult(build))
                 .map(previousBuild -> previousBuild.getAction(ResultAction.class))
                 .map(ResultAction::getSeverityDistribution)
                 .orElse(null);
-
-        evaluateRiskGates(build, logger, severityDistribution, previousSeverityDistribution);
-    }
-
-    private void evaluateRiskGates(final Run<?, ?> build, final ConsoleLogger logger, final SeverityDistribution currentDistribution, final SeverityDistribution previousDistribution) throws AbortException {
         if (previousDistribution != null) {
             logger.log(Messages.Builder_Threshold_ComparingTo(previousDistribution.getBuildNumber()));
         } else {
             logger.log(Messages.Builder_Threshold_NoComparison());
         }
-        final RiskGate riskGate = new RiskGate(getThresholds());
+        final RiskGate riskGate = new RiskGate(thresholds);
         final Result result = riskGate.evaluate(currentDistribution, previousDistribution);
         if (result.isWorseOrEqualTo(Result.UNSTABLE) && result.isCompleteBuild()) {
             logger.log(Messages.Builder_Threshold_Exceed());
