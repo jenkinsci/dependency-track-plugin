@@ -48,6 +48,15 @@ jobs:
       - name: Build without Sonar
         if: steps.build_sonar.conclusion == 'skipped'
         run: mvn -B clean test verify package
+      - name: Sonar Quality Gate check
+        id: sonarqube-quality-gate-check
+        uses: sonarsource/sonarqube-quality-gate-action@master
+        if: steps.build_sonar.conclusion == 'success'
+        with:
+          scanMetadataReportFile: target/sonar/report-task.txt
+        env:
+          SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
+          SONAR_ORGANIZATION: ${{ secrets.SONARCLOUD_ORGANIZATION }}
       - uses: actions/upload-artifact@v4
         if: matrix.java == '11' && success()
         with:
