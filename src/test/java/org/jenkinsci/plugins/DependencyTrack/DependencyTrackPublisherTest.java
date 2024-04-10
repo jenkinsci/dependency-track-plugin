@@ -164,6 +164,7 @@ class DependencyTrackPublisherTest {
         uut.setProjectId("uuid-1");
         uut.setDependencyTrackApiKey(apikeyId);
         uut.setProjectProperties(new ProjectProperties());
+        uut.setUnstableTotalCritical(1);
 
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false)))
                 .thenReturn(new UploadResult(true))
@@ -203,6 +204,7 @@ class DependencyTrackPublisherTest {
         DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
         uut.setProjectId("uuid-1");
         uut.setDependencyTrackApiKey(apikeyId);
+        uut.setUnstableTotalCritical(1);
 
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
@@ -223,6 +225,29 @@ class DependencyTrackPublisherTest {
         verify(client, times(2)).isTokenBeingProcessed("token-1");
         verify(client).getFindings("uuid-1");
         verify(buildWithResultAction, times(2)).getAction(ResultAction.class);
+    }
+
+    @Test
+    void testPerformSyncNoThresholds(@TempDir Path tmpWork) throws IOException, InterruptedException {
+        File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
+        FilePath workDir = new FilePath(tmpWork.toFile());
+        DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
+        uut.setProjectId("uuid-1");
+        uut.setDependencyTrackApiKey(apikeyId);
+
+        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
+        when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
+        when(client.getFindings("uuid-1")).thenReturn(List.of());
+        
+        Run abortedBuild = mock(Run.class);
+        when(abortedBuild.getResult()).thenReturn(Result.NOT_BUILT);
+        when(build.getPreviousSuccessfulBuild()).thenReturn(abortedBuild);
+
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
+        verify(client, times(2)).isTokenBeingProcessed("token-1");
+        verify(client).getFindings("uuid-1");
+        verify(abortedBuild, never()).getAction(ResultAction.class);
     }
 
     @Test

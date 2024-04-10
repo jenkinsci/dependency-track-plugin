@@ -46,6 +46,7 @@
         <maven.javadoc.skip>true</maven.javadoc.skip>
         <npm.path>npm</npm.path>
         <npm.suffix />
+        <spotbugs.excludeFilterFile>spotbugs-excludes.xml</spotbugs.excludeFilterFile>
     </properties>
     
     <profiles>

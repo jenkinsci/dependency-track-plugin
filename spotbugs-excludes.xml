@@ -1,0 +1,13 @@
+<FindBugsFilter
+    xmlns="https://github.com/spotbugs/filter/4.8.3"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="https://github.com/spotbugs/filter/4.8.3 https://raw.githubusercontent.com/spotbugs/spotbugs/4.8.3/spotbugs/etc/findbugsfilter.xsd">
+    <Match>
+        <Class name="org.jenkinsci.plugins.DependencyTrack.model.RiskGate" />
+        <Or>
+            <Method name="equals" />
+            <Method name="hashCode" />
+        </Or>
+        <Bug pattern="RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE" />
+    </Match>
+</FindBugsFilter>
