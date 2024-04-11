@@ -27,7 +27,6 @@ import hudson.util.RunList;
 import java.io.IOException;
 import java.util.List;
 import net.sf.json.JSONArray;
-import org.assertj.core.api.Assertions;
 import org.jenkinsci.plugins.DependencyTrack.model.Severity;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.junit.jupiter.api.Test;
@@ -37,6 +36,7 @@ import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.assertj.core.api.Assertions.assertThatObject;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -104,7 +104,8 @@ class JobActionTest {
         project._getRuns().put(2, b2);
 
         final JobAction uut = new JobAction(project);
-        Assertions.<JSONArray>assertThat(uut.getSeverityDistributionTrend()).isEqualTo(JSONArray.fromObject(List.of(sd1, sd2)));
+        final JSONArray expected = JSONArray.fromObject(List.of(sd1, sd2));
+        assertThatObject(uut.getSeverityDistributionTrend()).isEqualTo(expected);
     }
 
 }
