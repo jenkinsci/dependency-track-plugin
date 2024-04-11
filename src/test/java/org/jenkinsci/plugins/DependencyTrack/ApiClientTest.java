@@ -189,12 +189,10 @@ class ApiClientTest {
 
         ApiClient uut = createClient();
         final List<Project> projects = uut.getProjects();
-        // org.kohsuke.stapler.json-lib before version 2.4-jenkins-3 treated the string "null" as {@code JSONNull}, which was not JSON-spec compliant
-        boolean isOldJsonVersion = net.sf.json.JSONNull.getInstance().equals("null");
 
         assertThat(projects).containsExactly(
                 Project.builder().name("Project 1").uuid("uuid-1").tags(List.of()).build(),
-                Project.builder().name("Project 2").uuid("uuid-2").version(isOldJsonVersion ? null : "null").tags(List.of()).build(),
+                Project.builder().name("Project 2").uuid("uuid-2").version("null").tags(List.of()).build(),
                 Project.builder().name("Project 3").uuid("uuid-3").version("1.2.3").tags(List.of("tag1", "tag2")).lastBomImport(LocalDateTime.of(2007, Month.DECEMBER, 3, 10, 15, 30)).build()
         );
     }
