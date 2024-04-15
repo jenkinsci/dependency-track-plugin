@@ -267,7 +267,7 @@ public class ApiClient {
     @NonNull
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public UploadResult upload(@Nullable final String projectId, @Nullable final String projectName, @Nullable final String projectVersion, @NonNull final FilePath artifact,
-            boolean autoCreateProject) throws IOException {
+            boolean autoCreateProject) throws ApiClientException {
         final String encodedScan;
         try (var in = artifact.read()) {
             encodedScan = Base64.getEncoder().encodeToString(in.readAllBytes());
@@ -314,9 +314,10 @@ public class ApiClient {
                 }
                 logger.log(body);
                 return new UploadResult(false);
+            } catch (IOException e) {
+                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
             }
         });
-
     }
 
     public void updateProjectProperties(@NonNull final String projectUuid, @NonNull final ProjectProperties properties) throws ApiClientException {

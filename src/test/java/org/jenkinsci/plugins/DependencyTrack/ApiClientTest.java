@@ -398,6 +398,18 @@ class ApiClientTest {
         FilePath fileWithError = new FilePath(mockFile);
         assertThat(uut.upload(null, "p1", "v1", fileWithError, true)).isEqualTo(new UploadResult(false));
         verify(logger).log(startsWith(Messages.Builder_Error_Processing(tmp.toAbsolutePath().toString(), "")));
+        
+        final var httpClient = mock(OkHttpClient.class);
+        final var call = mock(okhttp3.Call.class);
+        final var uutWithMock = createClient(httpClient);
+        when(httpClient.newCall(any(okhttp3.Request.class))).thenReturn(call);
+        doThrow(new java.net.SocketTimeoutException("oops"))
+                .when(call).execute();
+
+        assertThatCode(() -> uutWithMock.upload(null, "p1", "v1", new FilePath(bom), true))
+                .hasMessage(Messages.ApiClient_Error_Connection("", ""))
+                .hasCauseInstanceOf(java.net.SocketTimeoutException.class);
+        verify(httpClient, times(2)).newCall(any(okhttp3.Request.class));
     }
 
     @Test
