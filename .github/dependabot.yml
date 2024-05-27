@@ -4,8 +4,6 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
-    ignore:
-      - dependency-name: "org.projectlombok:lombok"
 
   - package-ecosystem: "github-actions"
     directory: "/"
