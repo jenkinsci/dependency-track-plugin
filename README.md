@@ -3,7 +3,7 @@
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=org.jenkins-ci.plugins%3Adependency-track&metric=security_rating)](https://sonarcloud.io/dashboard?id=org.jenkins-ci.plugins%3Adependency-track)
 [![License](https://img.shields.io/badge/license-apache%20v2-brightgreen.svg)](LICENSE.txt)
 [![Plugin Version](https://img.shields.io/jenkins/plugin/v/dependency-track.svg)](https://plugins.jenkins.io/dependency-track/)
-[![Jenkins Plugin Installs](https://img.shields.io/jenkins/plugin/i/dependency-track.svg?color=blue)](https://plugins.jenkins.io/dependency-track/)
+[![Jenkins Plugin Installs](https://img.shields.io/jenkins/plugin/i/dependency-track.svg?color=blue)](https://stats.jenkins.io/pluginversions/dependency-track.html)
 [![GitHub open issues](https://img.shields.io/github/issues-raw/jenkinsci/dependency-track-plugin)](https://github.com/jenkinsci/dependency-track-plugin/issues)
 [![Website](https://img.shields.io/badge/https://-dependencytrack.org-blue.svg)](https://dependencytrack.org/)
 
