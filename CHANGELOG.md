@@ -19,6 +19,7 @@
 - Supports HTTP/2
 - In the event of an unexpected exception, each call to Dependency-Track is retried within an uniformly distributed, randomly generated period in the range of 50-500ms.
 - A warning is emitted when threshold values are configured but synchronous mode is disabled.
+Add Support for Identification of Aliases ... by ignoring them ([#168](https://github.com/jenkinsci/dependency-track-plugin/issues/168))
 
 ### 🐞 Bugs Fixed
 - The settings for the threshold values are now only visible when synchronous mode is enabled. This will hopefully avoid misunderstandings/misconfigurations.
