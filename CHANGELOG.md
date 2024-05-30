@@ -5,7 +5,7 @@
 ### ⭐ New Features
 ### 🐞 Bugs Fixed
 
-## v5.0.0 - 2024-??-??
+## v5.0.0 - 2024-05-30
 ### ⚠ Breaking
 - require Jenkins 2.440.1 or newer
 - require Java 11 or newer ([required since Jenkins 2.361.1](https://www.jenkins.io/blog/2022/06/28/require-java-11/))
