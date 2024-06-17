@@ -40,7 +40,7 @@
         <jenkins.version>2.440.1</jenkins.version>
         <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
         <configuration-as-code.version>1810.v9b_c30a_249a_4c</configuration-as-code.version>
-        <byte-buddy.version>1.14.16</byte-buddy.version>
+        <byte-buddy.version>1.14.17</byte-buddy.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.javadoc.skip>true</maven.javadoc.skip>
