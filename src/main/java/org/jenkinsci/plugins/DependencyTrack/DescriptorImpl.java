@@ -76,20 +76,19 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
     private final transient ApiClientFactory clientFactory;
 
     /**
-     * Specifies the base URL to Dependency-Track v3 or higher.
+     * Specifies the base URL to Dependency-Track.
      */
     @Setter(onMethod_ = {@DataBoundSetter})
     private String dependencyTrackUrl;
 
     /**
-     * Specifies the alternative base URL to the frontend of Dependency-Track v3 or higher.
+     * Specifies the alternative base URL to the frontend of Dependency-Track.
      */
     @Setter(onMethod_ = {@DataBoundSetter})
     private String dependencyTrackFrontendUrl;
 
     /**
-     * Specifies an API Key used for authentication (if authentication is
-     * required).
+     * Specifies the credential-id for an API Key used for authentication.
      */
     @Getter(onMethod_ = {@CheckForNull})
     @Setter(onMethod_ = {@DataBoundSetter})
@@ -162,6 +161,11 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
      */
     @POST
     public ListBoxModel doFillProjectIdItems(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable final Item item) {
+        if (item == null) {
+            Jenkins.get().checkPermission(Jenkins.ADMINISTER);
+        } else {
+            item.checkPermission(Item.CONFIGURE);
+        }
         final ListBoxModel projects = new ListBoxModel();
         try {
             // url may come from instance-config. if empty, then take it from global config (this)
