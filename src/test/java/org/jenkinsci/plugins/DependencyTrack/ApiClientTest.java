@@ -321,14 +321,13 @@ class ApiClientTest {
         }))
                 .bindNow();
 
-        ApiClient uut = createClient();
-        assertThat(uut.upload("uuid-1", null, null, new FilePath(bom.toFile()), false)).isEqualTo(new UploadResult(true, "uuid-1"));
+        final var props = new ProjectProperties();
+        props.setParentId("parent-uuid");
 
-        File mockFile = mock(File.class);
-        when(mockFile.getPath()).thenReturn(tmp.toAbsolutePath().toString());
-        FilePath fileWithError = new FilePath(mockFile);
-        assertThat(uut.upload(null, "p1", "v1", fileWithError, true)).isEqualTo(new UploadResult(false));
-        String expectedBody = "{\"bom\":\"PHRlc3QgLz4=\",\"project\":\"uuid-1\"}";
+        ApiClient uut = createClient();
+        assertThat(uut.upload("uuid-1", null, null, new FilePath(bom.toFile()), false, props)).isEqualTo(new UploadResult(true, "uuid-1"));
+
+        String expectedBody = "{\"bom\":\"PHRlc3QgLz4=\",\"project\":\"uuid-1\",\"parentUUID\":\"parent-uuid\"}";
         completionSignal.await(5, TimeUnit.SECONDS);
         assertThat(completionSignal.getCount()).isZero();
         assertThat(requestBody.get()).isEqualTo(expectedBody);
@@ -355,9 +354,14 @@ class ApiClientTest {
         }))
                 .bindNow();
 
+        final var props = new ProjectProperties();
+        props.setParentName("parent-name");
+        props.setParentVersion("parent-version");
+
         ApiClient uut = createClient();
-        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom.toFile()), false)).isEqualTo(new UploadResult(true));
-        String expectedBody = "{\"bom\":\"PHRlc3QgLz4=\",\"projectName\":\"p1\",\"projectVersion\":\"v1\",\"autoCreate\":false}";
+        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom.toFile()), false, props)).isEqualTo(new UploadResult(true));
+
+        String expectedBody = "{\"bom\":\"PHRlc3QgLz4=\",\"projectName\":\"p1\",\"projectVersion\":\"v1\",\"autoCreate\":false,\"parentName\":\"parent-name\",\"parentVersion\":\"parent-version\"}";
         completionSignal.await(5, TimeUnit.SECONDS);
         assertThat(completionSignal.getCount()).isZero();
         assertThat(requestBody.get()).isEqualTo(expectedBody);
@@ -371,32 +375,32 @@ class ApiClientTest {
 
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.BAD_REQUEST).send())).bindNow();
         uut = createClient();
-        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom), true)).isEqualTo(new UploadResult(false));
+        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom), true, null)).isEqualTo(new UploadResult(false));
         verify(logger).log(Messages.Builder_Payload_Invalid());
         server.disposeNow();
 
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.UNAUTHORIZED).send())).bindNow();
         uut = createClient();
-        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom), true)).isEqualTo(new UploadResult(false));
+        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom), true, null)).isEqualTo(new UploadResult(false));
         verify(logger).log(Messages.Builder_Unauthorized());
         server.disposeNow();
 
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.NOT_FOUND).send())).bindNow();
         uut = createClient();
-        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom), true)).isEqualTo(new UploadResult(false));
+        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom), true, null)).isEqualTo(new UploadResult(false));
         verify(logger).log(Messages.Builder_Project_NotFound());
         server.disposeNow();
 
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.GONE).send())).bindNow();
         uut = createClient();
-        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom), true)).isEqualTo(new UploadResult(false));
+        assertThat(uut.upload(null, "p1", "v1", new FilePath(bom), true, null)).isEqualTo(new UploadResult(false));
         verify(logger).log(Messages.ApiClient_Error_Connection(HttpResponseStatus.GONE.code(), HttpResponseStatus.GONE.reasonPhrase()));
         server.disposeNow();
 
         File mockFile = mock(File.class);
         when(mockFile.getPath()).thenReturn(tmp.toAbsolutePath().toString());
         FilePath fileWithError = new FilePath(mockFile);
-        assertThat(uut.upload(null, "p1", "v1", fileWithError, true)).isEqualTo(new UploadResult(false));
+        assertThat(uut.upload(null, "p1", "v1", fileWithError, true, null)).isEqualTo(new UploadResult(false));
         verify(logger).log(startsWith(Messages.Builder_Error_Processing(tmp.toAbsolutePath().toString(), "")));
         
         final var httpClient = mock(OkHttpClient.class);
@@ -406,7 +410,7 @@ class ApiClientTest {
         doThrow(new java.net.SocketTimeoutException("oops"))
                 .when(call).execute();
 
-        assertThatCode(() -> uutWithMock.upload(null, "p1", "v1", new FilePath(bom), true))
+        assertThatCode(() -> uutWithMock.upload(null, "p1", "v1", new FilePath(bom), true, null))
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(java.net.SocketTimeoutException.class);
         verify(httpClient, times(2)).newCall(any(okhttp3.Request.class));

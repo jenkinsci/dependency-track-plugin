@@ -3,6 +3,8 @@
 ## Unreleased
 ### ⚠ Breaking
 ### ⭐ New Features
+- Support for specifying the parent project using its name and version as an alternative to its ID (fixes [#261](https://github.com/jenkinsci/dependency-track-plugin/issues/261))
+
 ### 🐞 Bugs Fixed
 
 ## v5.0.0 - 2024-05-30

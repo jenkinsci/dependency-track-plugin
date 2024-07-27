@@ -81,6 +81,18 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
     @Nullable
     private String parentId;
 
+    /**
+     * Name of the parent project
+     */
+    @Nullable
+    private String parentName;
+
+    /**
+     * Version of the parent project
+     */
+    @Nullable
+    private String parentVersion;
+
     @NonNull
     public List<String> getTags() {
         return normalizeTags(tags);
@@ -132,6 +144,16 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
     @DataBoundSetter
     public void setParentId(final String parentId) {
         this.parentId = StringUtils.trimToNull(parentId);
+    }
+
+    @DataBoundSetter
+    public void setParentName(final String parentName) {
+        this.parentName = StringUtils.trimToNull(parentName);
+    }
+
+    @DataBoundSetter
+    public void setParentVersion(final String parentVersion) {
+        this.parentVersion = StringUtils.trimToNull(parentVersion);
     }
 
     @NonNull

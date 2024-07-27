@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -57,6 +58,7 @@ import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 public class ApiClient {
 
+    private static final MediaType APPLICATION_JSON = MediaType.parse(APPLICATION_JSON_VALUE);
     private static final String API_URL = "/api/v1";
     static final String API_KEY_HEADER = "X-Api-Key";
     static final String PROJECT_FINDINGS_URL = API_URL + "/finding/project";
@@ -267,7 +269,7 @@ public class ApiClient {
     @NonNull
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public UploadResult upload(@Nullable final String projectId, @Nullable final String projectName, @Nullable final String projectVersion, @NonNull final FilePath artifact,
-            boolean autoCreateProject) throws ApiClientException {
+            boolean autoCreateProject, @Nullable final ProjectProperties properties) throws ApiClientException {
         final String encodedScan;
         try (var in = artifact.read()) {
             encodedScan = Base64.getEncoder().encodeToString(in.readAllBytes());
@@ -276,16 +278,21 @@ public class ApiClient {
             return new UploadResult(false);
         }
         // Creates the JSON payload that will be sent to Dependency-Track
-        JSONObject jsonObject = new JSONObject();
-        jsonObject.element("bom", encodedScan);
+        final var bomSubmitRequest = new JSONObject();
+        bomSubmitRequest.element("bom", encodedScan);
         if (StringUtils.isNotBlank(projectId)) {
-            jsonObject.element("project", projectId);
+            bomSubmitRequest.element("project", projectId);
         } else {
-            jsonObject.element("projectName", projectName)
+            bomSubmitRequest.element("projectName", projectName)
                     .element("projectVersion", projectVersion)
                     .element("autoCreate", autoCreateProject);
         }
-        final var request = createRequest(URI.create(BOM_URL), "PUT", RequestBody.create(jsonObject.toString(), okhttp3.MediaType.parse(APPLICATION_JSON_VALUE)));
+        if (properties != null) {
+            bomSubmitRequest.elementOpt("parentUUID", properties.getParentId())
+                    .elementOpt("parentName", properties.getParentName())
+                    .elementOpt("parentVersion", properties.getParentVersion());
+        }
+        final var request = createRequest(URI.create(BOM_URL), "PUT", RequestBody.create(bomSubmitRequest.toString(), APPLICATION_JSON));
         return executeWithRetry(() -> {
             try (var response = httpClient.newCall(request).execute()) {
                 final var body = response.body().string();
@@ -348,7 +355,7 @@ public class ApiClient {
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void updateProject(@NonNull final String projectUuid, @NonNull final JSONObject project) throws ApiClientException {
         final var uri = UriComponentsBuilder.fromUriString(PROJECT_URL).pathSegment("{uuid}").build(projectUuid);
-        final var request = createRequest(uri, "PATCH", RequestBody.create(project.toString(), okhttp3.MediaType.parse(APPLICATION_JSON_VALUE)));
+        final var request = createRequest(uri, "PATCH", RequestBody.create(project.toString(), APPLICATION_JSON));
         executeWithRetry(() -> {
             try (var response = httpClient.newCall(request).execute()) {
                 if (!response.isSuccessful() && response.code() != HttpStatus.NOT_MODIFIED.value()) {

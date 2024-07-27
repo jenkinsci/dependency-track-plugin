@@ -150,7 +150,7 @@ class DependencyTrackPublisherTest {
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, clientFactory);
         uut.setProjectId("uuid-1");
 
-        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false))).thenThrow(new ApiClientException(Messages.ApiClient_Error_Connection("", "")));
+        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false), isNull())).thenThrow(new ApiClientException(Messages.ApiClient_Error_Connection("", "")));
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).isInstanceOf(ApiClientException.class).hasMessage(Messages.ApiClient_Error_Connection("", ""));
     }
@@ -160,20 +160,21 @@ class DependencyTrackPublisherTest {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
+        final var props = new ProjectProperties();
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, clientFactory);
         uut.setProjectId("uuid-1");
         uut.setDependencyTrackApiKey(apikeyId);
-        uut.setProjectProperties(new ProjectProperties());
+        uut.setProjectProperties(props);
         uut.setUnstableTotalCritical(1);
 
-        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false)))
+        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false), eq(props)))
                 .thenReturn(new UploadResult(true))
                 .thenReturn(new UploadResult(false));
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
         verify(client, never()).getFindings(anyString());
         verify(client, never()).lookupProject(anyString(), anyString());
-        verify(client).updateProjectProperties(eq("uuid-1"), any(ProjectProperties.class));
+        verify(client, never()).updateProjectProperties(eq("uuid-1"), any(ProjectProperties.class));
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Upload_Failed());
     }
@@ -189,7 +190,7 @@ class DependencyTrackPublisherTest {
         uut.setDependencyTrackApiKey(apikeyId);
         uut.setAutoCreateProjects(Boolean.TRUE);
 
-        when(client.upload(isNull(), eq("name-1"), eq("my.value"), any(FilePath.class), eq(true))).thenReturn(new UploadResult(true, "token-1"));
+        when(client.upload(isNull(), eq("name-1"), eq("my.value"), any(FilePath.class), eq(true), isNull())).thenReturn(new UploadResult(true, "token-1"));
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
         verify(client, never()).lookupProject(anyString(), anyString());
@@ -206,7 +207,7 @@ class DependencyTrackPublisherTest {
         uut.setDependencyTrackApiKey(apikeyId);
         uut.setUnstableTotalCritical(1);
 
-        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
+        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false), isNull())).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(List.of());
         
@@ -236,7 +237,7 @@ class DependencyTrackPublisherTest {
         uut.setProjectId("uuid-1");
         uut.setDependencyTrackApiKey(apikeyId);
 
-        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false))).thenReturn(new UploadResult(true, "token-1"));
+        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false), isNull())).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(List.of());
         
@@ -255,14 +256,16 @@ class DependencyTrackPublisherTest {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
+        final var props = new ProjectProperties();
+        props.setDescription("description");
         DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
         uut.setProjectName("name-1");
         uut.setProjectVersion("version-1");
         uut.setDependencyTrackApiKey(apikeyId);
         uut.setAutoCreateProjects(Boolean.TRUE);
-        uut.setProjectProperties(new ProjectProperties());
+        uut.setProjectProperties(props);
 
-        when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(true))).thenReturn(new UploadResult(true, "token-1"));
+        when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(true), eq(props))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(List.of());
         when(client.lookupProject("name-1", "version-1")).thenReturn(Project.builder().uuid("uuid-1").build());
@@ -271,7 +274,7 @@ class DependencyTrackPublisherTest {
         assertThat(uut.getProjectId()).isNullOrEmpty();
         verify(client, times(2)).isTokenBeingProcessed("token-1");
         verify(client).getFindings("uuid-1");
-        verify(client).updateProjectProperties(eq("uuid-1"), any(ProjectProperties.class));
+        verify(client).updateProjectProperties("uuid-1", props);
         verify(client).lookupProject("name-1", "version-1");
     }
 
@@ -296,7 +299,7 @@ class DependencyTrackPublisherTest {
         uut.setDependencyTrackConnectionTimeout(1);
         uut.setDependencyTrackReadTimeout(1);
 
-        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(true)))
+        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(true), isNull()))
                 .thenReturn(new UploadResult(false));
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Upload_Failed());
