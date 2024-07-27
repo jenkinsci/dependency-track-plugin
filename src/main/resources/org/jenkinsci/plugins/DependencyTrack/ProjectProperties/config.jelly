@@ -31,5 +31,11 @@ limitations under the License.
     <f:entry field="parentId" title="${%parentId}">
         <f:select id="parentId"/>
     </f:entry>
+    <f:entry field="parentName" title="${%parentName}">
+        <f:textbox id="parentName" />
+    </f:entry>
+    <f:entry field="parentVersion" title="${%parentVersion}">
+        <f:textbox id="parentVersion" />
+    </f:entry>
 
 </j:jelly>

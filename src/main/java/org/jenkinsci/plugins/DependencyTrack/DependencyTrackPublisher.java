@@ -306,7 +306,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         logger.log(Messages.Builder_Publishing(effectiveUrl));
         final ApiClient apiClient = clientFactory.create(effectiveUrl, effectiveApiKey, logger, getEffectiveConnectionTimeout(), getEffectiveReadTimeout());
         final UploadResult uploadResult = apiClient.upload(projectId, effectiveProjectName, effectiveProjectVersion,
-                artifactFilePath, effectiveAutocreate);
+                artifactFilePath, effectiveAutocreate, projectProperties);
 
         if (!uploadResult.isSuccess()) {
             throw new AbortException(Messages.Builder_Upload_Failed());
@@ -563,7 +563,15 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     }
     
     private void updateProjectProperties(final ConsoleLogger logger, final ApiClient apiClient, final String effectiveProjectName, final String effectiveProjectVersion) throws ApiClientException {
-        if (projectProperties != null) {
+        // check whether there are settings other than those of the parent project.
+        // the parent project is set during upload.
+        boolean doUpdateProject = projectProperties != null && ( // noformat
+                projectProperties.getDescription() != null
+                || projectProperties.getGroup() != null
+                || projectProperties.getSwidTagId() != null
+                || !projectProperties.getTags().isEmpty());
+
+        if (doUpdateProject) {
             logger.log(Messages.Builder_Project_Update());
             final String id = lookupProjectId(logger, apiClient, effectiveProjectName, effectiveProjectVersion);
             apiClient.updateProjectProperties(id, projectProperties);
