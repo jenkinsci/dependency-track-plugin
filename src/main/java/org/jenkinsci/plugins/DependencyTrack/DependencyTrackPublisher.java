@@ -303,7 +303,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
 
         final String effectiveUrl = getEffectiveUrl();
         final String effectiveApiKey = getEffectiveApiKey(run);
-        logger.log(Messages.Builder_Publishing(effectiveUrl));
+        logger.log(Messages.Builder_Publishing(effectiveUrl, effectiveArtifact));
         final ApiClient apiClient = clientFactory.create(effectiveUrl, effectiveApiKey, logger, getEffectiveConnectionTimeout(), getEffectiveReadTimeout());
         final UploadResult uploadResult = apiClient.upload(projectId, effectiveProjectName, effectiveProjectVersion,
                 artifactFilePath, effectiveAutocreate, projectProperties);
