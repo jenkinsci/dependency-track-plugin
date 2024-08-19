@@ -46,14 +46,15 @@ class FindingParserTest {
         Analysis a1 = new Analysis("state-1", false);
         Finding f1 = new Finding(c1, v1, a1, "matrix-1");
 
+        var aliases2 = List.of("CVE-1234-123456");
         var c2 = new Component("uuid-2", "name-2", "group-2", "version-2", "purl-2");
-        var v2 = new Vulnerability("uuid-2", "GITHUB", "GHSA-abcd-abcd-abcd", "title-1", "subtitle-1", "description-1", "recommendation-1", Severity.CRITICAL, 1, 2, "cweName-1", null);
+        var v2 = new Vulnerability("uuid-2", "GITHUB", "GHSA-abcd-abcd-abcd", "title-1", "subtitle-1", "description-1", "recommendation-1", Severity.CRITICAL, 1, 2, "cweName-1", aliases2);
         var f2 = new Finding(c2, v2, a1, "matrix-3");
 
         var c3 = new Component("uuid-3", "name-3", "group-3", "version-3", "purl-3");
-        var v3 = new Vulnerability("uuid-3", "FOO", "FOO-78945", "title-3", "subtitle-3", "description-3", "recommendation-3", Severity.CRITICAL, 1, 2, "cweName-1", null);
+        var v3 = new Vulnerability("uuid-3", "FOO", "FOO-78945", "title-3", "subtitle-3", "description-3", "recommendation-3", Severity.CRITICAL, 1, null, null, null);
         var f3 = new Finding(c3, v3, a1, "matrix-4");
 
-        assertThat(FindingParser.parse(Files.contentOf(findings, StandardCharsets.UTF_8))).containsExactly(f1, f2, f3);
+        assertThat(FindingParser.parse(Files.contentOf(findings, StandardCharsets.UTF_8))).usingRecursiveFieldByFieldElementComparator().containsExactly(f1, f2, f3);
     }
 }
