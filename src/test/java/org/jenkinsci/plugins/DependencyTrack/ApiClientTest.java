@@ -301,6 +301,48 @@ class ApiClientTest {
     }
 
     @Test
+    void getViolationsTest(JenkinsRule r) throws ApiClientException {
+        server = HttpServer.create()
+                .host("localhost")
+                .port(0)
+                .route(routes -> routes.get(ApiClient.PROJECT_VIOLATIONS_URL + "/{uuid}", (request, response) -> {
+            assertCommonHeaders(request);
+            assertThat(request.param("uuid")).isNotEmpty();
+            String uuid = request.param("uuid");
+            switch (uuid) {
+                case "uuid-1":
+                    return response.sendString(Mono.just("[]"));
+                default:
+                    return response.sendNotFound();
+            }
+        }))
+                .bindNow();
+
+        ApiClient uut = createClient();
+
+        assertThatCode(() -> uut.getViolations("foo")).isInstanceOf(ApiClientException.class)
+                .hasNoCause()
+                .hasMessage(Messages.ApiClient_Error_RetrieveViolations(HttpResponseStatus.NOT_FOUND.code(), HttpResponseStatus.NOT_FOUND.reasonPhrase()));
+
+        assertThat(uut.getViolations("uuid-1")).isEmpty();
+    }
+
+    @Test
+    void getViolationsTestWithErrors() throws IOException {
+        final var httpClient = mock(OkHttpClient.class);
+        final var call = mock(okhttp3.Call.class);
+        final var uut = createClient(httpClient);
+        when(httpClient.newCall(any(okhttp3.Request.class))).thenReturn(call);
+        doThrow(new ConnectException("oops"))
+                .when(call).execute();
+
+        assertThatCode(() -> uut.getViolations("foo"))
+                .hasMessage(Messages.ApiClient_Error_Connection("", ""))
+                .hasCauseInstanceOf(ConnectException.class);
+        verify(httpClient, times(2)).newCall(any(okhttp3.Request.class));
+    }
+
+    @Test
     void uploadTestWithUuid(@TempDir Path tmp, JenkinsRule r) throws IOException, InterruptedException {
         Path bom = tmp.resolve("bom.xml");
         Files.writeString(bom, "<test />", Charset.defaultCharset());

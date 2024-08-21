@@ -44,12 +44,9 @@
      * @param {object[]} items
      */
     function updateCounter(items) {
-        this.countBySeverity.CRITICAL = items.filter(finding => finding.vulnerability.severity === 'CRITICAL').length;
-        this.countBySeverity.HIGH = items.filter(finding => finding.vulnerability.severity === 'HIGH').length;
-        this.countBySeverity.MEDIUM = items.filter(finding => finding.vulnerability.severity === 'MEDIUM').length;
-        this.countBySeverity.LOW = items.filter(finding => finding.vulnerability.severity === 'LOW').length;
-        this.countBySeverity.INFO = items.filter(finding => finding.vulnerability.severity === 'INFO').length;
-        this.countBySeverity.UNASSIGNED = items.filter(finding => finding.vulnerability.severity === 'UNASSIGNED').length;
+        this.countByState.FAIL = items.filter(violation => violation.state === 'FAIL').length;
+        this.countByState.WARN = items.filter(violation => violation.state === 'WARN').length;
+        this.countByState.INFO = items.filter(violation => violation.state === 'INFO').length;
     }
 
     /**
@@ -69,7 +66,7 @@
             perPage: 10,
             currentPage: 1,
             isBusy: false,
-            sortBy: 'vulnerability.severityRank',
+            sortBy: 'stateRank',
             sortDesc: false,
             filter: null,
             filterOn: [],
@@ -77,23 +74,19 @@
                 { key: 'component.name', label: 'Name', sortable: true },
                 { key: 'component.version', label: 'Version', sortable: true },
                 { key: 'component.group', label: 'Group', sortable: true },
-                { key: 'vulnerability.vulnId', label: 'Vulnerability', sortable: true },
-                { key: 'vulnerability.aliases', label: 'Aliases', sortable: false },
-                { key: 'vulnerability.severityRank', label: 'Severity', sortable: true },
-                { key: 'vulnerability.cweId', label: 'CWE', sortable: true },
+                { key: 'policyName', label: 'Policy Name', sortable: true },
+                { key: 'type', label: 'Type', sortable: true },
+                { key: 'stateRank', label: 'State', sortable: true },
             ],
-            countBySeverity: {
-                CRITICAL: 0,
-                HIGH: 0,
-                MEDIUM: 0,
-                LOW: 0,
+            countByState: {
+                FAIL: 0,
+                WARN: 0,
                 INFO: 0,
-                UNASSIGNED: 0
             }
         },
         methods: {
             items(ctx, callback) {
-                return window.fetch(`${actionUrl.href}/getFindingsJson`, {
+                return window.fetch(`${actionUrl.href}/getViolationsJson`, {
                     method: 'POST',
                     mode: 'same-origin',
                     credentials: 'same-origin',
@@ -119,8 +112,9 @@
             },
             matchesFilter(item, term) {
                 const keys = this.filterOn.length ? this.filterOn : this.fields.map(field => field.key);
+                const searchValues = [];
                 const accessPaths = { };
-                keys.forEach(key => {
+                keys.filter(key => key.includes('.')).forEach(key => {
                     const parts = key.split('.');
                     if (accessPaths[parts[0]] === undefined) {
                         accessPaths[parts[0]] = [parts[1]];
@@ -128,26 +122,26 @@
                         accessPaths[parts[0]].push(parts[1]);
                     }
                 });
-                const searchValues = [];
+                keys.filter(key => !key.includes('.')).forEach(key => {
+                   accessPaths[key] = key;
+                });
                 Object.entries(accessPaths).forEach(p1 => {
-                    p1[1].forEach(p2 => {
-                        let searchValue;
-                        if (p1[0] === 'vulnerability' && p2 === 'severityRank') {
-                            searchValue = item.vulnerability.severity;
-                        } else {
-                            searchValue = item[p1[0]][p2].toString();
+                    if (Array.isArray(p1[1])) {
+                        searchValues.push(...p1[1].map(p2 => item[p1[0]][p2].toLowerCase()).filter(value => value.length));
+                    } else {
+                        if (p1[0] === 'stateRank' && item['state']) {
+                            searchValues.push(item['state'].toLowerCase());
+                        } else if (item[p1[0]]) {
+                            searchValues.push(item[p1[0]].toLowerCase());
                         }
-                        if (searchValue) {
-                            searchValues.push(searchValue.toLowerCase());
-                        }
-                    });
+                    }
                 });
                 return searchValues.some(value => value.includes(term.trim().toLowerCase()));
             }
         },
     });
 
-    window.fetch(`${document.head.dataset.rooturl}/i18n/resourceBundle/?baseName=org.jenkinsci.plugins.DependencyTrack.ResultAction.index`, {
+    window.fetch(`${document.head.dataset.rooturl}/i18n/resourceBundle/?baseName=org.jenkinsci.plugins.DependencyTrack.ViolationsRunAction.index`, {
         mode: 'same-origin',
         credentials: 'same-origin',
         cache: 'default',
@@ -162,9 +156,8 @@
         app.fields.find(field => field.key === 'component.name').label = i18n['filter.value.name'];
         app.fields.find(field => field.key === 'component.version').label = i18n['filter.value.version'];
         app.fields.find(field => field.key === 'component.group').label = i18n['filter.value.group'];
-        app.fields.find(field => field.key === 'vulnerability.vulnId').label = i18n['filter.value.vuln'];
-        app.fields.find(field => field.key === 'vulnerability.aliases').label = i18n['filter.value.aliases'];
-        app.fields.find(field => field.key === 'vulnerability.severityRank').label = i18n['filter.value.severity'];
-        app.fields.find(field => field.key === 'vulnerability.cweId').label = i18n['filter.value.cwe'];
+        app.fields.find(field => field.key === 'policyName').label = i18n['filter.value.policyName'];
+        app.fields.find(field => field.key === 'type').label = i18n['filter.value.type'];
+        app.fields.find(field => field.key === 'stateRank').label = i18n['filter.value.state'];
     });
 })();

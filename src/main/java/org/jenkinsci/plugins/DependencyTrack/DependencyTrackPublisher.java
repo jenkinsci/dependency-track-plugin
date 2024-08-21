@@ -32,6 +32,7 @@ import hudson.EnvVars;
 import hudson.tasks.Recorder;
 import hudson.util.Secret;
 import java.util.Optional;
+import jenkins.model.RunAction2;
 import jenkins.tasks.SimpleBuildStep;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
@@ -43,10 +44,14 @@ import org.jenkinsci.plugins.DependencyTrack.model.RiskGate;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.jenkinsci.plugins.DependencyTrack.model.Thresholds;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
+import org.jenkinsci.plugins.DependencyTrack.model.Violation;
+import org.jenkinsci.plugins.DependencyTrack.model.ViolationState;
 import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
+
+import static org.jenkinsci.plugins.DependencyTrack.model.Permissions.VIEW_POLICY_VIOLATION;
 
 @Getter
 @Setter(onMethod_ = {@DataBoundSetter})
@@ -235,6 +240,18 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      */
     private Integer failedNewUnassigned;
 
+    /**
+     * mark job as UNSTABLE if there is at least one policy violation of severity
+     * warning
+     */
+    private boolean warnOnViolationWarn;
+
+    /**
+     * mark job as FAILED if there is at least one policy violation of severity
+     * fail
+     */
+    private boolean failOnViolationFail;
+
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
     private transient ApiClientFactory clientFactory;
@@ -324,9 +341,14 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
 
         final var thresholds = getThresholds();
         if (synchronous && StringUtils.isNotBlank(uploadResult.getToken())) {
-            final var severityDistribution = publishAnalysisResult(logger, apiClient, uploadResult.getToken(), run, effectiveProjectName, effectiveProjectVersion);
+            final var resultActions = publishAnalysisResult(logger, apiClient, uploadResult.getToken(), run, effectiveProjectName, effectiveProjectVersion);
             if (thresholds.hasValues()) {
-                evaluateRiskGates(run, logger, severityDistribution, thresholds);
+                final var resultAction = resultActions.get(0).map(ResultAction.class::cast).get();
+                evaluateRiskGates(run, logger, resultAction.getSeverityDistribution(), thresholds);
+            }
+            if (resultActions.get(1).isPresent()) {
+                final var violationsAction = resultActions.get(1).map(ViolationsRunAction.class::cast).get();
+                evaluateViolations(run, logger, violationsAction.getViolations());
             }
         }
         if (!synchronous && thresholds.hasValues()) {
@@ -334,7 +356,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         }
     }
 
-    private SeverityDistribution publishAnalysisResult(final ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build, final String effectiveProjectName, final String effectiveProjectVersion) throws InterruptedException, ApiClientException, AbortException {
+    private List<Optional<RunAction2>> publishAnalysisResult(final ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build, final String effectiveProjectName, final String effectiveProjectVersion) throws InterruptedException, ApiClientException, AbortException {
         final long timeout = System.currentTimeMillis() + (60000L * getEffectivePollingTimeout());
         final long interval = 1000L * getEffectivePollingInterval();
         logger.log(Messages.Builder_Polling());
@@ -352,10 +374,24 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         final List<Finding> findings = apiClient.getFindings(effectiveProjectId);
         final SeverityDistribution severityDistribution = new SeverityDistribution(build.getNumber());
         findings.stream().map(Finding::getVulnerability).map(Vulnerability::getSeverity).forEach(severityDistribution::add);
-        final ResultAction projectAction = new ResultAction(findings, severityDistribution);
-        projectAction.setDependencyTrackUrl(getEffectiveFrontendUrl());
-        projectAction.setProjectId(effectiveProjectId);
-        build.addOrReplaceAction(projectAction);
+        final var findingsAction = new ResultAction(findings, severityDistribution);
+        findingsAction.setDependencyTrackUrl(getEffectiveFrontendUrl());
+        findingsAction.setProjectId(effectiveProjectId);
+        build.addOrReplaceAction(findingsAction);
+
+        final var team = apiClient.getTeamPermissions();
+        ViolationsRunAction violationsAction = null;
+        // for compatibility reasons: the permission may not be present so we check if it is. otherwise an exception would be thrown.
+        if (team.getPermissions().contains(VIEW_POLICY_VIOLATION.toString())) {
+            logger.log(Messages.Builder_Violations_Processing());
+            final var violations = apiClient.getViolations(effectiveProjectId);
+            violationsAction = new ViolationsRunAction(violations);
+            violationsAction.setDependencyTrackUrl(getEffectiveFrontendUrl());
+            violationsAction.setProjectId(effectiveProjectId);
+            build.addOrReplaceAction(violationsAction);
+        } else {
+            logger.log(Messages.Builder_Violations_Skipped(VIEW_POLICY_VIOLATION, team.getName()));
+        }
 
         // update ResultLinkAction with one that surely contains a projectId
         final ResultLinkAction linkAction = new ResultLinkAction(getEffectiveFrontendUrl(), effectiveProjectId);
@@ -363,7 +399,8 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         linkAction.setProjectVersion(effectiveProjectVersion);
         build.addOrReplaceAction(linkAction);
 
-        return severityDistribution;
+        // replace with record when using Java 17
+        return List.of(Optional.of(findingsAction), Optional.ofNullable(violationsAction));
     }
 
     private void evaluateRiskGates(final Run<?, ?> build, final ConsoleLogger logger, final SeverityDistribution currentDistribution, final Thresholds thresholds) throws AbortException {
@@ -387,6 +424,16 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         if (result.isWorseThan(Result.UNSTABLE) && result.isCompleteBuild()) {
             // attempt to halt the build
             throw new AbortException(Messages.Builder_Threshold_Exceed());
+        }
+    }
+
+    private void evaluateViolations(final Run<?, ?> build, final ConsoleLogger logger, final List<Violation> violations) throws AbortException {
+        if (warnOnViolationWarn && violations.stream().anyMatch(violation -> violation.getState() == ViolationState.WARN)) {
+            logger.log(Messages.Builder_Violations_Exceed());
+            build.setResult(Result.UNSTABLE);
+        }
+        if (failOnViolationFail && violations.stream().anyMatch(violation -> violation.getState() == ViolationState.FAIL)) {
+            throw new AbortException(Messages.Builder_Violations_Exceed());
         }
     }
 

@@ -1,0 +1,113 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core" xmlns:l="/lib/layout" xmlns:st="jelly:stapler" xmlns:v-on="vue" xmlns:v-slot="vue">
+
+    <st:header name="viewport" value="width=device-width, initial-scale=1, shrink-to-fit=no" />
+
+    <l:layout title="${%page.title(it.displayName, it.run.parent.displayName, it.run.displayName)}">
+
+        <l:side-panel>
+            <st:include page="sidepanel.jelly" it="${it.run}" optional="true" />
+        </l:side-panel>
+
+        <l:header>
+            <link rel="preload" as="style" onload="this.rel='stylesheet'" href="${resURL}/plugin/dependency-track/css/bootstrap.min.css?v=${it.versionHash}" />
+            <link rel="preload" as="style" onload="this.rel='stylesheet'" href="${resURL}/plugin/dependency-track/css/bootstrap-vue.min.css?v=${it.versionHash}" />
+            <link rel="preload" as="style" onload="this.rel='stylesheet'" href="${resURL}/plugin/dependency-track/css/result-action.css?v=${it.versionHash}" />
+
+            <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/libs/vue.min.js?v=${it.versionHash}" defer="defer"></script>
+            <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/libs/bootstrap-vue.min.js?v=${it.versionHash}" defer="defer"></script>
+            <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/libs/bootstrap-vue-icons.min.js?v=${it.versionHash}" defer="defer"></script>
+
+            <script type="text/javascript" src="${resURL}/plugin/dependency-track/js/violations-action.js?v=${it.versionHash}" defer="defer" data-action-url="${it.bindUrl}" data-crumb-value="${it.crumb}"></script>
+        </l:header>
+
+        <l:main-panel>
+            <h1>${%page.title(it.displayName, it.run.parent.displayName, it.run.displayName)}</h1>
+            <div class="alert alert-warning dt-warning" role="alert">
+                ${%page.globalwarning.1} <j:if test="${it.dependencyTrackUrl != null and !it.dependencyTrackUrl.isEmpty()}">${%page.globalwarning.2(it.dependencyTrackUrl + '/projects/' + it.projectId + '/policyViolations', 'alert-link')}</j:if>
+            </div>
+
+            <div id="app">
+            <b-form-group
+                label-cols-sm="1"
+                label-align-sm="right"
+                label-size="sm"
+                label-for="filterInput"
+                class="mb-1"
+                >
+                <b-input-group size="sm">
+                    <b-form-input
+                        v-model="filter"
+                        type="search"
+                        id="filterInput"
+                        debounce="500"
+                        placeholder="${%searchinput.placeholder}"
+                    ></b-form-input>
+                    <b-input-group-append>
+                        <b-button :disabled="!filter" v-on:click="filter = ''">${%searchinput.clear}</b-button>
+                        <b-dropdown text="${%filter.title}" size="sm" dropleft="dropleft">
+                            <b-dropdown-form>
+                                <b-form-group description="${%filter.description}">
+                                <b-form-checkbox-group v-model="filterOn">
+                                    <b-form-checkbox value="component.name">${%filter.value.name}</b-form-checkbox>
+                                    <b-form-checkbox value="component.version">${%filter.value.version}</b-form-checkbox>
+                                    <b-form-checkbox value="component.group">${%filter.value.group}</b-form-checkbox>
+                                    <b-form-checkbox value="policyName">${%filter.value.policyName}</b-form-checkbox>
+                                    <b-form-checkbox value="type">${%filter.value.type}</b-form-checkbox>
+                                    <b-form-checkbox value="state">${%filter.value.state}</b-form-checkbox>
+                                </b-form-checkbox-group>
+                                </b-form-group>
+                            </b-dropdown-form>
+                        </b-dropdown>
+                    </b-input-group-append>
+                </b-input-group>
+            </b-form-group>
+
+            <span class="sr-only">${%findingsbar.description}</span>
+            <b-progress :max="rows" class="mb-1">
+                <b-progress-bar variant="danger" :value="countByState.FAIL" show-value="show-value" title="${%findingsbar.title.fail}"></b-progress-bar>
+                <b-progress-bar variant="warning" :value="countByState.WARN" show-value="show-value" title="${%findingsbar.title.warn}"></b-progress-bar>
+                <b-progress-bar variant="info" :value="countByState.INFO" show-value="show-value" title="${%findingsbar.title.info}"></b-progress-bar>
+            </b-progress>
+
+            <b-table striped="striped" hover="hover" responsive="responsive" show-empty="show-empty"
+                     id="findings-table"
+                     :items="items"
+                     :fields="fields"
+                     :filter="filter"
+                     :filter-included-fields="filterOn"
+                     :sort-by.sync="sortBy"
+                     :sort-desc.sync="sortDesc"
+                     :per-page="perPage"
+                     :current-page="currentPage"
+                     :busy.sync="isBusy"
+                     :no-provider-paging="true"
+                     :no-provider-sorting="true"
+                     :no-provider-filtering="true"
+                     :filter-function="matchesFilter"
+                     v-on:filtered="onFiltered"
+                     >
+
+                <template slot="cell(stateRank)" slot-scope="data"><j:whitespace>
+                    <b-badge variant="danger" v-if="data.value === 0"><b-icon icon="bug-fill" font-scale="1.5"></b-icon></b-badge>
+                    <b-badge variant="warning" v-if="data.value === 1"><b-icon icon="bug-fill" font-scale="1.5"></b-icon></b-badge>
+                    <b-badge variant="info" v-if="data.value === 2"><b-icon icon="bug-fill" font-scale="1.5"></b-icon></b-badge>
+                    <span v-if="data.value === 0">${%severity.fail}</span>
+                    <span v-if="data.value === 1">${%severity.warn}</span>
+                    <span v-if="data.value === 2">${%severity.info}</span>
+                </j:whitespace></template>
+                <template slot="cell(type)" slot-scope="data"><j:whitespace>
+                    <b-badge pill="pill" variant="info">{{data.value}}</b-badge>
+                </j:whitespace></template>
+            </b-table>
+            <b-pagination
+                v-model="currentPage"
+                :total-rows="rows"
+                :per-page="perPage"
+                aria-controls="findings-table"
+                align="center"
+                ></b-pagination>
+        </div>
+        </l:main-panel>
+    </l:layout>
+</j:jelly>

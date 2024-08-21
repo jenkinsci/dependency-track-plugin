@@ -296,8 +296,10 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
         }
         if (synchronous) {
             requiredPermissions.add(VIEW_VULNERABILITY.toString());
+            requiredPermissions.add(VIEW_POLICY_VIOLATION.toString());
         } else {
             optionalPermissions.add(VIEW_VULNERABILITY.toString());
+            optionalPermissions.add(VIEW_POLICY_VIOLATION.toString());
         }
         if (projectProperties) {
             requiredPermissions.add(PORTFOLIO_MANAGEMENT.toString());

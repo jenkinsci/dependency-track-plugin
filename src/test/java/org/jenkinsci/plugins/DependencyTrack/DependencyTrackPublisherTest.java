@@ -35,9 +35,14 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Path;
 import java.util.List;
+import java.util.Set;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
+import org.jenkinsci.plugins.DependencyTrack.model.Team;
 import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
+import org.jenkinsci.plugins.DependencyTrack.model.Violation;
+import org.jenkinsci.plugins.DependencyTrack.model.ViolationState;
+import org.jenkinsci.plugins.DependencyTrack.model.ViolationType;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -50,6 +55,7 @@ import org.mockito.quality.Strictness;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.jenkinsci.plugins.DependencyTrack.model.Permissions.VIEW_POLICY_VIOLATION;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -173,6 +179,8 @@ class DependencyTrackPublisherTest {
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
         verify(client, never()).getFindings(anyString());
+        verify(client, never()).getTeamPermissions();
+        verify(client, never()).getViolations(anyString());
         verify(client, never()).lookupProject(anyString(), anyString());
         verify(client, never()).updateProjectProperties(eq("uuid-1"), any(ProjectProperties.class));
 
@@ -195,6 +203,8 @@ class DependencyTrackPublisherTest {
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
         verify(client, never()).lookupProject(anyString(), anyString());
         verify(client, never()).getFindings(anyString());
+        verify(client, never()).getTeamPermissions();
+        verify(client, never()).getViolations(anyString());
     }
 
     @Test
@@ -210,6 +220,7 @@ class DependencyTrackPublisherTest {
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false), isNull())).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(List.of());
+        when(client.getTeamPermissions()).thenReturn(Team.builder().name("test-team").permissions(Set.of()).build());
         
         Run buildWithResultAction = mock(Run.class);
         when(buildWithResultAction.getResult()).thenReturn(Result.SUCCESS);
@@ -225,6 +236,7 @@ class DependencyTrackPublisherTest {
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
         verify(client, times(2)).isTokenBeingProcessed("token-1");
         verify(client).getFindings("uuid-1");
+        verify(client).getTeamPermissions();
         verify(buildWithResultAction, times(2)).getAction(ResultAction.class);
     }
 
@@ -240,6 +252,7 @@ class DependencyTrackPublisherTest {
         when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false), isNull())).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(List.of());
+        when(client.getTeamPermissions()).thenReturn(Team.builder().name("test-team").permissions(Set.of()).build());
         
         Run abortedBuild = mock(Run.class);
         when(abortedBuild.getResult()).thenReturn(Result.NOT_BUILT);
@@ -248,7 +261,51 @@ class DependencyTrackPublisherTest {
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
         verify(client, times(2)).isTokenBeingProcessed("token-1");
         verify(client).getFindings("uuid-1");
+        verify(client).getTeamPermissions();
         verify(abortedBuild, never()).getAction(ResultAction.class);
+    }
+
+    @Test
+    void testPerformSyncNoThresholdsWarnOnViolationWarn(@TempDir Path tmpWork) throws IOException, InterruptedException {
+        File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
+        FilePath workDir = new FilePath(tmpWork.toFile());
+        DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
+        uut.setProjectId("uuid-1");
+        uut.setDependencyTrackApiKey(apikeyId);
+        uut.setWarnOnViolationWarn(true);
+
+        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false), isNull())).thenReturn(new UploadResult(true, "token-1"));
+        when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.FALSE);
+        when(client.getFindings("uuid-1")).thenReturn(List.of());
+        when(client.getTeamPermissions()).thenReturn(Team.builder().name("test-team").permissions(Set.of(VIEW_POLICY_VIOLATION.toString())).build());
+        when(client.getViolations("uuid-1")).thenReturn(List.of(new Violation("uuid-1", ViolationType.SECURITY, ViolationState.WARN, "rule-1", null)));
+
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
+        verify(client).isTokenBeingProcessed("token-1");
+        verify(client).getFindings("uuid-1");
+        verify(client).getTeamPermissions();
+        verify(client).getViolations("uuid-1");
+        verify(build).setResult(Result.UNSTABLE);
+    }
+
+    @Test
+    void testPerformSyncNoThresholdsFailOnViolationFail(@TempDir Path tmpWork) throws IOException, InterruptedException {
+        File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
+        FilePath workDir = new FilePath(tmpWork.toFile());
+        DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
+        uut.setProjectId("uuid-1");
+        uut.setDependencyTrackApiKey(apikeyId);
+        uut.setFailOnViolationFail(true);
+
+        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false), isNull())).thenReturn(new UploadResult(true, "token-1"));
+        when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.FALSE);
+        when(client.getFindings("uuid-1")).thenReturn(List.of());
+        when(client.getTeamPermissions()).thenReturn(Team.builder().name("test-team").permissions(Set.of(VIEW_POLICY_VIOLATION.toString())).build());
+        when(client.getViolations("uuid-1")).thenReturn(List.of(new Violation("uuid-1", ViolationType.SECURITY, ViolationState.FAIL, "rule-1", null)));
+
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Violations_Exceed());
     }
 
     @Test
@@ -264,16 +321,21 @@ class DependencyTrackPublisherTest {
         uut.setDependencyTrackApiKey(apikeyId);
         uut.setAutoCreateProjects(Boolean.TRUE);
         uut.setProjectProperties(props);
+        final var team = Team.builder().name("test-team").permissions(Set.of(VIEW_POLICY_VIOLATION.toString())).build();
 
         when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(true), eq(props))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(List.of());
+        when(client.getTeamPermissions()).thenReturn(team);
+        when(client.getViolations("uuid-1")).thenReturn(List.of());
         when(client.lookupProject("name-1", "version-1")).thenReturn(Project.builder().uuid("uuid-1").build());
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
         assertThat(uut.getProjectId()).isNullOrEmpty();
         verify(client, times(2)).isTokenBeingProcessed("token-1");
         verify(client).getFindings("uuid-1");
+        verify(client).getTeamPermissions();
+        verify(client).getViolations("uuid-1");
         verify(client).updateProjectProperties("uuid-1", props);
         verify(client).lookupProject("name-1", "version-1");
     }

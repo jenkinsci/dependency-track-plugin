@@ -24,7 +24,7 @@
         <l:main-panel>
             <h1>${%page.title(it.displayName, it.run.parent.displayName, it.run.displayName)}</h1>
             <div class="alert alert-warning dt-warning" role="alert">
-                ${%page.globalwarning.1} <j:if test="${it.dependencyTrackUrl != null and !it.dependencyTrackUrl.isEmpty()}">${%page.globalwarning.2(it.dependencyTrackUrl + '/projects/' + it.projectId, 'alert-link')}</j:if>
+                ${%page.globalwarning.1} <j:if test="${it.dependencyTrackUrl != null and !it.dependencyTrackUrl.isEmpty()}">${%page.globalwarning.2(it.dependencyTrackUrl + '/projects/' + it.projectId + '/findings', 'alert-link')}</j:if>
             </div>
 
             <div id="app">

@@ -1,0 +1,15 @@
+<?jelly escape-by-default='true'?>
+<j:jelly xmlns:j="jelly:core">
+
+    <j:if test="${from.isTrendVisible()}">
+        <aside>
+            <h3 class="test-trend-caption">
+                ${%chart.title}
+            </h3>
+            <figure id="${from.urlName}-history-chart-violations" style="margin: 0; width: 500px; height: 210px;"/>
+
+            <script src="${resURL}/plugin/dependency-track/js/charts-violations.js" type="module" async="async" data-action-url="${from.bindUrl}" data-crumb-value="${from.crumb}"></script>
+        </aside>
+    </j:if>
+
+</j:jelly>

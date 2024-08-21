@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 OWASP.
+ * Copyright 2024 OWASP.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,10 +15,28 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.model;
 
+import java.io.Serializable;
+import lombok.EqualsAndHashCode;
+import lombok.Value;
+
 /**
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
-public enum Permissions {
-    BOM_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS, PROJECT_CREATION_UPLOAD, PORTFOLIO_MANAGEMENT, VIEW_VULNERABILITY, VIEW_POLICY_VIOLATION
+@Value
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+public class Violation implements Serializable {
+
+    private static final long serialVersionUID = -2591514706071774767L;
+
+    @EqualsAndHashCode.Include
+    private final String uuid;
+    private final ViolationType type;
+    private final ViolationState state;
+    private final String policyName;
+    private final Component component;
+
+    public int getStateRank() {
+        return state.ordinal();
+    }
 }

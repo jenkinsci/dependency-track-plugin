@@ -1,5 +1,5 @@
 /*
- * Copyright 2022 OWASP.
+ * Copyright 2024 OWASP.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,8 @@ package org.jenkinsci.plugins.DependencyTrack.model;
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
-public enum Permissions {
-    BOM_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS, PROJECT_CREATION_UPLOAD, PORTFOLIO_MANAGEMENT, VIEW_VULNERABILITY, VIEW_POLICY_VIOLATION
+public enum ViolationState {
+    FAIL,
+    WARN,
+    INFO
 }
