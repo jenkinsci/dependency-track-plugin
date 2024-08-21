@@ -19,7 +19,7 @@ class ConfigurationAsCodeTest {
     private static JenkinsConfiguredWithCodeRule r;
 
     @Test
-    void shouldSupportConfigurationAsCode() throws Exception {
+    void shouldSupportConfigurationAsCode() {
         DescriptorImpl descriptor = r.getInstance().getDescriptorByType(DescriptorImpl.class);
 
         assertThat(descriptor)

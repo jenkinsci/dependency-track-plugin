@@ -96,7 +96,7 @@ class DependencyTrackPublisherTest {
     private final String apikey = "api-key";
 
     @BeforeEach
-    void setup(JenkinsRule r) throws ApiClientException, IOException {
+    void setup(JenkinsRule r) throws IOException {
         when(listener.getLogger()).thenReturn(System.err);
 
         DescriptorImpl descriptor = r.jenkins.getDescriptorByType(DescriptorImpl.class);
@@ -149,7 +149,7 @@ class DependencyTrackPublisherTest {
     }
 
     @Test
-    void doNotThrowNPEinGetEffectiveApiKey(@TempDir Path tmpWork) throws IOException, InterruptedException {
+    void doNotThrowNPEinGetEffectiveApiKey(@TempDir Path tmpWork) throws IOException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
@@ -162,7 +162,7 @@ class DependencyTrackPublisherTest {
     }
 
     @Test
-    void testPerformAsync(@TempDir Path tmpWork) throws IOException, InterruptedException {
+    void testPerformAsync(@TempDir Path tmpWork) throws IOException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
@@ -188,7 +188,7 @@ class DependencyTrackPublisherTest {
     }
 
     @Test
-    void testPerformAsyncWithoutProjectId(@TempDir Path tmpWork) throws IOException, InterruptedException {
+    void testPerformAsyncWithoutProjectId(@TempDir Path tmpWork) throws IOException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
@@ -208,7 +208,7 @@ class DependencyTrackPublisherTest {
     }
 
     @Test
-    void testPerformSync(@TempDir Path tmpWork) throws IOException, InterruptedException {
+    void testPerformSync(@TempDir Path tmpWork) throws IOException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
@@ -241,7 +241,7 @@ class DependencyTrackPublisherTest {
     }
 
     @Test
-    void testPerformSyncNoThresholds(@TempDir Path tmpWork) throws IOException, InterruptedException {
+    void testPerformSyncNoThresholds(@TempDir Path tmpWork) throws IOException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
@@ -266,7 +266,7 @@ class DependencyTrackPublisherTest {
     }
 
     @Test
-    void testPerformSyncNoThresholdsWarnOnViolationWarn(@TempDir Path tmpWork) throws IOException, InterruptedException {
+    void testPerformSyncNoThresholdsWarnOnViolationWarn(@TempDir Path tmpWork) throws IOException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
@@ -290,7 +290,7 @@ class DependencyTrackPublisherTest {
     }
 
     @Test
-    void testPerformSyncNoThresholdsFailOnViolationFail(@TempDir Path tmpWork) throws IOException, InterruptedException {
+    void testPerformSyncNoThresholdsFailOnViolationFail(@TempDir Path tmpWork) throws IOException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
@@ -309,7 +309,7 @@ class DependencyTrackPublisherTest {
     }
 
     @Test
-    void testPerformSyncWithoutProjectId(@TempDir Path tmpWork) throws IOException, InterruptedException {
+    void testPerformSyncWithoutProjectId(@TempDir Path tmpWork) throws IOException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
@@ -341,7 +341,7 @@ class DependencyTrackPublisherTest {
     }
 
     @Test
-    void testUseOfOverridenProperties(@TempDir Path tmpWork) throws IOException, InterruptedException {
+    void testUseOfOverridenProperties(@TempDir Path tmpWork) throws IOException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());

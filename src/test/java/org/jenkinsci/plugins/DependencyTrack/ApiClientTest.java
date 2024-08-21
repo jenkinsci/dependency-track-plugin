@@ -502,7 +502,7 @@ class ApiClientTest {
     }
 
     @Test
-    void updateProjectPropertiesTest(JenkinsRule r) throws ApiClientException, InterruptedException {
+    void updateProjectPropertiesTest(JenkinsRule r) throws InterruptedException {
         final AtomicReference<String> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
@@ -549,7 +549,7 @@ class ApiClientTest {
     }
 
     @Test
-    void updateProjectPropertiesTestWithStatus304(JenkinsRule r) throws ApiClientException, InterruptedException {
+    void updateProjectPropertiesTestWithStatus304(JenkinsRule r) throws InterruptedException {
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
                 .host("localhost")

@@ -30,8 +30,7 @@ import static org.assertj.core.api.Assertions.assertThat;
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
-public class ViolationParserTest {
-    
+class ViolationParserTest {
 
     @Test
     void parseTest() {

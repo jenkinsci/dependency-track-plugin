@@ -186,7 +186,7 @@ class DescriptorImplTest {
     }
 
     @Test
-    void doTestConnectionTestWithEmptyArgs() throws ApiClientException, IOException {
+    void doTestConnectionTestWithEmptyArgs() throws IOException {
         final String apikey = "api-key";
         final String credentialsid = "credentials-id";
         // custom factory here so we can check that doTestConnection strips trailing slashes from the url
