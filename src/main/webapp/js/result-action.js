@@ -131,10 +131,14 @@
                 const searchValues = [];
                 Object.entries(accessPaths).forEach(p1 => {
                     p1[1].forEach(p2 => {
+                        let searchValue;
                         if (p1[0] === 'vulnerability' && p2 === 'severityRank') {
-                            searchValues.push(item.vulnerability.severity.toLowerCase());
+                            searchValue = item.vulnerability.severity;
                         } else {
-                            searchValues.push(item[p1[0]][p2].toString().toLowerCase());
+                            searchValue = item[p1[0]][p2].toString();
+                        }
+                        if (searchValue) {
+                            searchValues.push(searchValue.toLowerCase());
                         }
                     });
                 });

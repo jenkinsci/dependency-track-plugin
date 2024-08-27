@@ -67,6 +67,12 @@ limitations under the License.
     </f:section>
 
     <f:optionalBlock inline="true" field="synchronous" title="${%enable.synchronous}">
+        <f:entry title="${%warnOnViolationWarn}" field="warnOnViolationWarn">
+            <f:checkbox id="warnOnViolationWarn" />
+        </f:entry>
+        <f:entry title="${%failOnViolationFail}" field="failOnViolationFail">
+            <f:checkbox id="failOnViolationFail" />
+        </f:entry>
         <f:advanced title="${%riskGateThresholds} - ${%totalFindings}" align="left">
             <f:section title="${%riskGateThresholds} - ${%totalFindings}">
                 <f:description>

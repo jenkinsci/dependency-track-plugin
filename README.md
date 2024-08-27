@@ -20,12 +20,13 @@ Asynchronous publishing simply uploads the SBOM to Dependency-Track and the job 
 
 ![job trend](docs/images/jenkins-job-trend.png)
 
-![findings](docs/images/jenkins-job-findings.png)
+![build summary](docs/images/jenkins-build-summary.png)
+![findings](docs/images/jenkins-build-findings.png) ![policy violations](docs/images/jenkins-build-policy-violations.png)
 
 ## Global Configuration
 To setup, navigate to Jenkins > System Configuration and complete the Dependency-Track section.
 
-![global configuration](docs/images/jenkins-global-odt.png)
+![global configuration](docs/images/jenkins-global-settings.png)
 
 **Dependency-Track Backend URL**: URL to the Backend of your Dependency-Track instance.
 
@@ -50,7 +51,8 @@ BOM_UPLOAD | :ballot_box_with_check: | needed for BOM upload
 VIEW_PORTFOLIO | :ballot_box_with_check: | needed to retrieve list of projects
 VULNERABILITY_ANALYSIS | :ballot_box_with_check: | needed to perform dependency analysis
 PROJECT_CREATION_UPLOAD | :grey_question: | needed to create non-existing projects during BOM upload
-VIEW_VULNERABILITY | :grey_question: | needed in synchronous publishing mode to retrieve analysis results
+VIEW_VULNERABILITY | :grey_question: | needed in synchronous publishing mode to retrieve results for vulnerabilities
+VIEW_POLICY_VIOLATION | :grey_question: | needed in synchronous publishing mode to retrieve results for policy violations
 PORTFOLIO_MANAGEMENT | :grey_question: | needed for updating project properties such as tags
 
 ## Job Configuration
@@ -66,7 +68,7 @@ Once configured with a valid URL and API key, simply configure a job to publish 
 
 **Artifact:** Specifies the file to upload. Paths are relative from the Jenkins workspace. The use of environment variables in the form `${VARIABLE}` is supported here.
 
-**Enable synchronous publishing mode**: Uploads a SBOM to Dependency-Track and waits for Dependency-Track to process and return results. The results returned are identical to the auditable findings but exclude findings that have previously been suppressed. Analysis decisions and vulnerability details are included in the response. Synchronous mode is possible with Dependency-Track v3.3.1 and higher. The provided API key requires the `VIEW_VULNERABILITY` permission to use this feature with Dependency-Track v4.4 and newer!
+**Enable synchronous publishing mode**: Uploads a SBOM to Dependency-Track and waits for Dependency-Track to process and return results. The results returned are identical to the auditable findings but exclude findings that have previously been suppressed. Analysis decisions and vulnerability details are included in the response. Synchronous mode is possible with Dependency-Track v3.3.1 and higher. The provided API key requires the `VIEW_VULNERABILITY` permission to use this feature with Dependency-Track v4.4 and newer! If the provided API key has the permission `VIEW_POLICY_VIOLATION`, then the results of policy violations are returned as well.
 
 **Update project properties**: Allows updating of some project properties after uploading the BOM. The provided API key requires the `PORTFOLIO_MANAGEMENT` permission to use this feature! These properties are:
 - tags
@@ -86,6 +88,10 @@ When synchronous mode is enabled, thresholds can be defined which can optionally
 **Total Findings:** Sets the threshold for the total number of critical, high, medium, low or unassigned severity findings allowed. If the number of findings equals or is greater than the threshold for any one of the severities, the job status will be changed to UNSTABLE or FAILURE.
 
 **New Findings:** Sets the threshold for the number of new critical, high, medium, low or unassigned severity findings allowed. If the number of new findings equals or is greater than the previous builds finding for any one of the severities, the job status will be changed to UNSTABLE or FAILURE. The previous build is the one that is successful and has an analysis result of Dependency-Track, which does not necessarily have to be the immediately previous build.
+
+### Policy Violations
+
+If synchronous mode is enabled, it is possible to set the job to the UNSTABLE or FAILURE state depending on the state of the policy violation. Policy violations are evaluated after the threshold values for vulnerability findings.
 
 ## Examples
 ### Declarative Pipeline

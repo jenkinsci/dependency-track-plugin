@@ -32,7 +32,7 @@ import static org.mockito.Mockito.verify;
 class ConsoleLoggerTest {
 
     @Test
-    void testLog() throws IOException {
+    void testLog() {
         PrintStream ps = mock(PrintStream.class);
         ConsoleLogger uut = new ConsoleLogger(ps);
         uut.log("test\r\nline2");

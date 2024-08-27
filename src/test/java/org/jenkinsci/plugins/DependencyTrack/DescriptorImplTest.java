@@ -186,7 +186,7 @@ class DescriptorImplTest {
     }
 
     @Test
-    void doTestConnectionTestWithEmptyArgs() throws ApiClientException, IOException {
+    void doTestConnectionTestWithEmptyArgs() throws IOException {
         final String apikey = "api-key";
         final String credentialsid = "credentials-id";
         // custom factory here so we can check that doTestConnection strips trailing slashes from the url
@@ -217,7 +217,7 @@ class DescriptorImplTest {
         final String credentialsid = "credentials-id";
         final Team team = Team.builder()
                 .name("test-team")
-                .permissions(Stream.of(BOM_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS, PROJECT_CREATION_UPLOAD, PORTFOLIO_MANAGEMENT).map(Enum::toString).collect(Collectors.toSet()))
+                .permissions(Stream.of(BOM_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS, PROJECT_CREATION_UPLOAD, PORTFOLIO_MANAGEMENT, VIEW_POLICY_VIOLATION).map(Enum::toString).collect(Collectors.toSet()))
                 .build();
         // custom factory here so we can check that doTestConnection strips trailing slashes from the url
         ApiClientFactory factory = (url, apiKey, logger, connTimeout, readTimeout) -> {
@@ -245,6 +245,7 @@ class DescriptorImplTest {
                     .contains(Messages.Publisher_PermissionTest_Okay(VULNERABILITY_ANALYSIS))
                     .contains(Messages.Publisher_PermissionTest_Okay(PROJECT_CREATION_UPLOAD))
                     .contains(Messages.Publisher_PermissionTest_Optional(PORTFOLIO_MANAGEMENT))
+                    .contains(Messages.Publisher_PermissionTest_Optional(VIEW_POLICY_VIOLATION))
                     .contains(team.getPermissions().toArray(String[]::new));
         }
     }
@@ -285,6 +286,7 @@ class DescriptorImplTest {
                     .contains(Messages.Publisher_PermissionTest_Okay(PROJECT_CREATION_UPLOAD))
                     .contains(Messages.Publisher_PermissionTest_Missing(PORTFOLIO_MANAGEMENT))
                     .contains(Messages.Publisher_PermissionTest_Missing(VIEW_VULNERABILITY))
+                    .contains(Messages.Publisher_PermissionTest_Missing(VIEW_POLICY_VIOLATION))
                     .contains(team.getPermissions().toArray(String[]::new));
         }
     }

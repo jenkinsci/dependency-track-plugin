@@ -24,7 +24,6 @@ import lombok.experimental.UtilityClass;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONNull;
 import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Analysis;
 import org.jenkinsci.plugins.DependencyTrack.model.Component;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
@@ -32,7 +31,7 @@ import org.jenkinsci.plugins.DependencyTrack.model.Severity;
 import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
 
 @UtilityClass
-class FindingParser {
+class FindingParser extends ModelParser {
 
     List<Finding> parse(final String jsonResponse) {
         final JSONArray jsonArray = JSONArray.fromObject(jsonResponse);
@@ -49,20 +48,11 @@ class FindingParser {
     }
 
     private Finding parseFinding(JSONObject json) {
-        final Component component = parseComponent(json.getJSONObject("component"));
+        final Component component = ComponentParser.parseComponent(json.getJSONObject("component"));
         final Vulnerability vulnerability = parseVulnerability(json.getJSONObject("vulnerability"));
         final Analysis analysis = parseAnalysis(json.optJSONObject("analysis"));
         final String matrix = getKeyOrNull(json, "matrix");
         return new Finding(component, vulnerability, analysis, matrix);
-    }
-
-    private Component parseComponent(JSONObject json) {
-        final String uuid = getKeyOrNull(json, "uuid");
-        final String name = getKeyOrNull(json, "name");
-        final String group = getKeyOrNull(json, "group");
-        final String version = getKeyOrNull(json, "version");
-        final String purl = getKeyOrNull(json, "purl");
-        return new Component(uuid, name, group, version, purl);
     }
 
     private Vulnerability parseVulnerability(JSONObject json) {
@@ -73,7 +63,7 @@ class FindingParser {
         final String subtitle = getKeyOrNull(json, "subtitle");
         final String description = getKeyOrNull(json, "description");
         final String recommendation = getKeyOrNull(json, "recommendation");
-        final Severity severity = json.has("severity") ? Severity.valueOf(json.getString("severity")) : null;
+        final Severity severity = getEnum(json, "severity", Severity.class);
         final Integer severityRank = json.optInt("severityRank");
         final var cwe = Optional.ofNullable(json.optJSONArray("cwes")).map(a -> a.optJSONObject(0)).filter(Predicate.not(JSONNull.class::isInstance));
         final Integer cweId = cwe.map(o -> o.optInt("cweId")).orElse(null);
@@ -99,15 +89,5 @@ class FindingParser {
                 .distinct()
                 .collect(Collectors.toList())
                 : null;
-    }
-
-    private String getKeyOrNull(JSONObject json, String key) {
-        // key can be null. but it may also be JSONNull!
-        // optString and getString do not check if v is JSONNull. instead they return just v.toString() which will be "null"!
-        return Optional.ofNullable(json.opt(key))
-                .filter(Predicate.not(JSONNull.class::isInstance))
-                .map(Object::toString)
-                .map(StringUtils::trimToNull)
-                .orElse(null);
     }
 }

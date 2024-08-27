@@ -1,0 +1,76 @@
+[{
+        "type": "SECURITY",
+        "component": {
+            "uuid": "uuid-2",
+            "name": "name-2",
+            "group": "group-2",
+            "version": "version-2",
+            "purl": "purl-2"
+        },
+        "policyCondition": {
+            "policy": {
+                "name": "my-rule2",
+                "operator": "ANY",
+                "violationState": "INFO",
+                "uuid": "171bdab2-e58c-48d5-8b60-ba4f6771e370",
+                "includeChildren": false,
+                "global": true
+            },
+            "operator": "IS",
+            "subject": "SEVERITY",
+            "value": "UNASSIGNED",
+            "uuid": "841cd56d-bf1c-4c12-87af-0edec1378608"
+        },
+        "timestamp": 1723992479032,
+        "uuid": "71e3ee99-86df-4819-a007-04dd9eb08278"
+    }, {
+        "type": "SECURITY",
+        "component": {
+            "uuid": "uuid-1",
+            "name": "name-1",
+            "group": "group-1",
+            "version": "version-1",
+            "purl": "purl-1"
+        },
+        "policyCondition": {
+            "policy": {
+                "name": "my-rule1",
+                "operator": "ANY",
+                "violationState": "WARN",
+                "uuid": "c0763480-60eb-4b4b-9a2b-8b7f8a9f4f80",
+                "includeChildren": false,
+                "global": true
+            },
+            "operator": "IS",
+            "subject": "SEVERITY",
+            "value": "MEDIUM",
+            "uuid": "773f46f3-4b77-4894-9eef-5aef1d86e46a"
+        },
+        "timestamp": 1723992479029,
+        "uuid": "965e0b34-64cb-44ba-ae65-5c05b6f296be"
+    }, {
+        "type": "SECURITY",
+        "component": {
+            "uuid": "uuid-1",
+            "name": "name-1",
+            "group": "group-1",
+            "version": "version-1",
+            "purl": "purl-1"
+        },
+        "policyCondition": {
+            "policy": {
+                "name": "my-rule3",
+                "operator": "ANY",
+                "violationState": "FAIL",
+                "uuid": "171bdab2-e58c-48d5-8b60-ba4f6771e371",
+                "includeChildren": false,
+                "global": true
+            },
+            "operator": "IS",
+            "subject": "SEVERITY",
+            "value": "CRITICAL",
+            "uuid": "841cd56d-bf1c-4c12-87af-0edec1378608"
+        },
+        "timestamp": 1723992478947,
+        "uuid": "0f15c0b5-9849-41e8-9361-1a3f966bed76"
+    }]

@@ -20,13 +20,12 @@ import java.util.List;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import net.sf.json.JSONArray;
-import net.sf.json.JSONNull;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
 
 @UtilityClass
-class ProjectParser {
+class ProjectParser extends ModelParser {
 
     Project parse(final JSONObject json) {
         final String lastInheritedRiskScoreStr = getKeyOrNull(json, "lastInheritedRiskScore");
@@ -43,18 +42,8 @@ class ProjectParser {
                 .active(activeStr != null ? Boolean.valueOf(activeStr) : null)
                 .swidTagId(getKeyOrNull(json, "swidTagId"))
                 .group(getKeyOrNull(json, "group"))
-                .parent(json.has("parent") ? ProjectParser.parse(json.getJSONObject("parent")) : null)
+                .parent(json.has("parent") ? parse(json.getJSONObject("parent")) : null)
                 .build();
-    }
-
-    private String getKeyOrNull(JSONObject json, String key) {
-        // key can be null. but it may also be JSONNull!
-        // optString and getString do not check if v is JSONNull. instead they return just v.toString() which will be "null"!
-        Object v = json.opt(key);
-        if (v instanceof JSONNull) {
-            v = null;
-        }
-        return v == null ? null : StringUtils.trimToNull(v.toString());
     }
 
     private LocalDateTime parseDateTime(String dateTime) {
