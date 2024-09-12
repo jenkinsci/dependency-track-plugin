@@ -124,6 +124,44 @@
                 </pluginRepository>
             </pluginRepositories>
         </profile>
+        <profile>
+            <id>update-changelog</id>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>update-changelog</id>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <tstamp prefix="build">
+                                            <format property="date" pattern="yyyy-MM-dd" />
+                                        </tstamp>
+                                        <echo level="info" message="Update CHANGELOG with version: v${project.version} - ${build.date}"/>
+                                        <replace file="CHANGELOG.md" encoding="${project.build.sourceEncoding}" summary="true">
+                                            <replacetoken>[Unreleased]</replacetoken>
+                                            <replacevalue><![CDATA[[Unreleased]
+### ⚠ Breaking
+### ⭐ New Features
+### 🐞 Bugs Fixed
+
+## [v${project.version}] - @build.date@]]></replacevalue>
+                                        </replace>
+                                        <!-- extra step is required because ${build.date} is not evaluated in previous replacevalue-element -->
+                                        <replace file="CHANGELOG.md" encoding="${project.build.sourceEncoding}" token="@build.date@" value="${build.date}" />
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
     </profiles>
 
     <build>
@@ -171,11 +209,11 @@
                 <artifactId>maven-release-plugin</artifactId>
                 <version>3.1.1</version>
                 <configuration>
-                    <pushChanges>false</pushChanges>
                     <localCheckout>true</localCheckout>
                     <tagNameFormat>v@{project.version}</tagNameFormat>
-                    <preparationGoals>clean sync-packagejson-version:sync scm:checkin verify</preparationGoals>
-                    <completionGoals>sync-packagejson-version:sync scm:checkin</completionGoals>
+                    <preparationProfiles>update-changelog</preparationProfiles>
+                    <preparationGoals>clean sync-packagejson-version:sync scm:checkin@checkin-package.json antrun:run@update-changelog scm:checkin@checkin-changelog verify</preparationGoals>
+                    <completionGoals>sync-packagejson-version:sync scm:checkin@checkin-package.json</completionGoals>
                 </configuration>
             </plugin>
             <plugin>
@@ -220,11 +258,28 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-scm-plugin</artifactId>
                 <version>2.1.0</version>
-                <configuration>
-                    <pushChanges>false</pushChanges>
-                    <message>[maven-scm-plugin] updating package.json</message>
-                    <includes>package.json</includes>
-                </configuration>
+                <executions>
+                    <execution>
+                        <id>checkin-package.json</id>
+                        <goals>
+                            <goal>checkin</goal>
+                        </goals>
+                        <configuration>
+                            <message>[maven-scm-plugin] updating package.json</message>
+                            <includes>package.json</includes>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>checkin-changelog</id>
+                        <goals>
+                            <goal>checkin</goal>
+                        </goals>
+                        <configuration>
+                            <message>[maven-scm-plugin] updating CHANGELOG.md</message>
+                            <includes>CHANGELOG.md</includes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -485,9 +540,9 @@
     </dependencies>
 
     <scm>
-        <connection>scm:git:git@github.com:jenkinsci/dependency-track-plugin.git</connection>
+        <connection>scm:git:${project.scm.url}</connection>
         <url>https://github.com/jenkinsci/dependency-track-plugin.git</url>
-        <developerConnection>scm:git:git@github.com:jenkinsci/dependency-track-plugin.git</developerConnection>
+        <developerConnection>scm:git:${project.scm.url}</developerConnection>
         <tag>HEAD</tag>
     </scm>
 
