@@ -1,6 +1,6 @@
 # Dependency-Track Jenkins Plugin - Changelog
 
-## Unreleased
+## [Unreleased]
 ### ⚠ Breaking
 ### ⭐ New Features
 - Support for specifying the parent project using its name and version as an alternative to its ID ([#261](https://github.com/jenkinsci/dependency-track-plugin/issues/261))
@@ -9,7 +9,7 @@
 
 ### 🐞 Bugs Fixed
 
-## v5.0.0 - 2024-05-30
+## [v5.0.0] - 2024-05-30
 ### ⚠ Breaking
 - require Jenkins 2.440.1 or newer
 - require Java 11 or newer ([required since Jenkins 2.361.1](https://www.jenkins.io/blog/2022/06/28/require-java-11/))
