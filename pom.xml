@@ -13,7 +13,7 @@
     <artifactId>dependency-track</artifactId>
 
     <name>OWASP Dependency-Track Plugin</name>
-    <version>5.0.1-SNAPSHOT</version>
+    <version>5.1.0</version>
     <packaging>hpi</packaging>
     <inceptionYear>2018</inceptionYear>
     <organization>
@@ -142,7 +142,7 @@
                                         <tstamp prefix="build">
                                             <format property="date" pattern="yyyy-MM-dd" />
                                         </tstamp>
-                                        <echo level="info" message="Update CHANGELOG with version: v${project.version} - ${build.date}"/>
+                                        <echo level="info" message="Update CHANGELOG with version: v${project.version} - ${build.date}" />
                                         <replace file="CHANGELOG.md" encoding="${project.build.sourceEncoding}" summary="true">
                                             <replacetoken>[Unreleased]</replacetoken>
                                             <replacevalue><![CDATA[[Unreleased]
@@ -543,7 +543,7 @@
         <connection>scm:git:${project.scm.url}</connection>
         <url>https://github.com/jenkinsci/dependency-track-plugin.git</url>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
-        <tag>HEAD</tag>
+        <tag>v5.1.0</tag>
     </scm>
 
     <issueManagement>
