@@ -3,6 +3,11 @@
 ## [Unreleased]
 ### ⚠ Breaking
 ### ⭐ New Features
+### 🐞 Bugs Fixed
+
+## [v5.1.0] - 2024-09-20
+### ⚠ Breaking
+### ⭐ New Features
 - Support for specifying the parent project using its name and version as an alternative to its ID ([#261](https://github.com/jenkinsci/dependency-track-plugin/issues/261))
 - Include artifact name in Publishing Logline ([#264](https://github.com/jenkinsci/dependency-track-plugin/issues/264))
 - Support for Policy Violations ([#130](https://github.com/jenkinsci/dependency-track-plugin/issues/130))
