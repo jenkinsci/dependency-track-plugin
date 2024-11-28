@@ -10,6 +10,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     strategy:
+      fail-fast: false
       matrix:
         java: [11,17,21]
     steps:
@@ -24,6 +25,10 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
+      - name: Set up Maven
+        uses: stCarolas/setup-maven@v5
+        with:
+          maven-version: 3.9.9
       - name: check Sonar pre-conditions
         id: check_sonar
         continue-on-error: true
@@ -34,15 +39,15 @@ jobs:
         shell: bash
       - name: Build with Sonar
         id: build_sonar
-        if: matrix.java == '17' && steps.check_sonar.outcome == 'success' && !startsWith(github.head_ref, 'dependabot/')
+        if: matrix.java == 17 && steps.check_sonar.outcome == 'success' && !startsWith(github.head_ref, 'dependabot/')
         env:
           SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
           SONAR_ORGANIZATION: ${{ secrets.SONARCLOUD_ORGANIZATION }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: mvn -B clean test verify package sonar:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.projectKey=org.jenkins-ci.plugins:dependency-track -Dsonar.organization=$SONAR_ORGANIZATION -Dsonar.token=$SONAR_TOKEN
+        run: mvn -B -T 1C verify sonar:sonar -Dsonar.host.url=https://sonarcloud.io -Dsonar.projectKey=org.jenkins-ci.plugins:dependency-track -Dsonar.organization=$SONAR_ORGANIZATION -Dsonar.token=$SONAR_TOKEN
       - name: Build without Sonar
         if: steps.build_sonar.conclusion == 'skipped'
-        run: mvn -B clean test verify package
+        run: mvn -B -T 1C verify
       - name: Sonar Quality Gate check
         id: sonarqube-quality-gate-check
         uses: sonarsource/sonarqube-quality-gate-action@master
@@ -53,7 +58,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
           SONAR_ORGANIZATION: ${{ secrets.SONARCLOUD_ORGANIZATION }}
       - uses: actions/upload-artifact@v4
-        if: matrix.java == '11' && success()
+        if: matrix.java == 11 && success()
         with:
           path: target/dependency-track.hpi
           name: dependency-track.hpi
