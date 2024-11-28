@@ -49,6 +49,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
+import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -173,7 +174,7 @@ class DependencyTrackPublisherTest {
         uut.setProjectProperties(props);
         uut.setUnstableTotalCritical(1);
 
-        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false), eq(props)))
+        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false), any(ProjectProperties.class)))
                 .thenReturn(new UploadResult(true))
                 .thenReturn(new UploadResult(false));
 
@@ -314,7 +315,13 @@ class DependencyTrackPublisherTest {
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
         final var props = new ProjectProperties();
-        props.setDescription("description");
+        props.setDescription("description. ${my.var}");
+        props.setTags(List.of("tag1", "${my.var}"));
+        props.setSwidTagId("swidTagId. ${my.var}");
+        props.setGroup("group. ${my.var}");
+        props.setParentId("parentId. ${my.var}");
+        props.setParentName("parentName. ${my.var}");
+        props.setParentVersion("parentVersion. ${my.var}");
         DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
         uut.setProjectName("name-1");
         uut.setProjectVersion("version-1");
@@ -323,7 +330,7 @@ class DependencyTrackPublisherTest {
         uut.setProjectProperties(props);
         final var team = Team.builder().name("test-team").permissions(Set.of(VIEW_POLICY_VIOLATION.toString())).build();
 
-        when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(true), eq(props))).thenReturn(new UploadResult(true, "token-1"));
+        when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(true), any(ProjectProperties.class))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(List.of());
         when(client.getTeamPermissions()).thenReturn(team);
@@ -336,7 +343,15 @@ class DependencyTrackPublisherTest {
         verify(client).getFindings("uuid-1");
         verify(client).getTeamPermissions();
         verify(client).getViolations("uuid-1");
-        verify(client).updateProjectProperties("uuid-1", props);
+        var propsCaptor = ArgumentCaptor.forClass(ProjectProperties.class);
+        verify(client).updateProjectProperties(eq("uuid-1"), propsCaptor.capture());
+        assertThat(propsCaptor.getValue().getDescription()).isEqualTo("description. my.value");
+        assertThat(propsCaptor.getValue().getTags()).containsExactlyInAnyOrder("tag1", "my.value");
+        assertThat(propsCaptor.getValue().getSwidTagId()).isEqualTo("swidTagId. my.value");
+        assertThat(propsCaptor.getValue().getGroup()).isEqualTo("group. my.value");
+        assertThat(propsCaptor.getValue().getParentId()).isEqualTo("parentId. my.value");
+        assertThat(propsCaptor.getValue().getParentName()).isEqualTo("parentName. my.value");
+        assertThat(propsCaptor.getValue().getParentVersion()).isEqualTo("parentVersion. my.value");
         verify(client).lookupProject("name-1", "version-1");
     }
 

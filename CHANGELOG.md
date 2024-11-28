@@ -3,6 +3,8 @@
 ## Unreleased
 ### ⚠ Breaking
 ### ⭐ New Features
+- Support variables in project properties ([JENKINS-74822](https://issues.jenkins.io/browse/JENKINS-74822))
+
 ### 🐞 Bugs Fixed
 
 ## v5.1.0 - 2024-09-20
