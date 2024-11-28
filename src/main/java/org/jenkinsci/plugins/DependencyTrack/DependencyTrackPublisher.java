@@ -32,6 +32,7 @@ import hudson.EnvVars;
 import hudson.tasks.Recorder;
 import hudson.util.Secret;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import jenkins.model.RunAction2;
 import jenkins.tasks.SimpleBuildStep;
 import lombok.AccessLevel;
@@ -320,10 +321,11 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
 
         final String effectiveUrl = getEffectiveUrl();
         final String effectiveApiKey = getEffectiveApiKey(run);
+        final ProjectProperties effectiveProjectProperties = expandProjectProperties(env);
         logger.log(Messages.Builder_Publishing(effectiveUrl, effectiveArtifact));
         final ApiClient apiClient = clientFactory.create(effectiveUrl, effectiveApiKey, logger, getEffectiveConnectionTimeout(), getEffectiveReadTimeout());
         final UploadResult uploadResult = apiClient.upload(projectId, effectiveProjectName, effectiveProjectVersion,
-                artifactFilePath, effectiveAutocreate, projectProperties);
+                artifactFilePath, effectiveAutocreate, effectiveProjectProperties);
 
         if (!uploadResult.isSuccess()) {
             throw new AbortException(Messages.Builder_Upload_Failed());
@@ -337,7 +339,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
 
         logger.log(Messages.Builder_Success(String.format("%s/projects/%s", getEffectiveFrontendUrl(), StringUtils.isNotBlank(projectId) ? projectId : StringUtils.EMPTY)));
         
-        updateProjectProperties(logger, apiClient, effectiveProjectName, effectiveProjectVersion);
+        updateProjectProperties(logger, apiClient, effectiveProjectName, effectiveProjectVersion, effectiveProjectProperties);
 
         final var thresholds = getThresholds();
         if (synchronous && StringUtils.isNotBlank(uploadResult.getToken())) {
@@ -609,7 +611,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         return thresholds;
     }
     
-    private void updateProjectProperties(final ConsoleLogger logger, final ApiClient apiClient, final String effectiveProjectName, final String effectiveProjectVersion) throws ApiClientException {
+    private void updateProjectProperties(final ConsoleLogger logger, final ApiClient apiClient, final String effectiveProjectName, final String effectiveProjectVersion, final ProjectProperties effectiveProjectProperties) throws ApiClientException {
         // check whether there are settings other than those of the parent project.
         // the parent project is set during upload.
         boolean doUpdateProject = projectProperties != null && ( // noformat
@@ -621,7 +623,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         if (doUpdateProject) {
             logger.log(Messages.Builder_Project_Update());
             final String id = lookupProjectId(logger, apiClient, effectiveProjectName, effectiveProjectVersion);
-            apiClient.updateProjectProperties(id, projectProperties);
+            apiClient.updateProjectProperties(id, effectiveProjectProperties);
         }
     }
     
@@ -635,5 +637,20 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
             projectIdCache = projectId;
         }
         return projectIdCache;
+    }
+
+    private ProjectProperties expandProjectProperties(final EnvVars env) {
+        if (projectProperties != null) {
+            final var expandedProperties = new ProjectProperties();
+            Optional.ofNullable(projectProperties.getDescription()).map(env::expand).ifPresent(expandedProperties::setDescription);
+            Optional.ofNullable(projectProperties.getGroup()).map(env::expand).ifPresent(expandedProperties::setGroup);
+            Optional.ofNullable(projectProperties.getParentId()).map(env::expand).ifPresent(expandedProperties::setParentId);
+            Optional.ofNullable(projectProperties.getParentName()).map(env::expand).ifPresent(expandedProperties::setParentName);
+            Optional.ofNullable(projectProperties.getParentVersion()).map(env::expand).ifPresent(expandedProperties::setParentVersion);
+            Optional.ofNullable(projectProperties.getSwidTagId()).map(env::expand).ifPresent(expandedProperties::setSwidTagId);
+            expandedProperties.setTags(projectProperties.getTags().stream().map(env::expand).collect(Collectors.toList()));
+            return expandedProperties;
+        }
+        return null;
     }
 }

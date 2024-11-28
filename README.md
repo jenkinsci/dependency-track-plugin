@@ -77,6 +77,8 @@ Once configured with a valid URL and API key, simply configure a job to publish 
 - description
 - ID of parent project (for Dependency-Track v4.7 and newer)
 
+ The use of environment variables in the form `${VARIABLE}` is supported here.
+
 **Override global settings**: Allows to override global settings for "Auto Create Projects", "Dependency-Track URL", "Dependency-Track Frontend URL", "API key", "Polling Interval" and the various timeouts.
 
 ### Thresholds
