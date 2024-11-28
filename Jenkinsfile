@@ -1,4 +1,7 @@
-#!/usr/bin/env groovy
-
-/* `buildPlugin` step provided by: https://github.com/jenkins-infra/pipeline-library */
-buildPlugin(jdkVersions: [11], platforms:['linux'])
+buildPlugin(
+  forkCount: '1C',
+  useContainerAgent: true,
+  useArtifactCachingProxy: false, // workaround for https://github.com/jenkins-infra/pipeline-library/issues/891
+  jdkVersions: [11],
+  platforms: ['linux'],
+)
