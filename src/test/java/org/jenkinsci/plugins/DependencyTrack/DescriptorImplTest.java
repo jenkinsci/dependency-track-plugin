@@ -47,7 +47,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -384,7 +384,7 @@ class DescriptorImplTest {
 
     @Test
     void configureTest() throws Descriptor.FormException {
-        StaplerRequest req = mock(StaplerRequest.class);
+        var req = mock(StaplerRequest2.class);
         JSONObject formData = new JSONObject()
                 .element("dependencyTrackUrl", "https://foo.bar/")
                 .element("dependencyTrackApiKey", "api-key")

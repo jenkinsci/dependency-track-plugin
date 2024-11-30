@@ -52,7 +52,7 @@ class ProjectPropertiesTest {
         uut.setTags(new String[]{"tag2", "tag1"});
         assertThat(uut.getTags()).containsExactly("tag1", "tag2");
 
-        uut.setTags(Stream.of("TAG2", "tag2").collect(Collectors.toList()));
+        uut.setTags(Stream.of("TAG2", "tag2").toList());
         assertThat(uut.getTags()).containsExactly("tag2");
 
         uut.setTags(Stream.of("TAG2", "tag2").collect(Collectors.toSet()));

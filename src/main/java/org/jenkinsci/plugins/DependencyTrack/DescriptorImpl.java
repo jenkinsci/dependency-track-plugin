@@ -53,7 +53,7 @@ import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
-import org.kohsuke.stapler.StaplerRequest;
+import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.verb.POST;
 
 import static org.jenkinsci.plugins.DependencyTrack.model.Permissions.*;
@@ -176,7 +176,7 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
             final List<ListBoxModel.Option> options = apiClient.getProjects().stream()
                     .map(p -> new ListBoxModel.Option(p.getName().concat(" ").concat(Optional.ofNullable(p.getVersion()).orElse(StringUtils.EMPTY)).trim(), p.getUuid()))
                     .sorted(Comparator.comparing(o -> o.name))
-                    .collect(Collectors.toList());
+                    .toList();
             projects.add(new ListBoxModel.Option(Messages.Publisher_ProjectList_Placeholder(), StringUtils.EMPTY));
             projects.addAll(options);
         } catch (ApiClientException e) {
@@ -338,15 +338,9 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
         }
         sb.append("</ul>");
         switch (worst) {
-            case OK:
-                sb.insert(0, Messages.Publisher_ConnectionTest_Success(poweredBy));
-                break;
-            case WARNING:
-                sb.insert(0, Messages.Publisher_ConnectionTest_Warning(poweredBy));
-                break;
-            case ERROR:
-                sb.insert(0, Messages.Publisher_ConnectionTest_Error(poweredBy));
-                break;
+            case OK -> sb.insert(0, Messages.Publisher_ConnectionTest_Success(poweredBy));
+            case WARNING -> sb.insert(0, Messages.Publisher_ConnectionTest_Warning(poweredBy));
+            case ERROR -> sb.insert(0, Messages.Publisher_ConnectionTest_Error(poweredBy));
         }
         return FormValidation.respond(worst, String.format("<div class=\"%s\">%s</div>", worst.name().toLowerCase(Locale.ENGLISH), sb));
     }
@@ -360,7 +354,7 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
      * @throws FormException an exception validating form input
      */
     @Override
-    public boolean configure(final StaplerRequest req, final JSONObject formData) throws Descriptor.FormException {
+    public boolean configure(final StaplerRequest2 req, final JSONObject formData) throws Descriptor.FormException {
         req.bindJSON(this, formData);
         save();
         return super.configure(req, formData);

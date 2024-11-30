@@ -17,7 +17,6 @@ package org.jenkinsci.plugins.DependencyTrack;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -58,6 +57,6 @@ class ProjectParser extends ModelParser {
         return tagArray.stream()
                 .map(o -> getKeyOrNull((JSONObject) o, "name"))
                 .filter(StringUtils::isNotBlank)
-                .collect(Collectors.toList());
+                .toList();
     }
 }
