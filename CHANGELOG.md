@@ -2,6 +2,9 @@
 
 ## Unreleased
 ### ⚠ Breaking
+- require Jenkins 2.479.1 or newer
+- require Java 17 or newer (required since Jenkins 2.479.1)
+
 ### ⭐ New Features
 - Support variables in project properties ([JENKINS-74822](https://issues.jenkins.io/browse/JENKINS-74822))
 
