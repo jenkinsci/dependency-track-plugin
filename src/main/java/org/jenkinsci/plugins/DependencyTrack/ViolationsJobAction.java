@@ -82,7 +82,7 @@ public class ViolationsJobAction extends InvisibleAction {
                     item.putIfAbsent(ViolationState.FAIL.name().toLowerCase(), 0);
                     return item;
                 })
-                .collect(Collectors.toList());
+                .toList();
         return JSONArray.fromObject(distributions);
     }
 

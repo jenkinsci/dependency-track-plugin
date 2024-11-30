@@ -32,8 +32,6 @@ import hudson.EnvVars;
 import hudson.tasks.Recorder;
 import hudson.util.Secret;
 import java.util.Optional;
-import java.util.stream.Collectors;
-import jenkins.model.RunAction2;
 import jenkins.tasks.SimpleBuildStep;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
@@ -345,11 +343,11 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         if (synchronous && StringUtils.isNotBlank(uploadResult.getToken())) {
             final var resultActions = publishAnalysisResult(logger, apiClient, uploadResult.getToken(), run, effectiveProjectName, effectiveProjectVersion);
             if (thresholds.hasValues()) {
-                final var resultAction = resultActions.get(0).map(ResultAction.class::cast).get();
+                final var resultAction = resultActions.findingsAction;
                 evaluateRiskGates(run, logger, resultAction.getSeverityDistribution(), thresholds);
             }
-            if (resultActions.get(1).isPresent()) {
-                final var violationsAction = resultActions.get(1).map(ViolationsRunAction.class::cast).get();
+            if (resultActions.violationsAction != null) {
+                final var violationsAction = resultActions.violationsAction;
                 evaluateViolations(run, logger, violationsAction.getViolations());
             }
         }
@@ -358,7 +356,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         }
     }
 
-    private List<Optional<RunAction2>> publishAnalysisResult(final ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build, final String effectiveProjectName, final String effectiveProjectVersion) throws InterruptedException, ApiClientException, AbortException {
+    private PublishAnalysisResult publishAnalysisResult(final ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build, final String effectiveProjectName, final String effectiveProjectVersion) throws InterruptedException, ApiClientException, AbortException {
         final long timeout = System.currentTimeMillis() + (60000L * getEffectivePollingTimeout());
         final long interval = 1000L * getEffectivePollingInterval();
         logger.log(Messages.Builder_Polling());
@@ -401,8 +399,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         linkAction.setProjectVersion(effectiveProjectVersion);
         build.addOrReplaceAction(linkAction);
 
-        // replace with record when using Java 17
-        return List.of(Optional.of(findingsAction), Optional.ofNullable(violationsAction));
+        return new PublishAnalysisResult(findingsAction, violationsAction);
     }
 
     private void evaluateRiskGates(final Run<?, ?> build, final ConsoleLogger logger, final SeverityDistribution currentDistribution, final Thresholds thresholds) throws AbortException {
@@ -648,9 +645,11 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
             Optional.ofNullable(projectProperties.getParentName()).map(env::expand).ifPresent(expandedProperties::setParentName);
             Optional.ofNullable(projectProperties.getParentVersion()).map(env::expand).ifPresent(expandedProperties::setParentVersion);
             Optional.ofNullable(projectProperties.getSwidTagId()).map(env::expand).ifPresent(expandedProperties::setSwidTagId);
-            expandedProperties.setTags(projectProperties.getTags().stream().map(env::expand).collect(Collectors.toList()));
+            expandedProperties.setTags(projectProperties.getTags().stream().map(env::expand).toList());
             return expandedProperties;
         }
         return null;
     }
+
+    private static record PublishAnalysisResult(@NonNull ResultAction findingsAction, @Nullable ViolationsRunAction violationsAction) {} 
 }

@@ -28,7 +28,6 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import okhttp3.MediaType;
@@ -204,7 +203,7 @@ public class ApiClient {
                     return JSONArray.fromObject(response.body().string()).stream()
                             .map(JSONObject.class::cast)
                             .map(ProjectParser::parse)
-                            .collect(Collectors.toList());
+                            .toList();
                 }
                 return List.of();
             } catch (IOException e) {
@@ -355,7 +354,7 @@ public class ApiClient {
         final var updates = new JSONObject();
         final var tags = properties.getTags().stream()
                 .map(tag -> Map.of("name", tag))
-                .collect(Collectors.toList());
+                .toList();
         // overwrite tags if needed
         if (!tags.isEmpty()) {
             updates.element("tags", tags);

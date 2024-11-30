@@ -101,12 +101,12 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
     @DataBoundSetter
     @SuppressWarnings("unchecked")
     public void setTags(final Object value) {
-        if (value instanceof String) {
-            setTagsIntern((String) value);
-        } else if (value instanceof String[]) {
-            setTagsIntern((String[]) value);
-        } else if (value instanceof Collection && areAllElementsOfType((Collection) value, String.class)) {
-            setTagsIntern((Collection<String>) value);
+        if (value instanceof String string) {
+            setTagsIntern(string);
+        } else if (value instanceof String[] strings) {
+            setTagsIntern(strings);
+        } else if (value instanceof Collection collection && areAllElementsOfType(collection, String.class)) {
+            setTagsIntern(collection);
         } else if (value == null) {
             tags = null;
         } else {
@@ -169,7 +169,7 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
                 .map(String::toLowerCase)
                 .distinct()
                 .sorted()
-                .collect(Collectors.toList());
+                .toList();
     }
 
     @Extension
