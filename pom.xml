@@ -85,7 +85,7 @@
                                 </goals>
                                 <phase>initialize</phase>
                                 <configuration>
-                                    <nodeVersion>v20.13.1</nodeVersion>
+                                    <nodeVersion>v22.11.0</nodeVersion>
                                     <nodeDownloadRoot>https://repo.jenkins-ci.org/nodejs-dist/</nodeDownloadRoot>
                                     <npmRegistryURL>https://repo.jenkins-ci.org/api/npm/npm/</npmRegistryURL>
                                     <installDirectory>${project.build.directory}</installDirectory>
