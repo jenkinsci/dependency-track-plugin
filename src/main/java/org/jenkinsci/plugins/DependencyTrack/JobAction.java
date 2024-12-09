@@ -20,7 +20,6 @@ import hudson.model.Job;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -65,7 +64,7 @@ public class JobAction extends InvisibleAction {
                 .sorted(Comparator.naturalOrder())
                 .map(run -> run.getAction(ResultAction.class)).filter(Objects::nonNull)
                 .map(ResultAction::getSeverityDistribution)
-                .collect(Collectors.toList());
+                .toList();
         return JSONArray.fromObject(severityDistributions);
     }
 
