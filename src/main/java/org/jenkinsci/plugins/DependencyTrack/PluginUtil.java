@@ -23,7 +23,6 @@ import java.net.URL;
 import java.util.Collection;
 import lombok.experimental.UtilityClass;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.Validate;
 
 @UtilityClass
 class PluginUtil {
@@ -35,8 +34,8 @@ class PluginUtil {
      * @return a FormValidation object
      */
     @NonNull
-    static FormValidation doCheckUrl(final String value) {
-        if (StringUtils.isBlank(value)) {
+    static FormValidation doCheckUrl(@Nullable final String value) {
+        if (value == null || value.isBlank()) {
             return FormValidation.ok();
         }
         try {
@@ -51,7 +50,7 @@ class PluginUtil {
     }
 
     @Nullable
-    static String parseBaseUrl(final String baseUrl) {
+    static String parseBaseUrl(@Nullable final String baseUrl) {
         return StringUtils.removeEnd(StringUtils.trimToNull(baseUrl), "/");
     }
 
@@ -63,14 +62,8 @@ class PluginUtil {
      * @param type the class which the collection's elements are expected to be
      * @return {@code true} if all elements are of type {@code type} (also if
      * coll is empty), else {@code false}
-     * @see Validate#allElementsOfType(java.util.Collection, java.lang.Class)
      */
     static boolean areAllElementsOfType(@NonNull final Collection<?> coll, @NonNull final Class<?> type) {
-        try {
-            Validate.allElementsOfType(coll, type);
-        } catch (IllegalArgumentException invalid) {
-            return false;
-        }
-        return true;
+        return coll.stream().allMatch(type::isInstance);
     }
 }
