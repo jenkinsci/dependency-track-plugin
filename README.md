@@ -1,4 +1,4 @@
-[![Build Status](https://github.com/jenkinsci/dependency-track-plugin/workflows/CI%20build/badge.svg)](https://github.com/jenkinsci/dependency-track-plugin/actions?query=workflow%3A%22CI+build%22)
+[![CI build](https://github.com/jenkinsci/dependency-track-plugin/actions/workflows/ci-build.yml/badge.svg)](https://github.com/jenkinsci/dependency-track-plugin/actions/workflows/ci-build.yml)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=org.jenkins-ci.plugins%3Adependency-track&metric=alert_status)](https://sonarcloud.io/dashboard?id=org.jenkins-ci.plugins%3Adependency-track)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=org.jenkins-ci.plugins%3Adependency-track&metric=security_rating)](https://sonarcloud.io/dashboard?id=org.jenkins-ci.plugins%3Adependency-track)
 [![License](https://img.shields.io/badge/license-apache%20v2-brightgreen.svg)](LICENSE.txt)
