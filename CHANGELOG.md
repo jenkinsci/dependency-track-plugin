@@ -4,8 +4,11 @@
 ### ⚠ Breaking
 - require Jenkins 2.479.1 or newer
 - require Java 17 or newer (required since Jenkins 2.479.1)
+- require Dependency-Track 4.12 or newer ([#286](https://github.com/jenkinsci/dependency-track-plugin/issues/286))
 
 ### ⭐ New Features
+- Support "isLatest" flag ([#286](https://github.com/jenkinsci/dependency-track-plugin/issues/286))
+
 ### 🐞 Bugs Fixed
 
 ## v5.2.0 - 2024-12-08

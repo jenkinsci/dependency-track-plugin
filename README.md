@@ -23,6 +23,12 @@ Asynchronous publishing simply uploads the SBOM to Dependency-Track and the job 
 ![build summary](docs/images/jenkins-build-summary.png)
 ![findings](docs/images/jenkins-build-findings.png) ![policy violations](docs/images/jenkins-build-policy-violations.png)
 
+## Version Compatibility Matrix
+Plugin Version | Dependency-Track | Jenkins | Java
+---------------| ---------------- | ------- | ----
+6.0.x (next) | 4.12+ | 2.479.1+ | 17+
+5.2.x (current) | 4.9+ | 2.440.1+ | 11+
+
 ## Global Configuration
 To setup, navigate to Jenkins > System Configuration and complete the Dependency-Track section.
 
@@ -75,7 +81,9 @@ Once configured with a valid URL and API key, simply configure a job to publish 
 - SWID tag ID
 - group/vendor
 - description
-- ID of parent project (for Dependency-Track v4.7 and newer)
+- ID of parent project
+- name and version of parent project (as an alternative to the ID)
+- "is latest version" flag
 
  The use of environment variables in the form `${VARIABLE}` is supported here.
 

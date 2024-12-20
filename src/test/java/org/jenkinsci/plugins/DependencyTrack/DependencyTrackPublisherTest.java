@@ -49,7 +49,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoSettings;
 import org.mockito.quality.Strictness;
@@ -59,8 +58,8 @@ import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.jenkinsci.plugins.DependencyTrack.model.Permissions.VIEW_POLICY_VIOLATION;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.assertArg;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -157,7 +156,7 @@ class DependencyTrackPublisherTest {
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, clientFactory);
         uut.setProjectId("uuid-1");
 
-        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false), isNull())).thenThrow(new ApiClientException(Messages.ApiClient_Error_Connection("", "")));
+        when(client.upload(any(ApiClient.ProjectData.class), any(FilePath.class))).thenThrow(new ApiClientException(Messages.ApiClient_Error_Connection("", "")));
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).isInstanceOf(ApiClientException.class).hasMessage(Messages.ApiClient_Error_Connection("", ""));
     }
@@ -174,7 +173,7 @@ class DependencyTrackPublisherTest {
         uut.setProjectProperties(props);
         uut.setUnstableTotalCritical(1);
 
-        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false), any(ProjectProperties.class)))
+        when(client.upload(any(ApiClient.ProjectData.class), any(FilePath.class)))
                 .thenReturn(new UploadResult(true))
                 .thenReturn(new UploadResult(false));
 
@@ -199,13 +198,20 @@ class DependencyTrackPublisherTest {
         uut.setDependencyTrackApiKey(apikeyId);
         uut.setAutoCreateProjects(Boolean.TRUE);
 
-        when(client.upload(isNull(), eq("name-1"), eq("my.value"), any(FilePath.class), eq(true), isNull())).thenReturn(new UploadResult(true, "token-1"));
+        when(client.upload(any(ApiClient.ProjectData.class), any(FilePath.class))).thenReturn(new UploadResult(true, "token-1"));
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
         verify(client, never()).lookupProject(anyString(), anyString());
         verify(client, never()).getFindings(anyString());
         verify(client, never()).getTeamPermissions();
         verify(client, never()).getViolations(anyString());
+        verify(client).upload(assertArg(data -> {
+            assertThat(data.id()).isNull();
+            assertThat(data.name()).isEqualTo("name-1");
+            assertThat(data.version()).isEqualTo("my.value");
+            assertThat(data.autoCreate()).isTrue();
+            assertThat(data.properties()).isNull();
+        }), any(FilePath.class));
     }
 
     @Test
@@ -218,7 +224,7 @@ class DependencyTrackPublisherTest {
         uut.setDependencyTrackApiKey(apikeyId);
         uut.setUnstableTotalCritical(1);
 
-        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false), isNull())).thenReturn(new UploadResult(true, "token-1"));
+        when(client.upload(any(ApiClient.ProjectData.class), any(FilePath.class))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(List.of());
         when(client.getTeamPermissions()).thenReturn(Team.builder().name("test-team").permissions(Set.of()).build());
@@ -239,6 +245,13 @@ class DependencyTrackPublisherTest {
         verify(client).getFindings("uuid-1");
         verify(client).getTeamPermissions();
         verify(buildWithResultAction, times(2)).getAction(ResultAction.class);
+        verify(client).upload(assertArg(data -> {
+            assertThat(data.id()).isEqualTo("uuid-1");
+            assertThat(data.name()).isNull();
+            assertThat(data.version()).isNull();
+            assertThat(data.autoCreate()).isFalse();
+            assertThat(data.properties()).isNull();
+        }), any(FilePath.class));
     }
 
     @Test
@@ -250,7 +263,7 @@ class DependencyTrackPublisherTest {
         uut.setProjectId("uuid-1");
         uut.setDependencyTrackApiKey(apikeyId);
 
-        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false), isNull())).thenReturn(new UploadResult(true, "token-1"));
+        when(client.upload(any(ApiClient.ProjectData.class), any(FilePath.class))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(List.of());
         when(client.getTeamPermissions()).thenReturn(Team.builder().name("test-team").permissions(Set.of()).build());
@@ -276,7 +289,7 @@ class DependencyTrackPublisherTest {
         uut.setDependencyTrackApiKey(apikeyId);
         uut.setWarnOnViolationWarn(true);
 
-        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false), isNull())).thenReturn(new UploadResult(true, "token-1"));
+        when(client.upload(any(ApiClient.ProjectData.class), any(FilePath.class))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(List.of());
         when(client.getTeamPermissions()).thenReturn(Team.builder().name("test-team").permissions(Set.of(VIEW_POLICY_VIOLATION.toString())).build());
@@ -300,7 +313,7 @@ class DependencyTrackPublisherTest {
         uut.setDependencyTrackApiKey(apikeyId);
         uut.setFailOnViolationFail(true);
 
-        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(false), isNull())).thenReturn(new UploadResult(true, "token-1"));
+        when(client.upload(any(ApiClient.ProjectData.class), any(FilePath.class))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(List.of());
         when(client.getTeamPermissions()).thenReturn(Team.builder().name("test-team").permissions(Set.of(VIEW_POLICY_VIOLATION.toString())).build());
@@ -322,6 +335,7 @@ class DependencyTrackPublisherTest {
         props.setParentId("parentId. ${my.var}");
         props.setParentName("parentName. ${my.var}");
         props.setParentVersion("parentVersion. ${my.var}");
+        props.setIsLatest(true);
         DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
         uut.setProjectName("name-1");
         uut.setProjectVersion("version-1");
@@ -330,7 +344,7 @@ class DependencyTrackPublisherTest {
         uut.setProjectProperties(props);
         final var team = Team.builder().name("test-team").permissions(Set.of(VIEW_POLICY_VIOLATION.toString())).build();
 
-        when(client.upload(isNull(), eq("name-1"), eq("version-1"), any(FilePath.class), eq(true), any(ProjectProperties.class))).thenReturn(new UploadResult(true, "token-1"));
+        when(client.upload(any(ApiClient.ProjectData.class), any(FilePath.class))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(List.of());
         when(client.getTeamPermissions()).thenReturn(team);
@@ -343,15 +357,16 @@ class DependencyTrackPublisherTest {
         verify(client).getFindings("uuid-1");
         verify(client).getTeamPermissions();
         verify(client).getViolations("uuid-1");
-        var propsCaptor = ArgumentCaptor.forClass(ProjectProperties.class);
-        verify(client).updateProjectProperties(eq("uuid-1"), propsCaptor.capture());
-        assertThat(propsCaptor.getValue().getDescription()).isEqualTo("description. my.value");
-        assertThat(propsCaptor.getValue().getTags()).containsExactlyInAnyOrder("tag1", "my.value");
-        assertThat(propsCaptor.getValue().getSwidTagId()).isEqualTo("swidTagId. my.value");
-        assertThat(propsCaptor.getValue().getGroup()).isEqualTo("group. my.value");
-        assertThat(propsCaptor.getValue().getParentId()).isEqualTo("parentId. my.value");
-        assertThat(propsCaptor.getValue().getParentName()).isEqualTo("parentName. my.value");
-        assertThat(propsCaptor.getValue().getParentVersion()).isEqualTo("parentVersion. my.value");
+        verify(client).updateProjectProperties(eq("uuid-1"), assertArg(actualProps -> {
+            assertThat(actualProps.getDescription()).isEqualTo("description. my.value");
+            assertThat(actualProps.getTags()).containsExactlyInAnyOrder("tag1", "my.value");
+            assertThat(actualProps.getSwidTagId()).isEqualTo("swidTagId. my.value");
+            assertThat(actualProps.getGroup()).isEqualTo("group. my.value");
+            assertThat(actualProps.getParentId()).isEqualTo("parentId. my.value");
+            assertThat(actualProps.getParentName()).isEqualTo("parentName. my.value");
+            assertThat(actualProps.getParentVersion()).isEqualTo("parentVersion. my.value");
+            assertThat(actualProps.getIsLatest()).isTrue();
+        }));
         verify(client).lookupProject("name-1", "version-1");
     }
 
@@ -376,8 +391,7 @@ class DependencyTrackPublisherTest {
         uut.setDependencyTrackConnectionTimeout(1);
         uut.setDependencyTrackReadTimeout(1);
 
-        when(client.upload(eq("uuid-1"), isNull(), isNull(), any(FilePath.class), eq(true), isNull()))
-                .thenReturn(new UploadResult(false));
+        when(client.upload(any(ApiClient.ProjectData.class), any(FilePath.class))).thenReturn(new UploadResult(false));
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Upload_Failed());
     }

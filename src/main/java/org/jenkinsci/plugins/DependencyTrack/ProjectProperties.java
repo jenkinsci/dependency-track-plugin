@@ -31,6 +31,7 @@ import java.util.stream.Stream;
 import jenkins.model.Jenkins;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
+import lombok.Setter;
 import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
@@ -92,6 +93,13 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
      */
     @Nullable
     private String parentVersion;
+
+    /**
+     * Mark this version of the project as the latest version
+     */
+    @Nullable
+    @Setter(onMethod_ = {@DataBoundSetter})
+    private Boolean isLatest;
 
     @NonNull
     public List<String> getTags() {
