@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONNull;
@@ -86,7 +87,9 @@ class FindingParser extends ModelParser {
                 .map(alias::getString)
                 .filter(Predicate.not(vulnId::equalsIgnoreCase)))
                 .distinct()
-                .toList()
+                // list must not be immutable:
+                // java.lang.UnsupportedOperationException: Refusing to marshal java.util.ImmutableCollections$ListN for security reasons
+                .collect(Collectors.toList())
                 : null;
     }
 }

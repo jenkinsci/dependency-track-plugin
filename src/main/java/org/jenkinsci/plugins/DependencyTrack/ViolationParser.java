@@ -16,6 +16,7 @@
 package org.jenkinsci.plugins.DependencyTrack;
 
 import java.util.List;
+import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
@@ -31,7 +32,9 @@ class ViolationParser extends ModelParser {
         return jsonArray.stream()
                 .map(JSONObject.class::cast)
                 .map(ViolationParser::parseViolation)
-                .toList();
+                // list must not be immutable:
+                // java.lang.UnsupportedOperationException: Refusing to marshal java.util.ImmutableCollections$ListN for security reasons
+                .collect(Collectors.toList());
     }
 
     private Violation parseViolation(JSONObject json) {

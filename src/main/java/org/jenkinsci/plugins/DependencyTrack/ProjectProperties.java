@@ -169,7 +169,9 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
                 .map(String::toLowerCase)
                 .distinct()
                 .sorted()
-                .toList();
+                // list must not be immutable:
+                // java.lang.UnsupportedOperationException: Refusing to marshal java.util.ImmutableCollections$ListN for security reasons
+                .collect(Collectors.toList());
     }
 
     @Extension
