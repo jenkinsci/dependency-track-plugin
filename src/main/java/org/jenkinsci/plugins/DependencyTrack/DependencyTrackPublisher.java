@@ -322,8 +322,8 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         final ProjectProperties effectiveProjectProperties = expandProjectProperties(env);
         logger.log(Messages.Builder_Publishing(effectiveUrl, effectiveArtifact));
         final ApiClient apiClient = clientFactory.create(effectiveUrl, effectiveApiKey, logger, getEffectiveConnectionTimeout(), getEffectiveReadTimeout());
-        final UploadResult uploadResult = apiClient.upload(projectId, effectiveProjectName, effectiveProjectVersion,
-                artifactFilePath, effectiveAutocreate, effectiveProjectProperties);
+        final var projectData = new ApiClient.ProjectData(projectId, effectiveProjectName, effectiveProjectVersion, effectiveAutocreate, effectiveProjectProperties);
+        final UploadResult uploadResult = apiClient.upload(projectData, artifactFilePath);
 
         if (!uploadResult.isSuccess()) {
             throw new AbortException(Messages.Builder_Upload_Failed());
@@ -615,6 +615,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
                 projectProperties.getDescription() != null
                 || projectProperties.getGroup() != null
                 || projectProperties.getSwidTagId() != null
+                || projectProperties.getIsLatest() != null
                 || !projectProperties.getTags().isEmpty());
 
         if (doUpdateProject) {
@@ -646,6 +647,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
             Optional.ofNullable(projectProperties.getParentVersion()).map(env::expand).ifPresent(expandedProperties::setParentVersion);
             Optional.ofNullable(projectProperties.getSwidTagId()).map(env::expand).ifPresent(expandedProperties::setSwidTagId);
             expandedProperties.setTags(projectProperties.getTags().stream().map(env::expand).toList());
+            expandedProperties.setIsLatest(projectProperties.getIsLatest());
             return expandedProperties;
         }
         return null;

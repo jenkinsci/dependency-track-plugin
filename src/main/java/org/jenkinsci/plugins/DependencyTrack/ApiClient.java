@@ -291,8 +291,7 @@ public class ApiClient {
 
     @NonNull
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
-    public UploadResult upload(@Nullable final String projectId, @Nullable final String projectName, @Nullable final String projectVersion, @NonNull final FilePath artifact,
-            boolean autoCreateProject, @Nullable final ProjectProperties properties) throws ApiClientException {
+    public UploadResult upload(@NonNull final ProjectData project, @NonNull final FilePath artifact) throws ApiClientException {
         final String encodedScan;
         try (var in = artifact.read()) {
             encodedScan = Base64.getEncoder().encodeToString(in.readAllBytes());
@@ -303,17 +302,19 @@ public class ApiClient {
         // Creates the JSON payload that will be sent to Dependency-Track
         final var bomSubmitRequest = new JSONObject();
         bomSubmitRequest.element("bom", encodedScan);
-        if (StringUtils.isNotBlank(projectId)) {
-            bomSubmitRequest.element("project", projectId);
+        if (StringUtils.isNotBlank(project.id())) {
+            bomSubmitRequest.element("project", project.id());
         } else {
-            bomSubmitRequest.element("projectName", projectName)
-                    .element("projectVersion", projectVersion)
-                    .element("autoCreate", autoCreateProject);
+            bomSubmitRequest.element("projectName", project.name())
+                    .element("projectVersion", project.version())
+                    .element("autoCreate", project.autoCreate());
         }
+        final var properties = project.properties();
         if (properties != null) {
             bomSubmitRequest.elementOpt("parentUUID", properties.getParentId())
                     .elementOpt("parentName", properties.getParentName())
-                    .elementOpt("parentVersion", properties.getParentVersion());
+                    .elementOpt("parentVersion", properties.getParentVersion())
+                    .elementOpt("isLatestProjectVersion", properties.getIsLatest());
         }
         final var request = createRequest(URI.create(BOM_URL), "PUT", RequestBody.create(bomSubmitRequest.toString(), APPLICATION_JSON));
         return executeWithRetry(() -> {
@@ -365,14 +366,18 @@ public class ApiClient {
         updates.elementOpt("group", properties.getGroup());
         // overwrite description only if it is set (means not null)
         updates.elementOpt("description", properties.getDescription());
+        // overwrite isLatest only if it is set (means not null)
+        updates.elementOpt("isLatest", properties.getIsLatest());
         // set new parent project if it is set (means not null)
         if (properties.getParentId() != null) {
             JSONObject newParent = new JSONObject().elementOpt("uuid", properties.getParentId());
             updates.element("parent", newParent);
         }
 
-        // update project
-        updateProject(projectUuid, updates);
+        // update project if necessary
+        if (!updates.isEmpty()) {
+            updateProject(projectUuid, updates);
+        }
     }
 
     @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
@@ -449,5 +454,13 @@ public class ApiClient {
     private interface RetryAction<T, E extends IOException> {
 
         T doWithRetry() throws E;
+    }
+
+    static record ProjectData(@Nullable String id,
+        @Nullable String name,
+        @Nullable String version,
+        boolean autoCreate,
+        @Nullable ProjectProperties properties) {
+
     }
 }
