@@ -62,6 +62,7 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -140,7 +141,7 @@ class ApiClientTest {
         doThrow(new ConnectException("oops"))
                 .when(call).execute();
 
-        assertThatCode(() -> uut.testConnection())
+        assertThatCode(uut::testConnection)
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
         verify(httpClient, times(2)).newCall(any(okhttp3.Request.class));
@@ -156,14 +157,14 @@ class ApiClientTest {
 
         ApiClient uut = createClient();
 
-        assertThatCode(() -> uut.testConnection()).isInstanceOf(ApiClientException.class)
+        assertThatCode(uut::testConnection).isInstanceOf(ApiClientException.class)
                 .hasNoCause()
                 .hasMessage(Messages.ApiClient_Error_Connection(HttpResponseStatus.INTERNAL_SERVER_ERROR.code(), HttpResponseStatus.INTERNAL_SERVER_ERROR.reasonPhrase()));
 
         verify(logger).log("something went wrong");
     }
 
-    @Test()
+    @Test
     void getProjectsTest(JenkinsRule r) throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
@@ -178,13 +179,14 @@ class ApiClientTest {
                 assertThat(Integer.valueOf(p)).isBetween(1, 3);
             });
             int page = Integer.parseInt(query.parameters().get("page").get(0));
-            switch (page) {
-                case 1:
-                    return response.sendString(Mono.just("[{\"name\":\"Project 1\",\"uuid\":\"uuid-1\",\"version\":null},{\"name\":\"Project 2\",\"uuid\":\"uuid-2\",\"version\":\"null\"}]"));
-                case 2:
-                    return response.sendString(Mono.just("[{\"name\":\"Project 3\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\",\"lastBomImportStr\":\"2007-12-03T10:15:30\",\"tags\":[{\"name\":\"tag1\"},{\"name\":\"tag2\"},{\"name\":null}]}]"));
-            }
-            return response.sendNotFound();
+            return switch (page) {
+                case 1 ->
+                    response.sendString(Mono.just("[{\"name\":\"Project 1\",\"uuid\":\"uuid-1\",\"version\":null},{\"name\":\"Project 2\",\"uuid\":\"uuid-2\",\"version\":\"null\"}]"));
+                case 2 ->
+                    response.sendString(Mono.just("[{\"name\":\"Project 3\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\",\"lastBomImportStr\":\"2007-12-03T10:15:30\",\"tags\":[{\"name\":\"tag1\"},{\"name\":\"tag2\"},{\"name\":null}]}]"));
+                default ->
+                    response.sendNotFound();
+            };
         }))
                 .bindNow();
 
@@ -207,7 +209,7 @@ class ApiClientTest {
         doThrow(new ConnectException("oops"))
                 .when(call).execute();
 
-        assertThatCode(() -> uut.getProjects())
+        assertThatCode(uut::getProjects)
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
         verify(httpClient, times(2)).newCall(any(okhttp3.Request.class));
@@ -268,12 +270,12 @@ class ApiClientTest {
             assertCommonHeaders(request);
             assertThat(request.param("uuid")).isNotEmpty();
             String uuid = request.param("uuid");
-            switch (uuid) {
-                case "uuid-1":
-                    return response.sendString(Mono.just("[]"));
-                default:
-                    return response.sendNotFound();
-            }
+            return switch (uuid) {
+                case "uuid-1" ->
+                    response.sendString(Mono.just("[]"));
+                default ->
+                    response.sendNotFound();
+            };
         }))
                 .bindNow();
 
@@ -310,12 +312,12 @@ class ApiClientTest {
             assertCommonHeaders(request);
             assertThat(request.param("uuid")).isNotEmpty();
             String uuid = request.param("uuid");
-            switch (uuid) {
-                case "uuid-1":
-                    return response.sendString(Mono.just("[]"));
-                default:
-                    return response.sendNotFound();
-            }
+            return switch (uuid) {
+                case "uuid-1" ->
+                    response.sendString(Mono.just("[]"));
+                default ->
+                    response.sendNotFound();
+            };
         }))
                 .bindNow();
 
@@ -357,8 +359,8 @@ class ApiClientTest {
             assertPOSTHeaders(request);
             return response.sendString(
                     request.receive().asString(StandardCharsets.UTF_8)
-                            .doOnNext(body -> requestBody.set(body))
-                            .doOnComplete(() -> completionSignal.countDown())
+                            .doOnNext(requestBody::set)
+                            .doOnComplete(completionSignal::countDown)
                             .map(body -> "{\"token\":\"uuid-1\"}")
             );
         }))
@@ -392,8 +394,8 @@ class ApiClientTest {
             assertPOSTHeaders(request);
             return response.sendString(
                     request.receive().asString(StandardCharsets.UTF_8)
-                            .doOnNext(body -> requestBody.set(body))
-                            .doOnComplete(() -> completionSignal.countDown())
+                            .doOnNext(requestBody::set)
+                            .doOnComplete(completionSignal::countDown)
                             .map(body -> "")
             );
         }))
@@ -472,12 +474,12 @@ class ApiClientTest {
             assertCommonHeaders(request);
             assertThat(request.param("uuid")).isNotEmpty();
             String uuid = request.param("uuid");
-            switch (uuid) {
-                case "uuid-1":
-                    return response.sendString(Mono.just("{\"processing\":true}"));
-                default:
-                    return response.sendNotFound();
-            }
+            return switch (uuid) {
+                case "uuid-1" ->
+                    response.sendString(Mono.just("{\"processing\":true}"));
+                default ->
+                    response.sendNotFound();
+            };
         }))
                 .bindNow();
 
@@ -519,8 +521,8 @@ class ApiClientTest {
                     assertPOSTHeaders(request);
                     return response.sendString(
                             request.receive().asString(StandardCharsets.UTF_8)
-                                    .doOnNext(body -> requestBody.set(body))
-                                    .doOnComplete(() -> completionSignal.countDown())
+                                    .doOnNext(requestBody::set)
+                                    .doOnComplete(completionSignal::countDown)
                     );
                 })
                 )
@@ -594,6 +596,16 @@ class ApiClientTest {
     }
 
     @Test
+    void updateProjectPropertiesTestWithEmptyProperties() throws IOException {
+        final var httpClient = mock(OkHttpClient.class);
+        final var uut = createClient(httpClient);
+
+        uut.updateProjectProperties("foo", new ProjectProperties());
+
+        verify(httpClient, never()).newCall(any(okhttp3.Request.class));
+    }
+
+    @Test
     void getTeamPermissionsTest(JenkinsRule r) throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
@@ -627,7 +639,7 @@ class ApiClientTest {
         doThrow(new ConnectException("oops"))
                 .when(call).execute();
 
-        assertThatCode(() -> uut.getTeamPermissions())
+        assertThatCode(uut::getTeamPermissions)
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
         verify(httpClient, times(2)).newCall(any(okhttp3.Request.class));
@@ -664,7 +676,7 @@ class ApiClientTest {
         doThrow(new ConnectException("oops"))
                 .when(call).execute();
 
-        assertThatCode(() -> uut.getVersion())
+        assertThatCode(uut::getVersion)
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(ConnectException.class);
         verify(httpClient, times(2)).newCall(any(okhttp3.Request.class));
@@ -680,7 +692,7 @@ class ApiClientTest {
 
         ApiClient uut = new ApiClient(String.format("http://%s:%d/ctx", server.host(), server.port()), API_KEY, logger, 1, 1);
 
-        assertThatCode(() -> uut.testConnection()).isInstanceOf(ApiClientException.class)
+        assertThatCode(uut::testConnection).isInstanceOf(ApiClientException.class)
                 .hasNoCause()
                 // if context path would be ignores, the server would return 404 instead of 500
                 .hasMessage(Messages.ApiClient_Error_Connection(HttpResponseStatus.INTERNAL_SERVER_ERROR.code(), HttpResponseStatus.INTERNAL_SERVER_ERROR.reasonPhrase()));

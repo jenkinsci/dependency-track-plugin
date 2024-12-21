@@ -77,12 +77,12 @@ class ResultActionTest {
         final User anonymous = User.getOrCreateByIdOrFullName(ACL.ANONYMOUS_USERNAME);
         // without propper permissions
         try (ACLContext ignored = ACL.as(anonymous)) {
-            assertThatThrownBy(() -> uut.getFindingsJson()).isInstanceOf(AccessDeniedException3.class);
+            assertThatThrownBy(uut::getFindingsJson).isInstanceOf(AccessDeniedException3.class);
         }
         // with propper permissions
         try (ACLContext ignored = ACL.as(anonymous)) {
             mockAuthorizationStrategy.grant(Job.READ).onItems(project).to(anonymous);
-            assertThatCode(() -> uut.getFindingsJson()).doesNotThrowAnyException();
+            assertThatCode(uut::getFindingsJson).doesNotThrowAnyException();
         }
     }
 
