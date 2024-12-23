@@ -39,7 +39,7 @@
     <properties>
         <jenkins.version>2.479.1</jenkins.version>
         <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
-        <configuration-as-code.version>1850.va_a_8c31d3158b_</configuration-as-code.version>
+        <configuration-as-code.version>1909.vb_b_f59a_27d013</configuration-as-code.version>
         <byte-buddy.version>1.15.11</byte-buddy.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
