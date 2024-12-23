@@ -444,7 +444,7 @@
         <dependency>
             <groupId>io.jenkins.plugins</groupId>
             <artifactId>okhttp-api</artifactId>
-            <version>4.11.0-181.v1de5b_83857df</version>
+            <version>4.11.0-183.va_87fc7a_89810</version>
         </dependency>
         <dependency>
             <groupId>org.springframework.retry</groupId>
