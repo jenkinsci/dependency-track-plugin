@@ -67,7 +67,7 @@ jobs:
           path: ./CHANGELOG.md
 
       - name: Create Release
-        uses: ncipollo/release-action@v1.14.0
+        uses: ncipollo/release-action@v1.15.0
         with:
           artifacts: target/checkout/target/dependency-track.hpi
           artifactContentType: application/zip
