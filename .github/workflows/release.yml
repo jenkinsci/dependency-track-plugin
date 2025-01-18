@@ -64,7 +64,7 @@ jobs:
         with:
           validation_level: none
           version: v${{ steps.current_version.outputs.version }}
-          path: ./CHANGELOG.md
+          path: ./target/checkout/CHANGELOG.md
 
       - name: Create Release
         uses: ncipollo/release-action@v1.15.0
