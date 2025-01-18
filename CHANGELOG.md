@@ -2,6 +2,11 @@
 
 ## Unreleased
 ### ⚠ Breaking
+### ⭐ New Features
+### 🐞 Bugs Fixed
+
+## v6.0.0 - 2025-01-18
+### ⚠ Breaking
 - require Jenkins 2.479.1 or newer
 - require Java 17 or newer (required since Jenkins 2.479.1)
 - require Dependency-Track 4.12 or newer ([#286](https://github.com/jenkinsci/dependency-track-plugin/issues/286))
