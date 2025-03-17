@@ -17,7 +17,6 @@ package org.jenkinsci.plugins.DependencyTrack;
 
 import edu.umd.cs.findbugs.annotations.NonNull;
 import edu.umd.cs.findbugs.annotations.Nullable;
-import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 import hudson.FilePath;
 import hudson.util.VersionNumber;
 import io.jenkins.plugins.okhttp.api.JenkinsOkHttpClient;
@@ -111,7 +110,6 @@ public class ApiClient {
     }
 
     @NonNull
-    @SuppressFBWarnings(value = "NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE", justification = "Returns a non-null value if this response was passed to Callback.onResponse or returned from Call.execute")
     public VersionNumber getVersion() throws ApiClientException {
         final var request = createRequest(URI.create(VERSION_URL));
         return executeWithRetry(() -> {
@@ -133,7 +131,6 @@ public class ApiClient {
     }
 
     @NonNull
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public String testConnection() throws ApiClientException {
         final var request = createRequest(URI.create(PROJECT_URL));
         return executeWithRetry(() -> {
@@ -154,7 +151,6 @@ public class ApiClient {
     }
 
     @NonNull
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public Team getTeamPermissions() throws ApiClientException {
         final var request = createRequest(URI.create(TEAM_SELF_URL));
         return executeWithRetry(() -> {
@@ -189,7 +185,6 @@ public class ApiClient {
     }
 
     @NonNull
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private List<Project> getProjectsPaged(final int page) throws ApiClientException {
         final var uri = UriComponentsBuilder.fromUriString(PROJECT_URL)
                 .queryParam("limit", "{limit}")
@@ -213,7 +208,6 @@ public class ApiClient {
     }
 
     @NonNull
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public Project lookupProject(@NonNull final String projectName, @NonNull final String projectVersion) throws ApiClientException {
         final var uri = UriComponentsBuilder.fromUriString(PROJECT_LOOKUP_URL)
                 .queryParam(PROJECT_LOOKUP_NAME_PARAM, "{name}")
@@ -246,7 +240,6 @@ public class ApiClient {
     }
 
     @NonNull
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public List<Finding> getFindings(@NonNull final String projectUuid) throws ApiClientException {
         final var uri = UriComponentsBuilder.fromUriString(PROJECT_FINDINGS_URL).pathSegment("{uuid}").build(projectUuid);
         final var request = createRequest(uri);
@@ -268,7 +261,6 @@ public class ApiClient {
     }
 
     @NonNull
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public List<Violation> getViolations(@NonNull final String projectUuid) throws ApiClientException {
         final var uri = UriComponentsBuilder.fromUriString(PROJECT_VIOLATIONS_URL).pathSegment("{uuid}").build(projectUuid);
         final var request = createRequest(uri);
@@ -290,7 +282,6 @@ public class ApiClient {
     }
 
     @NonNull
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public UploadResult upload(@NonNull final ProjectData project, @NonNull final FilePath artifact) throws ApiClientException {
         final String encodedScan;
         try (var in = artifact.read()) {
@@ -380,7 +371,6 @@ public class ApiClient {
         }
     }
 
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     private void updateProject(@NonNull final String projectUuid, @NonNull final JSONObject project) throws ApiClientException {
         final var uri = UriComponentsBuilder.fromUriString(PROJECT_URL).pathSegment("{uuid}").build(projectUuid);
         final var request = createRequest(uri, "PATCH", RequestBody.create(project.toString(), APPLICATION_JSON));
@@ -401,7 +391,6 @@ public class ApiClient {
         });
     }
 
-    @SuppressFBWarnings("NP_NULL_ON_SOME_PATH_FROM_RETURN_VALUE")
     public boolean isTokenBeingProcessed(@NonNull final String token) throws ApiClientException {
         final var uri = UriComponentsBuilder.fromUriString(BOM_TOKEN_URL).pathSegment("{token}").build(token);
         final var request = createRequest(uri);
