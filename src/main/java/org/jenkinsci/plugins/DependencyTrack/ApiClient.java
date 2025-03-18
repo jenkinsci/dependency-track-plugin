@@ -24,12 +24,13 @@ import java.io.IOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import okhttp3.MediaType;
+import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
@@ -283,31 +284,29 @@ public class ApiClient {
 
     @NonNull
     public UploadResult upload(@NonNull final ProjectData project, @NonNull final FilePath artifact) throws ApiClientException {
-        final String encodedScan;
-        try (var in = artifact.read()) {
-            encodedScan = Base64.getEncoder().encodeToString(in.readAllBytes());
+        final var formBodyBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
+        try {
+            formBodyBuilder.addFormDataPart("bom", artifact.readToString());
         } catch (IOException | InterruptedException e) {
             logger.log(Messages.Builder_Error_Processing(artifact.getRemote(), e.getLocalizedMessage()));
             return new UploadResult(false);
         }
         // Creates the JSON payload that will be sent to Dependency-Track
-        final var bomSubmitRequest = new JSONObject();
-        bomSubmitRequest.element("bom", encodedScan);
         if (StringUtils.isNotBlank(project.id())) {
-            bomSubmitRequest.element("project", project.id());
+            formBodyBuilder.addFormDataPart("project", project.id());
         } else {
-            bomSubmitRequest.element("projectName", project.name())
-                    .element("projectVersion", project.version())
-                    .element("autoCreate", project.autoCreate());
+            formBodyBuilder.addFormDataPart("projectName", project.name())
+                    .addFormDataPart("projectVersion", project.version())
+                    .addFormDataPart("autoCreate", String.valueOf(project.autoCreate()));
         }
         final var properties = project.properties();
         if (properties != null) {
-            bomSubmitRequest.elementOpt("parentUUID", properties.getParentId())
-                    .elementOpt("parentName", properties.getParentName())
-                    .elementOpt("parentVersion", properties.getParentVersion())
-                    .elementOpt("isLatestProjectVersion", properties.getIsLatest());
+            Optional.ofNullable(properties.getParentId()).ifPresent(value -> formBodyBuilder.addFormDataPart("parentUUID", value));
+            Optional.ofNullable(properties.getParentName()).ifPresent(value -> formBodyBuilder.addFormDataPart("parentName", value));
+            Optional.ofNullable(properties.getParentVersion()).ifPresent(value -> formBodyBuilder.addFormDataPart("parentVersion", value));
+            Optional.ofNullable(properties.getIsLatest()).map(String::valueOf).ifPresent(value -> formBodyBuilder.addFormDataPart("isLatest", value));
         }
-        final var request = createRequest(URI.create(BOM_URL), "PUT", RequestBody.create(bomSubmitRequest.toString(), APPLICATION_JSON));
+        final var request = createRequest(URI.create(BOM_URL), "POST", formBodyBuilder.build());
         return executeWithRetry(() -> {
             try (var response = httpClient.newCall(request).execute()) {
                 final var body = response.body().string();

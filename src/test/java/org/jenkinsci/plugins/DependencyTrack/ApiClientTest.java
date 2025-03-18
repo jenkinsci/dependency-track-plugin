@@ -22,6 +22,7 @@ import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.QueryStringDecoder;
+import io.netty.handler.codec.http.multipart.HttpData;
 import java.io.File;
 import java.io.IOException;
 import java.net.ConnectException;
@@ -32,11 +33,13 @@ import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 import net.sf.json.JSONObject;
 import okhttp3.OkHttpClient;
+import org.apache.commons.io.function.Uncheck;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.jenkinsci.plugins.DependencyTrack.ApiClient.ProjectData;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
@@ -349,22 +352,22 @@ class ApiClientTest {
     void uploadTestWithUuid(@TempDir Path tmp, JenkinsRule r) throws IOException, InterruptedException {
         Path bom = tmp.resolve("bom.xml");
         Files.writeString(bom, "<test />", Charset.defaultCharset());
-        final AtomicReference<String> requestBody = new AtomicReference<>();
+        final AtomicReference<Map<String, String>> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
-                .route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> {
+                .route(routes -> routes.post(ApiClient.BOM_URL, (request, response) -> {
             assertCommonHeaders(request);
-            assertPOSTHeaders(request);
-            return response.sendString(
-                    request.receive().asString(StandardCharsets.UTF_8)
-                            .doOnNext(requestBody::set)
-                            .doOnComplete(completionSignal::countDown)
-                            .map(body -> "{\"token\":\"uuid-1\"}")
-            );
-        }))
-                .bindNow();
+            assertThat(request.isMultipart()).isTrue();
+            return response.sendString(request.receiveForm()
+                    .collectMap(HttpData::getName, v -> Uncheck.apply(HttpData::getString, v))
+                    .doOnSuccess(m -> {
+                        requestBody.set(m);
+                        completionSignal.countDown();
+                    })
+                    .map(body -> "{\"token\":\"uuid-1\"}"));
+        })).bindNow();
 
         final var props = new ProjectProperties();
         props.setParentId("parent-uuid");
@@ -374,32 +377,31 @@ class ApiClientTest {
         var data = new ProjectData("uuid-1", null, null, false, props);
         assertThat(uut.upload(data, new FilePath(bom.toFile()))).isEqualTo(new UploadResult(true, "uuid-1"));
 
-        String expectedBody = "{\"bom\":\"PHRlc3QgLz4=\",\"project\":\"uuid-1\",\"parentUUID\":\"parent-uuid\",\"isLatestProjectVersion\":true}";
         completionSignal.await(5, TimeUnit.SECONDS);
         assertThat(completionSignal.getCount()).isZero();
-        assertThat(requestBody.get()).isEqualTo(expectedBody);
+        assertThat(requestBody).hasValueSatisfying(body -> assertThat(body).containsOnly(entry("bom", "<test />"), entry("project", "uuid-1"), entry("parentUUID", "parent-uuid"), entry("isLatest", "true")));
     }
 
     @Test
     void uploadTestWithName(@TempDir Path tmp, JenkinsRule r) throws IOException, InterruptedException {
         Path bom = tmp.resolve("bom.xml");
         Files.writeString(bom, "<test />", Charset.defaultCharset());
-        final AtomicReference<String> requestBody = new AtomicReference<>();
+        final AtomicReference<Map<String, String>> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
-                .route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> {
+                .route(routes -> routes.post(ApiClient.BOM_URL, (request, response) -> {
             assertCommonHeaders(request);
-            assertPOSTHeaders(request);
-            return response.sendString(
-                    request.receive().asString(StandardCharsets.UTF_8)
-                            .doOnNext(requestBody::set)
-                            .doOnComplete(completionSignal::countDown)
-                            .map(body -> "")
-            );
-        }))
-                .bindNow();
+            assertThat(request.isMultipart()).isTrue();
+           return response.sendString(request.receiveForm()
+                    .collectMap(HttpData::getName, v -> Uncheck.apply(HttpData::getString, v))
+                    .doOnSuccess(m -> {
+                        requestBody.set(m);
+                        completionSignal.countDown();
+                    })
+                    .map(body -> ""));
+        })).bindNow();
 
         final var props = new ProjectProperties();
         props.setParentName("parent-name");
@@ -409,10 +411,9 @@ class ApiClientTest {
         var data = new ProjectData(null, "p1", "v1", false, props);
         assertThat(uut.upload(data, new FilePath(bom.toFile()))).isEqualTo(new UploadResult(true));
 
-        String expectedBody = "{\"bom\":\"PHRlc3QgLz4=\",\"projectName\":\"p1\",\"projectVersion\":\"v1\",\"autoCreate\":false,\"parentName\":\"parent-name\",\"parentVersion\":\"parent-version\"}";
         completionSignal.await(5, TimeUnit.SECONDS);
         assertThat(completionSignal.getCount()).isZero();
-        assertThat(requestBody.get()).isEqualTo(expectedBody);
+        assertThat(requestBody).hasValueSatisfying(body -> assertThat(body).containsOnly(entry("bom", "<test />"), entry("projectName", "p1"), entry("projectVersion", "v1"), entry("autoCreate", "false"), entry("parentName", "parent-name"), entry("parentVersion", "parent-version")));
     }
 
     @Test
@@ -422,25 +423,25 @@ class ApiClientTest {
         bom.createNewFile();
         var data = new ProjectData(null, "p1", "v1", true, null);
 
-        server = HttpServer.create().host("localhost").port(0).route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.BAD_REQUEST).send())).bindNow();
+        server = HttpServer.create().host("localhost").port(0).route(routes -> routes.post(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.BAD_REQUEST).send())).bindNow();
         uut = createClient();
         assertThat(uut.upload(data, new FilePath(bom))).isEqualTo(new UploadResult(false));
         verify(logger).log(Messages.Builder_Payload_Invalid());
         server.disposeNow();
 
-        server = HttpServer.create().host("localhost").port(0).route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.UNAUTHORIZED).send())).bindNow();
+        server = HttpServer.create().host("localhost").port(0).route(routes -> routes.post(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.UNAUTHORIZED).send())).bindNow();
         uut = createClient();
         assertThat(uut.upload(data, new FilePath(bom))).isEqualTo(new UploadResult(false));
         verify(logger).log(Messages.Builder_Unauthorized());
         server.disposeNow();
 
-        server = HttpServer.create().host("localhost").port(0).route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.NOT_FOUND).send())).bindNow();
+        server = HttpServer.create().host("localhost").port(0).route(routes -> routes.post(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.NOT_FOUND).send())).bindNow();
         uut = createClient();
         assertThat(uut.upload(data, new FilePath(bom))).isEqualTo(new UploadResult(false));
         verify(logger).log(Messages.Builder_Project_NotFound());
         server.disposeNow();
 
-        server = HttpServer.create().host("localhost").port(0).route(routes -> routes.put(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.GONE).send())).bindNow();
+        server = HttpServer.create().host("localhost").port(0).route(routes -> routes.post(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.GONE).send())).bindNow();
         uut = createClient();
         assertThat(uut.upload(data, new FilePath(bom))).isEqualTo(new UploadResult(false));
         verify(logger).log(Messages.ApiClient_Error_Connection(HttpResponseStatus.GONE.code(), HttpResponseStatus.GONE.reasonPhrase()));
