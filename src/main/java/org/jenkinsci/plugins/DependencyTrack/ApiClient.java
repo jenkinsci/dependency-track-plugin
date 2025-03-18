@@ -64,7 +64,7 @@ public class ApiClient {
     static final String PROJECT_FINDINGS_URL = API_URL + "/finding/project";
     static final String PROJECT_VIOLATIONS_URL = API_URL + "/violation/project";
     static final String BOM_URL = API_URL + "/bom";
-    static final String BOM_TOKEN_URL = BOM_URL + "/token";
+    static final String BOM_TOKEN_URL = API_URL + "/event/token";
     static final String PROJECT_URL = API_URL + "/project";
     static final String PROJECT_LOOKUP_URL = PROJECT_URL + "/lookup";
     static final String PROJECT_LOOKUP_NAME_PARAM = "name";
