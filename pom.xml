@@ -122,15 +122,15 @@
 ### ⭐ New Features
 ### 🐞 Bugs Fixed
 
-## v${project.version} - @build.date@]]></replacevalue>
+## [v${project.version}] - @build.date@]]></replacevalue>
                                         </replace>
                                         <!-- extra step is required because ${build.date} is not evaluated in previous replacevalue-element -->
                                         <replace file="CHANGELOG.md" encoding="${project.build.sourceEncoding}" token="@build.date@" value="${build.date}" summary="true" />
                                         <!-- fail if changelog entry is missing -->
-                                        <fail message="changelog entry '## v${project.version} - ${build.date}' not found!">
+                                        <fail message="changelog entry '## [v${project.version}] - ${build.date}' not found!">
                                             <condition>
                                                 <not>
-                                                    <resourcecontains resource="CHANGELOG.md" substring="## v${project.version} - ${build.date}" />
+                                                    <resourcecontains resource="CHANGELOG.md" substring="## [v${project.version}] - ${build.date}" />
                                                 </not>
                                             </condition>
                                         </fail>
