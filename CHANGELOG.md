@@ -4,6 +4,11 @@
 ### ⚠ Breaking
 ### ⭐ New Features
 ### 🐞 Bugs Fixed
+
+## v6.0.1 - 2025-03-23
+### ⚠ Breaking
+### ⭐ New Features
+### 🐞 Bugs Fixed
 - avoid "JSON Payload Too Large" error ([#313](https://github.com/jenkinsci/dependency-track-plugin/issues/313))
 
 ## v6.0.0 - 2025-01-18
