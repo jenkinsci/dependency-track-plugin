@@ -27,6 +27,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import okhttp3.MediaType;
@@ -63,6 +65,7 @@ public class ApiClient {
     static final String API_KEY_HEADER = "X-Api-Key";
     static final String PROJECT_FINDINGS_URL = API_URL + "/finding/project";
     static final String PROJECT_VIOLATIONS_URL = API_URL + "/violation/project";
+    static final int PROJECT_VIOLATONS_PAGING_SIZE = 500;
     static final String BOM_URL = API_URL + "/bom";
     static final String BOM_TOKEN_URL = API_URL + "/event/token";
     static final String PROJECT_URL = API_URL + "/project";
@@ -263,23 +266,37 @@ public class ApiClient {
 
     @NonNull
     public List<Violation> getViolations(@NonNull final String projectUuid) throws ApiClientException {
-        final var uri = UriComponentsBuilder.fromUriString(PROJECT_VIOLATIONS_URL).pathSegment("{uuid}").build(projectUuid);
-        final var request = createRequest(uri);
-        return executeWithRetry(() -> {
-            try (var response = httpClient.newCall(request).execute()) {
-                final var body = response.body().string();
-                if (!response.isSuccessful()) {
-                    final int status = response.code();
-                    logger.log(body);
-                    throw new ApiClientException(Messages.ApiClient_Error_RetrieveViolations(status, HttpStatus.valueOf(status).getReasonPhrase()));
+        final var violations = new ArrayList<Violation>();
+        final var pageNumber = new AtomicInteger();
+        final var totalViolations = new AtomicInteger(-1);
+        do {
+            violations.addAll(executeWithRetry(() -> {
+                final var uri = UriComponentsBuilder.fromUriString(PROJECT_VIOLATIONS_URL).pathSegment("{uuid}")
+                        .queryParam("pageNumber", pageNumber.incrementAndGet()).queryParam("pageSize", PROJECT_VIOLATONS_PAGING_SIZE).build(projectUuid);
+                final var request = createRequest(uri);
+                try (var response = httpClient.newCall(request).execute()) {
+                    final var body = response.body().string();
+                    if (!response.isSuccessful()) {
+                        final int status = response.code();
+                        logger.log(body);
+                        throw new ApiClientException(Messages.ApiClient_Error_RetrieveViolations(status, HttpStatus.valueOf(status).getReasonPhrase()));
+                    }
+                    if (totalViolations.intValue() == -1) {
+                        try {
+                            totalViolations.set(Integer.parseInt(response.header("X-Total-Count")));
+                        } catch (NumberFormatException nfe) {
+                            totalViolations.set(0);
+                        }
+                    }
+                    return ViolationParser.parse(body);
+                } catch (ApiClientException e) {
+                    throw e;
+                } catch (IOException e) {
+                    throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
                 }
-                return ViolationParser.parse(body);
-            } catch (ApiClientException e) {
-                throw e;
-            } catch (IOException e) {
-                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
-            }
-        });
+            }));
+        } while (totalViolations.intValue() > pageNumber.intValue() * PROJECT_VIOLATONS_PAGING_SIZE);
+        return violations;
     }
 
     @NonNull
