@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jenkinsci.plugins.DependencyTrack;
+package org.jenkinsci.plugins.DependencyTrack.model;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -24,16 +24,11 @@ import lombok.experimental.UtilityClass;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONNull;
 import net.sf.json.JSONObject;
-import org.jenkinsci.plugins.DependencyTrack.model.Analysis;
-import org.jenkinsci.plugins.DependencyTrack.model.Component;
-import org.jenkinsci.plugins.DependencyTrack.model.Finding;
-import org.jenkinsci.plugins.DependencyTrack.model.Severity;
-import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
 
 @UtilityClass
-class FindingParser extends ModelParser {
+public class FindingParser extends ModelParser {
 
-    List<Finding> parse(final String jsonResponse) {
+    public List<Finding> parse(final String jsonResponse) {
         final JSONArray jsonArray = JSONArray.fromObject(jsonResponse);
         return jsonArray.stream()
                 .map(JSONObject.class::cast)

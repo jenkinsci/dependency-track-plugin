@@ -15,14 +15,17 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.util.FormValidation;
+import io.jenkins.plugins.okhttp.api.JenkinsOkHttpClient;
+import jakarta.annotation.Nonnull;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.time.Duration;
 import java.util.Collection;
 import lombok.experimental.UtilityClass;
+import okhttp3.OkHttpClient;
 import org.apache.commons.lang.StringUtils;
+import org.springframework.lang.Nullable;
 
 @UtilityClass
 class PluginUtil {
@@ -33,7 +36,7 @@ class PluginUtil {
      * @param value The value of the URL as specified in the global config
      * @return a FormValidation object
      */
-    @NonNull
+    @Nonnull
     static FormValidation doCheckUrl(@Nullable final String value) {
         if (value == null || value.isBlank()) {
             return FormValidation.ok();
@@ -63,7 +66,15 @@ class PluginUtil {
      * @return {@code true} if all elements are of type {@code type} (also if
      * coll is empty), else {@code false}
      */
-    static boolean areAllElementsOfType(@NonNull final Collection<?> coll, @NonNull final Class<?> type) {
+    static boolean areAllElementsOfType(@Nonnull final Collection<?> coll, @Nonnull final Class<?> type) {
         return coll.stream().allMatch(type::isInstance);
+    }
+
+    @Nonnull
+    static OkHttpClient newHttpClient(final int connectionTimeout, final int readTimeout) {
+        return JenkinsOkHttpClient.newClientBuilder(new OkHttpClient())
+                .connectTimeout(Duration.ofSeconds(connectionTimeout))
+                .readTimeout(Duration.ofSeconds(readTimeout))
+                .build();
     }
 }

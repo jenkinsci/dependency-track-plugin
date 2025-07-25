@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 OWASP.
+ * Copyright 2020 OWASP.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jenkinsci.plugins.DependencyTrack;
+package org.jenkinsci.plugins.DependencyTrack.api;
 
-import okhttp3.OkHttpClient;
+import jakarta.annotation.Nullable;
 
-/**
- *
- * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
- */
-@FunctionalInterface
-interface HttpClientFactory {
+public final record UploadResult(boolean success, @Nullable String token) {
 
-    OkHttpClient create();
+    public UploadResult(boolean success) {
+        this(success, null);
+    }
 }

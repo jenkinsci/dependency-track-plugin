@@ -15,6 +15,10 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
+import okhttp3.OkHttpClient;
+import org.jenkinsci.plugins.DependencyTrack.api.ApiClient;
+import org.jenkinsci.plugins.DependencyTrack.api.Logger;
+
 /**
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
@@ -22,5 +26,5 @@ package org.jenkinsci.plugins.DependencyTrack;
 @FunctionalInterface
 interface ApiClientFactory {
 
-    ApiClient create(final String baseUrl, final String apiKey, final ConsoleLogger logger, final int connectionTimeout, final int readTimeout);
+    ApiClient create(final String baseUrl, final String apiKey, final Logger logger, final OkHttpClient httpClient);
 }

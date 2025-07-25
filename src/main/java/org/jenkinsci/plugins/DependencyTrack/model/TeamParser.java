@@ -13,22 +13,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jenkinsci.plugins.DependencyTrack;
+package org.jenkinsci.plugins.DependencyTrack.model;
 
 import java.util.Set;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import net.sf.json.JSONObject;
-import org.jenkinsci.plugins.DependencyTrack.model.Team;
 
 /**
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
 @UtilityClass
-class TeamParser {
+public class TeamParser {
 
-    Team parse(final JSONObject json) {
+    public Team parse(final JSONObject json) {
         final Set<String> permissions = json.getJSONArray("permissions").stream()
                 .map(JSONObject.class::cast)
                 .map(o -> o.getString("name"))

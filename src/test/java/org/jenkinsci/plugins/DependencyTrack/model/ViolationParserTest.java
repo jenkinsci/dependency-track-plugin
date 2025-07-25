@@ -13,15 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jenkinsci.plugins.DependencyTrack;
+package org.jenkinsci.plugins.DependencyTrack.model;
 
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import org.assertj.core.util.Files;
-import org.jenkinsci.plugins.DependencyTrack.model.Component;
-import org.jenkinsci.plugins.DependencyTrack.model.Violation;
-import org.jenkinsci.plugins.DependencyTrack.model.ViolationState;
-import org.jenkinsci.plugins.DependencyTrack.model.ViolationType;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;

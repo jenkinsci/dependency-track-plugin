@@ -15,11 +15,11 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
 import hudson.Plugin;
 import hudson.PluginWrapper;
 import hudson.model.Action;
 import hudson.model.Run;
+import jakarta.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
@@ -94,7 +94,7 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
         return Set.of(new JobAction(run.getParent()));
     }
 
-    @NonNull
+    @Nonnull
     public String getVersionHash() {
         return DigestUtils.sha256Hex(
                 Optional.ofNullable(Jenkins.get().getPlugin("dependency-track"))

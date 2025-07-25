@@ -13,22 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jenkinsci.plugins.DependencyTrack;
+package org.jenkinsci.plugins.DependencyTrack.api;
 
-import hudson.FilePath;
-import hudson.util.VersionNumber;
 import io.netty.handler.codec.http.HttpHeaderNames;
 import io.netty.handler.codec.http.HttpHeaderValues;
 import io.netty.handler.codec.http.HttpMethod;
 import io.netty.handler.codec.http.HttpResponseStatus;
 import io.netty.handler.codec.http.QueryStringDecoder;
 import io.netty.handler.codec.http.multipart.HttpData;
-import java.io.File;
 import java.io.IOException;
 import java.net.ConnectException;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.Month;
@@ -41,9 +36,8 @@ import net.sf.json.JSONObject;
 import okhttp3.OkHttpClient;
 import org.apache.commons.io.function.Uncheck;
 import org.assertj.core.api.InstanceOfAssertFactories;
-import org.jenkinsci.plugins.DependencyTrack.ApiClient.ProjectData;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
-import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
+import org.jenkinsci.plugins.DependencyTrack.model.ProjectParser;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -62,7 +56,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
 import static org.assertj.core.api.Assertions.entry;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.startsWith;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -83,7 +76,7 @@ class ApiClientTest {
     private DisposableServer server;
 
     @Mock
-    private ConsoleLogger logger;
+    private Logger logger;
 
     @AfterEach
     void tearDown() {
@@ -93,11 +86,11 @@ class ApiClientTest {
     }
 
     private ApiClient createClient() {
-        return new ApiClient(String.format("http://%s:%d", server.host(), server.port()), API_KEY, logger, 1, 1);
+        return new ApiClient(String.format("http://%s:%d", server.host(), server.port()), API_KEY, logger, new OkHttpClient());
     }
 
     private ApiClient createClient(OkHttpClient httpClient) {
-        return new ApiClient("http://host.tld", API_KEY, logger, () -> httpClient);
+        return new ApiClient("http://host.tld", API_KEY, logger, httpClient);
     }
 
     private void assertCommonHeaders(HttpServerRequest request) {
@@ -350,8 +343,6 @@ class ApiClientTest {
 
     @Test
     void uploadTestWithUuid(@TempDir Path tmp, JenkinsRule r) throws IOException, InterruptedException {
-        Path bom = tmp.resolve("bom.xml");
-        Files.writeString(bom, "<test />", Charset.defaultCharset());
         final AtomicReference<Map<String, String>> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
@@ -369,13 +360,11 @@ class ApiClientTest {
                     .map(body -> "{\"token\":\"uuid-1\"}"));
         })).bindNow();
 
-        final var props = new ProjectProperties();
-        props.setParentId("parent-uuid");
-        props.setIsLatest(true);
+        final var props = new ProjectData.Properties(null, null, null, null, "parent-uuid", null, null, true);
 
         ApiClient uut = createClient();
         var data = new ProjectData("uuid-1", null, null, false, props);
-        assertThat(uut.upload(data, new FilePath(bom.toFile()))).isEqualTo(new UploadResult(true, "uuid-1"));
+        assertThat(uut.upload(data, "<test />")).isEqualTo(new UploadResult(true, "uuid-1"));
 
         completionSignal.await(5, TimeUnit.SECONDS);
         assertThat(completionSignal.getCount()).isZero();
@@ -384,8 +373,6 @@ class ApiClientTest {
 
     @Test
     void uploadTestWithName(@TempDir Path tmp, JenkinsRule r) throws IOException, InterruptedException {
-        Path bom = tmp.resolve("bom.xml");
-        Files.writeString(bom, "<test />", Charset.defaultCharset());
         final AtomicReference<Map<String, String>> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
@@ -403,13 +390,11 @@ class ApiClientTest {
                     .map(body -> ""));
         })).bindNow();
 
-        final var props = new ProjectProperties();
-        props.setParentName("parent-name");
-        props.setParentVersion("parent-version");
+        final var props = new ProjectData.Properties(null, null, null, null, null, "parent-name", "parent-version", null);
 
         ApiClient uut = createClient();
         var data = new ProjectData(null, "p1", "v1", false, props);
-        assertThat(uut.upload(data, new FilePath(bom.toFile()))).isEqualTo(new UploadResult(true));
+        assertThat(uut.upload(data, "<test />")).isEqualTo(new UploadResult(true));
 
         completionSignal.await(5, TimeUnit.SECONDS);
         assertThat(completionSignal.getCount()).isZero();
@@ -417,41 +402,33 @@ class ApiClientTest {
     }
 
     @Test
-    void uploadTestWithErrors(@TempDir Path tmp, JenkinsRule r) throws IOException {
+    void uploadTestWithErrors(JenkinsRule r) throws IOException {
         ApiClient uut;
-        File bom = tmp.resolve("bom.xml").toFile();
-        bom.createNewFile();
         var data = new ProjectData(null, "p1", "v1", true, null);
 
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.post(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.BAD_REQUEST).send())).bindNow();
         uut = createClient();
-        assertThat(uut.upload(data, new FilePath(bom))).isEqualTo(new UploadResult(false));
-        verify(logger).log(Messages.Builder_Payload_Invalid());
+        assertThat(uut.upload(data, "")).isEqualTo(new UploadResult(false));
+        verify(logger).log(Messages.ApiClient_Payload_Invalid());
         server.disposeNow();
 
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.post(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.UNAUTHORIZED).send())).bindNow();
         uut = createClient();
-        assertThat(uut.upload(data, new FilePath(bom))).isEqualTo(new UploadResult(false));
-        verify(logger).log(Messages.Builder_Unauthorized());
+        assertThat(uut.upload(data, "")).isEqualTo(new UploadResult(false));
+        verify(logger).log(Messages.ApiClient_Unauthorized());
         server.disposeNow();
 
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.post(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.NOT_FOUND).send())).bindNow();
         uut = createClient();
-        assertThat(uut.upload(data, new FilePath(bom))).isEqualTo(new UploadResult(false));
-        verify(logger).log(Messages.Builder_Project_NotFound());
+        assertThat(uut.upload(data, "")).isEqualTo(new UploadResult(false));
+        verify(logger).log(Messages.ApiClient_Project_NotFound());
         server.disposeNow();
 
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.post(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.GONE).send())).bindNow();
         uut = createClient();
-        assertThat(uut.upload(data, new FilePath(bom))).isEqualTo(new UploadResult(false));
+        assertThat(uut.upload(data, "")).isEqualTo(new UploadResult(false));
         verify(logger).log(Messages.ApiClient_Error_Connection(HttpResponseStatus.GONE.code(), HttpResponseStatus.GONE.reasonPhrase()));
         server.disposeNow();
-
-        File mockFile = mock(File.class);
-        when(mockFile.getPath()).thenReturn(tmp.toAbsolutePath().toString());
-        FilePath fileWithError = new FilePath(mockFile);
-        assertThat(uut.upload(data, fileWithError)).isEqualTo(new UploadResult(false));
-        verify(logger).log(startsWith(Messages.Builder_Error_Processing(tmp.toAbsolutePath().toString(), "")));
         
         final var httpClient = mock(OkHttpClient.class);
         final var call = mock(okhttp3.Call.class);
@@ -460,7 +437,7 @@ class ApiClientTest {
         doThrow(new java.net.SocketTimeoutException("oops"))
                 .when(call).execute();
 
-        assertThatCode(() -> uutWithMock.upload(data, new FilePath(bom)))
+        assertThatCode(() -> uutWithMock.upload(data, ""))
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(java.net.SocketTimeoutException.class);
         verify(httpClient, times(2)).newCall(any(okhttp3.Request.class));
@@ -531,23 +508,18 @@ class ApiClientTest {
 
         ApiClient uut = createClient();
 
-        final ProjectProperties props = new ProjectProperties();
-        props.setTags(List.of("tag2", "tag4"));
-        props.setSwidTagId("my swid tag id");
-        props.setGroup("my group");
-        props.setDescription("my description");
-        props.setParentId("parent-uuid");
+        final var props = new ProjectData.Properties(List.of("tag2", "tag4"), "my swid tag id", "my group", "my description", "parent-uuid", null, null, null);
 
         assertThatCode(() -> uut.updateProjectProperties("uuid-3", props)).doesNotThrowAnyException();
         completionSignal.await(5, TimeUnit.SECONDS);
         assertThat(completionSignal.getCount()).isZero();
         final JSONObject updatedProject = JSONObject.fromObject(requestBody.get());
         final Project project = ProjectParser.parse(updatedProject);
-        assertThat(project.getTags()).containsExactlyInAnyOrderElementsOf(props.getTags());
-        assertThat(project.getSwidTagId()).isEqualTo(props.getSwidTagId());
-        assertThat(project.getGroup()).isEqualTo(props.getGroup());
-        assertThat(project.getDescription()).isEqualTo(props.getDescription());
-        assertThat(project.getParent()).hasFieldOrPropertyWithValue("uuid", props.getParentId());
+        assertThat(project.getTags()).containsExactlyInAnyOrderElementsOf(props.tags());
+        assertThat(project.getSwidTagId()).isEqualTo(props.swidTagId());
+        assertThat(project.getGroup()).isEqualTo(props.group());
+        assertThat(project.getDescription()).isEqualTo(props.description());
+        assertThat(project.getParent()).hasFieldOrPropertyWithValue("uuid", props.parentId());
         assertThat(updatedProject.has("parentUuid")).isFalse();
 
         assertThatCode(() -> createClient().updateProjectProperties("uuid-unknown", props))
@@ -571,8 +543,7 @@ class ApiClientTest {
                 .bindNow();
 
         ApiClient uut = createClient();
-        final var props = new ProjectProperties();
-        props.setSwidTagId("swid");
+        final var props = new ProjectData.Properties(null, "swid", null, null, null, null, null, null);
 
         assertThatCode(() -> uut.updateProjectProperties("uuid-3", props)).doesNotThrowAnyException();
         completionSignal.await(5, TimeUnit.SECONDS);
@@ -584,8 +555,7 @@ class ApiClientTest {
         final var httpClient = mock(OkHttpClient.class);
         final var call = mock(okhttp3.Call.class);
         final var uut = createClient(httpClient);
-        final var props = new ProjectProperties();
-        props.setSwidTagId("swid");
+        final var props = new ProjectData.Properties(null, "swid", null, null, null, null, null, null);
         when(httpClient.newCall(any(okhttp3.Request.class))).thenReturn(call);
         doThrow(new ConnectException("oops"))
                 .when(call).execute();
@@ -601,7 +571,7 @@ class ApiClientTest {
         final var httpClient = mock(OkHttpClient.class);
         final var uut = createClient(httpClient);
 
-        uut.updateProjectProperties("foo", new ProjectProperties());
+        uut.updateProjectProperties("foo", new ProjectData.Properties(null, null, null, null, null, null, null, null));
 
         verify(httpClient, never()).newCall(any(okhttp3.Request.class));
     }
@@ -658,7 +628,7 @@ class ApiClientTest {
 
         ApiClient uut = createClient();
 
-        assertThat(uut.getVersion()).isEqualTo(new VersionNumber("1.2.4"));
+        assertThat(uut.getVersion()).isEqualTo("1.2.4");
 
         server.disposeNow();
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.get(ApiClient.VERSION_URL, (request, response) -> response.status(HttpResponseStatus.BAD_REQUEST).send())).bindNow();
@@ -691,7 +661,7 @@ class ApiClientTest {
                 .route(routes -> routes.get("/ctx" + ApiClient.PROJECT_URL, (request, response) -> response.status(HttpResponseStatus.INTERNAL_SERVER_ERROR).sendString(Mono.just("something went wrong"))))
                 .bindNow();
 
-        ApiClient uut = new ApiClient(String.format("http://%s:%d/ctx", server.host(), server.port()), API_KEY, logger, 1, 1);
+        ApiClient uut = new ApiClient(String.format("http://%s:%d/ctx", server.host(), server.port()), API_KEY, logger, new OkHttpClient());
 
         assertThatCode(uut::testConnection).isInstanceOf(ApiClientException.class)
                 .hasNoCause()

@@ -22,14 +22,13 @@ import hudson.model.User;
 import hudson.security.ACL;
 import hudson.security.ACLContext;
 import hudson.security.AccessDeniedException3;
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import net.sf.json.JSONArray;
 import org.assertj.core.api.Assertions;
-import org.assertj.core.util.Files;
 import org.jenkinsci.plugins.DependencyTrack.model.Violation;
+import org.jenkinsci.plugins.DependencyTrack.model.ViolationState;
+import org.jenkinsci.plugins.DependencyTrack.model.ViolationType;
 import org.junit.jupiter.api.Test;
 import org.jvnet.hudson.test.JenkinsRule;
 import org.jvnet.hudson.test.MockAuthorizationStrategy;
@@ -45,11 +44,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 @WithJenkins
 class ViolationsRunActionTest {
-
-    private List<Violation> getTestViolations() {
-        File violations = new File("src/test/resources/violations.json");
-        return ViolationParser.parse(Files.contentOf(violations, StandardCharsets.UTF_8));
-    }
+    private List<Violation> testViolations = List.of(new Violation("uuid", ViolationType.LICENSE, ViolationState.FAIL, "policyName", null));
 
     @Test
     void getVersionHashTest(JenkinsRule j) {
@@ -70,7 +65,7 @@ class ViolationsRunActionTest {
             project = j.createFreeStyleProject();
         }
         final FreeStyleBuild b1 = new FreeStyleBuild(project);
-        final ViolationsRunAction uut = new ViolationsRunAction(getTestViolations());
+        final ViolationsRunAction uut = new ViolationsRunAction(testViolations);
         uut.onLoad(b1);
 
         final User anonymous = User.getOrCreateByIdOrFullName(ACL.ANONYMOUS_USERNAME);
@@ -90,7 +85,7 @@ class ViolationsRunActionTest {
     void getViolationsJson(JenkinsRule j) throws IOException {
         final FreeStyleProject project = j.createFreeStyleProject();
         final FreeStyleBuild b1 = new FreeStyleBuild(project);
-        final List<Violation> violations = getTestViolations();
+        final List<Violation> violations = testViolations;
         final ViolationsRunAction uut = new ViolationsRunAction(violations);
         uut.onLoad(b1);
         Assertions.<JSONArray>assertThat(uut.getViolationsJson()).isEqualTo(JSONArray.fromObject(violations));
@@ -100,6 +95,6 @@ class ViolationsRunActionTest {
     void hasViolationsTest() {
         assertThat(new ViolationsRunAction(null).hasViolations()).isFalse();
         assertThat(new ViolationsRunAction(List.of()).hasViolations()).isFalse();
-        assertThat(new ViolationsRunAction(getTestViolations()).hasViolations()).isTrue();
+        assertThat(new ViolationsRunAction(testViolations).hasViolations()).isTrue();
     }
 }

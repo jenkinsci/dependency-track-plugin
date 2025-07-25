@@ -13,20 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jenkinsci.plugins.DependencyTrack;
+package org.jenkinsci.plugins.DependencyTrack.api;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
-import hudson.FilePath;
-import hudson.util.VersionNumber;
-import io.jenkins.plugins.okhttp.api.JenkinsOkHttpClient;
+import jakarta.annotation.Nonnull;
 import java.io.IOException;
 import java.net.URI;
-import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Stream;
+import lombok.RequiredArgsConstructor;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import okhttp3.MediaType;
@@ -36,10 +33,13 @@ import okhttp3.Request;
 import okhttp3.RequestBody;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
+import org.jenkinsci.plugins.DependencyTrack.model.FindingParser;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
+import org.jenkinsci.plugins.DependencyTrack.model.ProjectParser;
 import org.jenkinsci.plugins.DependencyTrack.model.Team;
-import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
+import org.jenkinsci.plugins.DependencyTrack.model.TeamParser;
 import org.jenkinsci.plugins.DependencyTrack.model.Violation;
+import org.jenkinsci.plugins.DependencyTrack.model.ViolationParser;
 import org.springframework.http.HttpStatus;
 import org.springframework.retry.RetryPolicy;
 import org.springframework.retry.backoff.UniformRandomBackOffPolicy;
@@ -56,6 +56,7 @@ import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static org.springframework.http.HttpHeaders.ACCEPT;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
+@RequiredArgsConstructor
 public class ApiClient {
 
     private static final MediaType APPLICATION_JSON = MediaType.parse(APPLICATION_JSON_VALUE);
@@ -76,42 +77,23 @@ public class ApiClient {
      * the base url to DT instance without trailing slashes, e.g.
      * "http://host.tld:port"
      */
+    @Nonnull
     private final String baseUrl;
 
     /**
      * the api key to authorize with against DT
      */
+    @Nonnull
     private final String apiKey;
 
-    private final ConsoleLogger logger;
+    @Nonnull
+    private final Logger logger;
+
+    @Nonnull
     private final OkHttpClient httpClient;
 
-    /**
-     *
-     * @param baseUrl the base url to DT instance without trailing slashes, e.g.
-     * "http://host.tld:port"
-     * @param apiKey the api key to authorize with against DT
-     * @param logger
-     * @param connectionTimeout the connection-timeout in seconds for every call
-     * to DT
-     * @param readTimeout the read-timeout in seconds for every call to DT
-     */
-    public ApiClient(@NonNull final String baseUrl, @NonNull final String apiKey, @NonNull final ConsoleLogger logger, final int connectionTimeout, final int readTimeout) {
-        this(baseUrl, apiKey, logger, () -> JenkinsOkHttpClient.newClientBuilder(new OkHttpClient())
-                .connectTimeout(Duration.ofSeconds(connectionTimeout))
-                .readTimeout(Duration.ofSeconds(readTimeout))
-                .build());
-    }
-
-    ApiClient(@NonNull final String baseUrl, @NonNull final String apiKey, @NonNull final ConsoleLogger logger, @NonNull final HttpClientFactory factory) {
-        this.baseUrl = baseUrl;
-        this.apiKey = apiKey;
-        this.logger = logger;
-        httpClient = factory.create();
-    }
-
-    @NonNull
-    public VersionNumber getVersion() throws ApiClientException {
+    @Nonnull
+    public String getVersion() throws ApiClientException {
         final var request = createRequest(URI.create(VERSION_URL));
         return executeWithRetry(() -> {
             try (var response = httpClient.newCall(request).execute()) {
@@ -122,7 +104,7 @@ public class ApiClient {
                     throw new ApiClientException(Messages.ApiClient_Error_Connection(status, HttpStatus.valueOf(status).getReasonPhrase()));
                 }
                 final var jsonObject = JSONObject.fromObject(body);
-                return new VersionNumber(jsonObject.getString("version"));
+                return jsonObject.getString("version");
             } catch (ApiClientException e) {
                 throw e;
             } catch (IOException e) {
@@ -131,7 +113,7 @@ public class ApiClient {
         });
     }
 
-    @NonNull
+    @Nonnull
     public String testConnection() throws ApiClientException {
         final var request = createRequest(URI.create(PROJECT_URL));
         return executeWithRetry(() -> {
@@ -151,7 +133,7 @@ public class ApiClient {
         });
     }
 
-    @NonNull
+    @Nonnull
     public Team getTeamPermissions() throws ApiClientException {
         final var request = createRequest(URI.create(TEAM_SELF_URL));
         return executeWithRetry(() -> {
@@ -172,7 +154,7 @@ public class ApiClient {
         });
     }
 
-    @NonNull
+    @Nonnull
     public List<Project> getProjects() throws ApiClientException {
         List<Project> projects = new ArrayList<>();
         int page = 1;
@@ -185,7 +167,7 @@ public class ApiClient {
         return projects;
     }
 
-    @NonNull
+    @Nonnull
     private List<Project> getProjectsPaged(final int page) throws ApiClientException {
         final var uri = UriComponentsBuilder.fromUriString(PROJECT_URL)
                 .queryParam("limit", "{limit}")
@@ -208,8 +190,8 @@ public class ApiClient {
         });
     }
 
-    @NonNull
-    public Project lookupProject(@NonNull final String projectName, @NonNull final String projectVersion) throws ApiClientException {
+    @Nonnull
+    public Project lookupProject(@Nonnull final String projectName, @Nonnull final String projectVersion) throws ApiClientException {
         final var uri = UriComponentsBuilder.fromUriString(PROJECT_LOOKUP_URL)
                 .queryParam(PROJECT_LOOKUP_NAME_PARAM, "{name}")
                 .queryParam(PROJECT_LOOKUP_VERSION_PARAM, "{version}")
@@ -240,8 +222,8 @@ public class ApiClient {
         });
     }
 
-    @NonNull
-    public List<Finding> getFindings(@NonNull final String projectUuid) throws ApiClientException {
+    @Nonnull
+    public List<Finding> getFindings(@Nonnull final String projectUuid) throws ApiClientException {
         final var uri = UriComponentsBuilder.fromUriString(PROJECT_FINDINGS_URL).pathSegment("{uuid}").build(projectUuid);
         final var request = createRequest(uri);
         return executeWithRetry(() -> {
@@ -261,8 +243,8 @@ public class ApiClient {
         });
     }
 
-    @NonNull
-    public List<Violation> getViolations(@NonNull final String projectUuid) throws ApiClientException {
+    @Nonnull
+    public List<Violation> getViolations(@Nonnull final String projectUuid) throws ApiClientException {
         final var uri = UriComponentsBuilder.fromUriString(PROJECT_VIOLATIONS_URL).pathSegment("{uuid}").build(projectUuid);
         final var request = createRequest(uri);
         return executeWithRetry(() -> {
@@ -282,15 +264,10 @@ public class ApiClient {
         });
     }
 
-    @NonNull
-    public UploadResult upload(@NonNull final ProjectData project, @NonNull final FilePath artifact) throws ApiClientException {
+    @Nonnull
+    public UploadResult upload(@Nonnull final ProjectData project, @Nonnull final String bom) throws ApiClientException {
         final var formBodyBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
-        try {
-            formBodyBuilder.addFormDataPart("bom", artifact.readToString());
-        } catch (IOException | InterruptedException e) {
-            logger.log(Messages.Builder_Error_Processing(artifact.getRemote(), e.getLocalizedMessage()));
-            return new UploadResult(false);
-        }
+        formBodyBuilder.addFormDataPart("bom", bom);
         // Creates the JSON payload that will be sent to Dependency-Track
         if (StringUtils.isNotBlank(project.id())) {
             formBodyBuilder.addFormDataPart("project", project.id());
@@ -301,10 +278,10 @@ public class ApiClient {
         }
         final var properties = project.properties();
         if (properties != null) {
-            Optional.ofNullable(properties.getParentId()).ifPresent(value -> formBodyBuilder.addFormDataPart("parentUUID", value));
-            Optional.ofNullable(properties.getParentName()).ifPresent(value -> formBodyBuilder.addFormDataPart("parentName", value));
-            Optional.ofNullable(properties.getParentVersion()).ifPresent(value -> formBodyBuilder.addFormDataPart("parentVersion", value));
-            Optional.ofNullable(properties.getIsLatest()).map(String::valueOf).ifPresent(value -> formBodyBuilder.addFormDataPart("isLatest", value));
+            Optional.ofNullable(properties.parentId()).ifPresent(value -> formBodyBuilder.addFormDataPart("parentUUID", value));
+            Optional.ofNullable(properties.parentName()).ifPresent(value -> formBodyBuilder.addFormDataPart("parentName", value));
+            Optional.ofNullable(properties.parentVersion()).ifPresent(value -> formBodyBuilder.addFormDataPart("parentVersion", value));
+            Optional.ofNullable(properties.isLatest()).map(String::valueOf).ifPresent(value -> formBodyBuilder.addFormDataPart("isLatest", value));
         }
         final var request = createRequest(URI.create(BOM_URL), "POST", formBodyBuilder.build());
         return executeWithRetry(() -> {
@@ -313,25 +290,22 @@ public class ApiClient {
                 final int status = response.code();
                 // Checks the server response
                 switch (status) {
-                    case HTTP_OK:
+                    case HTTP_OK -> {
                         if (StringUtils.isNotBlank(body)) {
                             final var json = JSONObject.fromObject(body);
                             return new UploadResult(true, StringUtils.trimToNull(json.getString("token")));
                         } else {
                             return new UploadResult(true);
                         }
-                    case HTTP_BAD_REQUEST:
-                        logger.log(Messages.Builder_Payload_Invalid());
-                        break;
-                    case HTTP_UNAUTHORIZED:
-                        logger.log(Messages.Builder_Unauthorized());
-                        break;
-                    case HTTP_NOT_FOUND:
-                        logger.log(Messages.Builder_Project_NotFound());
-                        break;
-                    default:
+                    }
+                    case HTTP_BAD_REQUEST ->
+                        logger.log(Messages.ApiClient_Payload_Invalid());
+                    case HTTP_UNAUTHORIZED ->
+                        logger.log(Messages.ApiClient_Unauthorized());
+                    case HTTP_NOT_FOUND ->
+                        logger.log(Messages.ApiClient_Project_NotFound());
+                    default ->
                         logger.log(Messages.ApiClient_Error_Connection(status, HttpStatus.valueOf(status).getReasonPhrase()));
-                        break;
                 }
                 logger.log(body);
                 return new UploadResult(false);
@@ -341,9 +315,9 @@ public class ApiClient {
         });
     }
 
-    public void updateProjectProperties(@NonNull final String projectUuid, @NonNull final ProjectProperties properties) throws ApiClientException {
+    public void updateProjectProperties(@Nonnull final String projectUuid, @Nonnull final ProjectData.Properties properties) throws ApiClientException {
         final var updates = new JSONObject();
-        final var tags = properties.getTags().stream()
+        final var tags = (properties.tags() != null ? properties.tags().stream() : Stream.empty())
                 .map(tag -> Map.of("name", tag))
                 .toList();
         // overwrite tags if needed
@@ -351,16 +325,16 @@ public class ApiClient {
             updates.element("tags", tags);
         }
         // overwrite swidTagId only if it is set (means not null)
-        updates.elementOpt("swidTagId", properties.getSwidTagId());
+        updates.elementOpt("swidTagId", properties.swidTagId());
         // overwrite group only if it is set (means not null)
-        updates.elementOpt("group", properties.getGroup());
+        updates.elementOpt("group", properties.group());
         // overwrite description only if it is set (means not null)
-        updates.elementOpt("description", properties.getDescription());
+        updates.elementOpt("description", properties.description());
         // overwrite isLatest only if it is set (means not null)
-        updates.elementOpt("isLatest", properties.getIsLatest());
+        updates.elementOpt("isLatest", properties.isLatest());
         // set new parent project if it is set (means not null)
-        if (properties.getParentId() != null) {
-            JSONObject newParent = new JSONObject().elementOpt("uuid", properties.getParentId());
+        if (properties.parentId() != null) {
+            JSONObject newParent = new JSONObject().elementOpt("uuid", properties.parentId());
             updates.element("parent", newParent);
         }
 
@@ -370,7 +344,7 @@ public class ApiClient {
         }
     }
 
-    private void updateProject(@NonNull final String projectUuid, @NonNull final JSONObject project) throws ApiClientException {
+    private void updateProject(@Nonnull final String projectUuid, @Nonnull final JSONObject project) throws ApiClientException {
         final var uri = UriComponentsBuilder.fromUriString(PROJECT_URL).pathSegment("{uuid}").build(projectUuid);
         final var request = createRequest(uri, "PATCH", RequestBody.create(project.toString(), APPLICATION_JSON));
         executeWithRetry(() -> {
@@ -390,7 +364,7 @@ public class ApiClient {
         });
     }
 
-    public boolean isTokenBeingProcessed(@NonNull final String token) throws ApiClientException {
+    public boolean isTokenBeingProcessed(@Nonnull final String token) throws ApiClientException {
         final var uri = UriComponentsBuilder.fromUriString(BOM_TOKEN_URL).pathSegment("{token}").build(token);
         final var request = createRequest(uri);
         return executeWithRetry(() -> {
@@ -442,13 +416,5 @@ public class ApiClient {
     private interface RetryAction<T, E extends IOException> {
 
         T doWithRetry() throws E;
-    }
-
-    static record ProjectData(@Nullable String id,
-        @Nullable String name,
-        @Nullable String version,
-        boolean autoCreate,
-        @Nullable ProjectProperties properties) {
-
     }
 }
