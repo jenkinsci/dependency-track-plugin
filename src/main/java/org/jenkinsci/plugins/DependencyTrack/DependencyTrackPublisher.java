@@ -30,6 +30,7 @@ import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serializable;
+import java.nio.charset.Charset;
 import java.util.List;
 import java.util.Optional;
 import jenkins.tasks.SimpleBuildStep;
@@ -322,8 +323,9 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         }
 
         String bom = null;
-        try {
-            bom = artifactFilePath.readToString();
+        logger.log(Messages.Builder_Artifact_Reading(effectiveArtifact));
+        try (var in = artifactFilePath.read()) {
+            bom = new String(in.readAllBytes(), Charset.defaultCharset());
         } catch (IOException | InterruptedException e) {
             var msg = Messages.Builder_Error_Processing(effectiveArtifact, e.getLocalizedMessage());
             log.warn(msg, e);

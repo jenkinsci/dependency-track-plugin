@@ -6,6 +6,7 @@
 ### 🐞 Bugs Fixed
 - The list of projects in the select box did not show all available projects.
 - Policy violations were limited to 100 ([#345](https://github.com/jenkinsci/dependency-track-plugin/issues/345))
+- The publishing step may get stuck when reading the BOM ([#336](https://github.com/jenkinsci/dependency-track-plugin/issues/336))
 
 ## v6.0.1 - 2025-03-23
 ### ⚠ Breaking
