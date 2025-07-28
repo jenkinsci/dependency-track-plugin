@@ -13,21 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.jenkinsci.plugins.DependencyTrack;
+package org.jenkinsci.plugins.DependencyTrack.model;
 
 import java.util.List;
 import java.util.stream.Collectors;
 import lombok.experimental.UtilityClass;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-import org.jenkinsci.plugins.DependencyTrack.model.Violation;
-import org.jenkinsci.plugins.DependencyTrack.model.ViolationState;
-import org.jenkinsci.plugins.DependencyTrack.model.ViolationType;
 
 @UtilityClass
-class ViolationParser extends ModelParser {
+public class ViolationParser extends ModelParser {
 
-    List<Violation> parse(final String jsonResponse) {
+    public List<Violation> parse(final String jsonResponse) {
         final JSONArray jsonArray = JSONArray.fromObject(jsonResponse);
         return jsonArray.stream()
                 .map(JSONObject.class::cast)

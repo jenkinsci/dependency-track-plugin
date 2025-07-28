@@ -18,8 +18,9 @@ package org.jenkinsci.plugins.DependencyTrack;
 import hudson.console.LineTransformationOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
+import org.jenkinsci.plugins.DependencyTrack.api.Logger;
 
-public class ConsoleLogger extends LineTransformationOutputStream {
+class ConsoleLogger extends LineTransformationOutputStream implements Logger {
 
     private static final String PREFIX = "[DependencyTrack] ";
     private final PrintStream logger;
@@ -37,7 +38,8 @@ public class ConsoleLogger extends LineTransformationOutputStream {
      *
      * @param message The message to log
      */
-    protected void log(final String message) {
+    @Override
+    public void log(final String message) {
         logger.println(PREFIX + message.replace("\n", "\n" + PREFIX));
     }
 

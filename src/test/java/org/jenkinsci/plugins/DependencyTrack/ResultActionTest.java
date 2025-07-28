@@ -22,13 +22,10 @@ import hudson.model.User;
 import hudson.security.ACL;
 import hudson.security.ACLContext;
 import hudson.security.AccessDeniedException3;
-import java.io.File;
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 import net.sf.json.JSONArray;
 import org.assertj.core.api.Assertions;
-import org.assertj.core.util.Files;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.junit.jupiter.api.Test;
@@ -46,11 +43,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  */
 @WithJenkins
 class ResultActionTest {
-
-    private List<Finding> getTestFindings() {
-        File findings = new File("src/test/resources/findings.json");
-        return FindingParser.parse(Files.contentOf(findings, StandardCharsets.UTF_8));
-    }
+    private final List<Finding> testFindings = List.of(new Finding(null, null, null, ""));
 
     @Test
     void getVersionHashTest(JenkinsRule j) {
@@ -71,7 +64,7 @@ class ResultActionTest {
             project = j.createFreeStyleProject();
         }
         final FreeStyleBuild b1 = new FreeStyleBuild(project);
-        final ResultAction uut = new ResultAction(getTestFindings(), new SeverityDistribution(1));
+        final ResultAction uut = new ResultAction(testFindings, new SeverityDistribution(1));
         uut.onLoad(b1);
 
         final User anonymous = User.getOrCreateByIdOrFullName(ACL.ANONYMOUS_USERNAME);
@@ -91,15 +84,15 @@ class ResultActionTest {
     void getFindingsJson(JenkinsRule j) throws IOException {
         final FreeStyleProject project = j.createFreeStyleProject();
         final FreeStyleBuild b1 = new FreeStyleBuild(project);
-        final ResultAction uut = new ResultAction(getTestFindings(), new SeverityDistribution(1));
+        final ResultAction uut = new ResultAction(testFindings, new SeverityDistribution(1));
         uut.onLoad(b1);
-        Assertions.<JSONArray>assertThat(uut.getFindingsJson()).isEqualTo(JSONArray.fromObject(getTestFindings()));
+        Assertions.<JSONArray>assertThat(uut.getFindingsJson()).isEqualTo(JSONArray.fromObject(testFindings));
     }
 
     @Test
     void hasFindingsTest() {
         assertThat(new ResultAction(null, new SeverityDistribution(1)).hasFindings()).isFalse();
         assertThat(new ResultAction(List.of(), new SeverityDistribution(1)).hasFindings()).isFalse();
-        assertThat(new ResultAction(getTestFindings(), new SeverityDistribution(1)).hasFindings()).isTrue();
+        assertThat(new ResultAction(testFindings, new SeverityDistribution(1)).hasFindings()).isTrue();
     }
 }

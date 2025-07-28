@@ -17,8 +17,6 @@ package org.jenkinsci.plugins.DependencyTrack;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import com.cloudbees.plugins.credentials.common.StandardListBoxModel;
-import edu.umd.cs.findbugs.annotations.CheckForNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import hudson.Util;
 import hudson.model.AbstractProject;
@@ -31,6 +29,7 @@ import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
 import hudson.util.VersionNumber;
+import jakarta.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -48,6 +47,8 @@ import lombok.Setter;
 import net.sf.json.JSONObject;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
+import org.jenkinsci.plugins.DependencyTrack.api.ApiClient;
+import org.jenkinsci.plugins.DependencyTrack.api.ApiClientException;
 import org.jenkinsci.plugins.DependencyTrack.model.Team;
 import org.jenkinsci.plugins.plaincredentials.StringCredentials;
 import org.kohsuke.stapler.AncestorInPath;
@@ -90,7 +91,7 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
     /**
      * Specifies the credential-id for an API Key used for authentication.
      */
-    @Getter(onMethod_ = {@CheckForNull})
+    @Getter(onMethod_ = {@Nullable})
     @Setter(onMethod_ = {@DataBoundSetter})
     private String dependencyTrackApiKey;
 
@@ -172,7 +173,7 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
             final String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElseGet(this::getDependencyTrackUrl);
             // api-key may come from instance-config. if empty, then take it from global config (this)
             final String apiKey = lookupApiKey(Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElseGet(this::getDependencyTrackApiKey), item);
-            final ApiClient apiClient = getClient(url, apiKey);
+            final ApiClient apiClient = createClient(url, apiKey);
             final List<ListBoxModel.Option> options = apiClient.getProjects().stream()
                     .map(p -> new ListBoxModel.Option(p.getName().concat(" ").concat(Optional.ofNullable(p.getVersion()).orElse(StringUtils.EMPTY)).trim(), p.getUuid()))
                     .sorted(Comparator.comparing(o -> o.name))
@@ -267,15 +268,15 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
         final String apiKey = lookupApiKey(Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElseGet(this::getDependencyTrackApiKey), item);
         if (doCheckDependencyTrackUrl(url, item).kind == FormValidation.Kind.OK && StringUtils.isNotBlank(apiKey)) {
             try {
-                final ApiClient apiClient = getClient(url, apiKey);
+                final ApiClient apiClient = createClient(url, apiKey);
                 final var poweredBy = apiClient.testConnection();
                 if (!poweredBy.startsWith("Dependency-Track v")) {
                     return FormValidation.error(Messages.Publisher_ConnectionTest_Error(poweredBy));
                 }
-                final VersionNumber version = apiClient.getVersion();
+                final var actualVersion = new VersionNumber(apiClient.getVersion());
                 final var requiredVersion = new VersionNumber("4.12.0");
-                if (version.isOlderThan(requiredVersion)) {
-                    return FormValidation.error(Messages.Publisher_ConnectionTest_VersionWarning(version, requiredVersion));
+                if (actualVersion.isOlderThan(requiredVersion)) {
+                    return FormValidation.error(Messages.Publisher_ConnectionTest_VersionWarning(actualVersion, requiredVersion));
                 }
                 return checkTeamPermissions(apiClient, poweredBy, autoCreateProjects, synchronous, updateProjectProperties);
             } catch (ApiClientException e) {
@@ -373,7 +374,7 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
     /**
      * @return global configuration for dependencyTrackUrl
      */
-    @CheckForNull
+    @Nullable
     public String getDependencyTrackUrl() {
         return PluginUtil.parseBaseUrl(dependencyTrackUrl);
     }
@@ -381,7 +382,7 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
     /**
      * @return global configuration for dependencyTrackFrontendUrl
      */
-    @CheckForNull
+    @Nullable
     public String getDependencyTrackFrontendUrl() {
         return PluginUtil.parseBaseUrl(dependencyTrackFrontendUrl);
     }
@@ -406,8 +407,11 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
         return dependencyTrackPollingInterval;
     }
 
-    private ApiClient getClient(final String baseUrl, final String apiKey) {
-        return clientFactory.create(baseUrl, apiKey, new ConsoleLogger(), Math.max(dependencyTrackConnectionTimeout, 0), Math.max(dependencyTrackReadTimeout, 0));
+    private ApiClient createClient(final String baseUrl, final String apiKey) {
+        final int connectionTimeout = Math.max(dependencyTrackConnectionTimeout, 0);
+        final int readTimeout = Math.max(dependencyTrackReadTimeout, 0);
+        final var httpClient = PluginUtil.newHttpClient(connectionTimeout, readTimeout);
+        return clientFactory.create(baseUrl, apiKey, new ConsoleLogger(), httpClient);
     }
 
     private String lookupApiKey(final String credentialId, final Item item) {

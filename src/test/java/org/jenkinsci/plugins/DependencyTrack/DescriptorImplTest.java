@@ -29,7 +29,6 @@ import hudson.security.AccessDeniedException3;
 import hudson.util.FormValidation;
 import hudson.util.ListBoxModel;
 import hudson.util.Secret;
-import hudson.util.VersionNumber;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +37,8 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jenkins.model.Jenkins;
 import net.sf.json.JSONObject;
+import org.jenkinsci.plugins.DependencyTrack.api.ApiClient;
+import org.jenkinsci.plugins.DependencyTrack.api.ApiClientException;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
 import org.jenkinsci.plugins.DependencyTrack.model.Team;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
@@ -77,7 +78,7 @@ class DescriptorImplTest {
 
     @BeforeEach
     void setup(JenkinsRule r) {
-        uut = new DescriptorImpl((url, apiKey, logger, connTimeout, readTimeout) -> client);
+        uut = new DescriptorImpl((url, apiKey, logger, factory) -> client);
         mockAuthorizationStrategy = new MockAuthorizationStrategy();
         mockAuthorizationStrategy.grant(Jenkins.ADMINISTER).onRoot().to(ACL.SYSTEM_USERNAME);
         mockAuthorizationStrategy.grant(Job.CREATE).onRoot().to(ACL.SYSTEM_USERNAME);
@@ -129,14 +130,14 @@ class DescriptorImplTest {
         final String apikey = "api-key";
         final String credentialsid = "credentials-id";
         // custom factory here so we can check that doTestConnection strips trailing slashes from the url
-        ApiClientFactory factory = (url, apiKey, logger, connTimeout, readTimeout) -> {
+        ApiClientFactory factory = (url, apiKey, logger, f) -> {
             assertThat(url).isEqualTo("http:///url.tld");
             assertThat(apiKey).isEqualTo(apikey);
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
         };
         when(client.testConnection()).thenReturn("Dependency-Track v3.8.0", "test").thenThrow(ApiClientException.class);
-        when(client.getVersion()).thenReturn(new VersionNumber("3.8.0"));
+        when(client.getVersion()).thenReturn("3.8.0");
         try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
             CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
             uut = new DescriptorImpl(factory);
@@ -190,14 +191,14 @@ class DescriptorImplTest {
         final String apikey = "api-key";
         final String credentialsid = "credentials-id";
         // custom factory here so we can check that doTestConnection strips trailing slashes from the url
-        ApiClientFactory factory = (url, apiKey, logger, connTimeout, readTimeout) -> {
+        ApiClientFactory factory = (url, apiKey, logger, f) -> {
             assertThat(url).isEqualTo("http:///url.tld");
             assertThat(apiKey).isEqualTo(apikey);
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
             return client;
         };
         when(client.testConnection()).thenReturn("Dependency-Track v4.12.0");
-        when(client.getVersion()).thenReturn(new VersionNumber("4.12.0"));
+        when(client.getVersion()).thenReturn("4.12.0");
         when(client.getTeamPermissions()).thenReturn(Team.builder().name("my-team").permissions(requiredPermissions).build());
         try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
             CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
@@ -220,7 +221,7 @@ class DescriptorImplTest {
                 .permissions(Stream.of(BOM_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS, PROJECT_CREATION_UPLOAD, PORTFOLIO_MANAGEMENT, VIEW_POLICY_VIOLATION).map(Enum::toString).collect(Collectors.toSet()))
                 .build();
         // custom factory here so we can check that doTestConnection strips trailing slashes from the url
-        ApiClientFactory factory = (url, apiKey, logger, connTimeout, readTimeout) -> {
+        ApiClientFactory factory = (url, apiKey, logger, f) -> {
             assertThat(url).isEqualTo("http:///url.tld");
             assertThat(apiKey).isEqualTo(apikey);
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
@@ -228,7 +229,7 @@ class DescriptorImplTest {
         };
         final var poweredBy = "Dependency-Track v4.12.0";
         when(client.testConnection()).thenReturn(poweredBy);
-        when(client.getVersion()).thenReturn(new VersionNumber("4.12.0"));
+        when(client.getVersion()).thenReturn("4.12.0");
         when(client.getTeamPermissions()).thenReturn(team);
         try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
             CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
@@ -260,7 +261,7 @@ class DescriptorImplTest {
                 .permissions(Stream.of(BOM_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS, PROJECT_CREATION_UPLOAD).map(Enum::toString).collect(Collectors.toSet()))
                 .build();
         // custom factory here so we can check that doTestConnection strips trailing slashes from the url
-        ApiClientFactory factory = (url, apiKey, logger, connTimeout, readTimeout) -> {
+        ApiClientFactory factory = (url, apiKey, logger, f) -> {
             assertThat(url).isEqualTo("http:///url.tld");
             assertThat(apiKey).isEqualTo(apikey);
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
@@ -268,7 +269,7 @@ class DescriptorImplTest {
         };
         final var poweredBy = "Dependency-Track v4.12.0";
         when(client.testConnection()).thenReturn(poweredBy);
-        when(client.getVersion()).thenReturn(new VersionNumber("4.12.0"));
+        when(client.getVersion()).thenReturn("4.12.0");
         when(client.getTeamPermissions()).thenReturn(team);
         try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
             CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
@@ -300,7 +301,7 @@ class DescriptorImplTest {
                 .permissions(Stream.of("BOM_UPLOAD", "VIEW_PORTFOLIO", "VULNERABILITY_ANALYSIS", "PROJECT_CREATION_UPLOAD", "DUMMY_PERM").collect(Collectors.toSet()))
                 .build();
         // custom factory here so we can check that doTestConnection strips trailing slashes from the url
-        ApiClientFactory factory = (url, apiKey, logger, connTimeout, readTimeout) -> {
+        ApiClientFactory factory = (url, apiKey, logger, f) -> {
             assertThat(url).isEqualTo("http:///url.tld");
             assertThat(apiKey).isEqualTo(apikey);
             assertThat(logger).isInstanceOf(ConsoleLogger.class);
@@ -308,7 +309,7 @@ class DescriptorImplTest {
         };
         final var poweredBy = "Dependency-Track v4.12.0";
         when(client.testConnection()).thenReturn(poweredBy);
-        when(client.getVersion()).thenReturn(new VersionNumber("4.12.0"));
+        when(client.getVersion()).thenReturn("4.12.0");
         when(client.getTeamPermissions()).thenReturn(team);
         try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
             CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));

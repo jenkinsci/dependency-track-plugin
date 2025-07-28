@@ -17,32 +17,35 @@ package org.jenkinsci.plugins.DependencyTrack;
 
 import com.cloudbees.plugins.credentials.CredentialsProvider;
 import hudson.AbortException;
+import hudson.EnvVars;
 import hudson.FilePath;
 import hudson.Launcher;
 import hudson.model.Result;
 import hudson.model.Run;
 import hudson.model.TaskListener;
 import hudson.tasks.BuildStepMonitor;
+import hudson.tasks.Recorder;
+import hudson.util.Secret;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.util.List;
-import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
-import hudson.EnvVars;
-import hudson.tasks.Recorder;
-import hudson.util.Secret;
 import java.util.Optional;
 import jenkins.tasks.SimpleBuildStep;
 import lombok.AccessLevel;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang.StringUtils;
+import org.jenkinsci.plugins.DependencyTrack.api.ApiClient;
+import org.jenkinsci.plugins.DependencyTrack.api.ApiClientException;
+import org.jenkinsci.plugins.DependencyTrack.api.ProjectData;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.RiskGate;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.jenkinsci.plugins.DependencyTrack.model.Thresholds;
-import org.jenkinsci.plugins.DependencyTrack.model.UploadResult;
 import org.jenkinsci.plugins.DependencyTrack.model.Violation;
 import org.jenkinsci.plugins.DependencyTrack.model.ViolationState;
 import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
@@ -55,6 +58,7 @@ import static org.jenkinsci.plugins.DependencyTrack.model.Permissions.VIEW_POLIC
 @Getter
 @Setter(onMethod_ = {@DataBoundSetter})
 @EqualsAndHashCode(callSuper = true)
+@Slf4j
 public final class DependencyTrackPublisher extends Recorder implements SimpleBuildStep, Serializable {
 
     private static final long serialVersionUID = 480115440498217963L;
@@ -290,7 +294,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      * @throws IOException if something goes wrong
      */
     @Override
-    public void perform(@NonNull final Run<?, ?> run, @NonNull final FilePath workspace, @NonNull final EnvVars env, @NonNull final Launcher launcher, @NonNull final TaskListener listener) throws InterruptedException, IOException {
+    public void perform(@Nonnull final Run<?, ?> run, @Nonnull final FilePath workspace, @Nonnull final EnvVars env, @Nonnull final Launcher launcher, @Nonnull final TaskListener listener) throws InterruptedException, IOException {
         final ConsoleLogger logger = new ConsoleLogger(listener.getLogger());
         final String effectiveProjectName = env.expand(projectName);
         final String effectiveProjectVersion = env.expand(projectVersion);
@@ -317,15 +321,27 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
             throw new AbortException(Messages.Builder_Artifact_NonExist(effectiveArtifact));
         }
 
+        String bom = null;
+        try {
+            bom = artifactFilePath.readToString();
+        } catch (IOException | InterruptedException e) {
+            var msg = Messages.Builder_Error_Processing(effectiveArtifact, e.getLocalizedMessage());
+            log.warn(msg, e);
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            throw new AbortException(msg);
+        }
+
         final String effectiveUrl = getEffectiveUrl();
         final String effectiveApiKey = getEffectiveApiKey(run);
-        final ProjectProperties effectiveProjectProperties = expandProjectProperties(env);
+        final var effectiveProjectProperties = expandProjectProperties(env);
         logger.log(Messages.Builder_Publishing(effectiveUrl, effectiveArtifact));
-        final ApiClient apiClient = clientFactory.create(effectiveUrl, effectiveApiKey, logger, getEffectiveConnectionTimeout(), getEffectiveReadTimeout());
-        final var projectData = new ApiClient.ProjectData(projectId, effectiveProjectName, effectiveProjectVersion, effectiveAutocreate, effectiveProjectProperties);
-        final UploadResult uploadResult = apiClient.upload(projectData, artifactFilePath);
+        final ApiClient apiClient = clientFactory.create(effectiveUrl, effectiveApiKey, logger, PluginUtil.newHttpClient(getEffectiveConnectionTimeout(), getEffectiveReadTimeout()));
+        final var projectData = new ProjectData(projectId, effectiveProjectName, effectiveProjectVersion, effectiveAutocreate, effectiveProjectProperties);
+        final var uploadResult = apiClient.upload(projectData, bom);
 
-        if (!uploadResult.isSuccess()) {
+        if (!uploadResult.success()) {
             throw new AbortException(Messages.Builder_Upload_Failed());
         }
 
@@ -340,8 +356,8 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         updateProjectProperties(logger, apiClient, effectiveProjectName, effectiveProjectVersion, effectiveProjectProperties);
 
         final var thresholds = getThresholds();
-        if (synchronous && StringUtils.isNotBlank(uploadResult.getToken())) {
-            final var resultActions = publishAnalysisResult(logger, apiClient, uploadResult.getToken(), run, effectiveProjectName, effectiveProjectVersion);
+        if (synchronous && StringUtils.isNotBlank(uploadResult.token())) {
+            final var resultActions = publishAnalysisResult(logger, apiClient, uploadResult.token(), run, effectiveProjectName, effectiveProjectVersion);
             if (thresholds.hasValues()) {
                 final var resultAction = resultActions.findingsAction;
                 evaluateRiskGates(run, logger, resultAction.getSeverityDistribution(), thresholds);
@@ -495,7 +511,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     /**
      * @return effective dependencyTrackUrl
      */
-    @NonNull
+    @Nonnull
     private String getEffectiveUrl() {
         String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElseGet(descriptor::getDependencyTrackUrl);
         return Optional.ofNullable(url).orElse(StringUtils.EMPTY);
@@ -504,7 +520,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     /**
      * @return effective dependencyTrackFrontendUrl
      */
-    @NonNull
+    @Nonnull
     private String getEffectiveFrontendUrl() {
         String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackFrontendUrl)).orElseGet(descriptor::getDependencyTrackFrontendUrl);
         return Optional.ofNullable(url).orElseGet(this::getEffectiveUrl);
@@ -516,8 +532,8 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      * @param run needed for credential retrieval
      * @return effective api-key
      */
-    @NonNull
-    private String getEffectiveApiKey(final @NonNull Run<?, ?> run) {
+    @Nonnull
+    private String getEffectiveApiKey(final @Nonnull Run<?, ?> run) {
         final String credId = Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElseGet(descriptor::getDependencyTrackApiKey);
         if (credId != null) {
             StringCredentials cred = CredentialsProvider.findCredentialById(credId, StringCredentials.class, run);
@@ -538,7 +554,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     /**
      * @return effective dependencyTrackPollingTimeout
      */
-    @NonNull
+    @Nonnull
     private int getEffectivePollingTimeout() {
         return Optional.ofNullable(dependencyTrackPollingTimeout).filter(v -> v > 0).orElseGet(descriptor::getDependencyTrackPollingTimeout);
     }
@@ -546,7 +562,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     /**
      * @return effective dependencyTrackPollingInterval
      */
-    @NonNull
+    @Nonnull
     private int getEffectivePollingInterval() {
         return Optional.ofNullable(dependencyTrackPollingInterval).filter(v -> v > 0).orElseGet(descriptor::getDependencyTrackPollingInterval);
     }
@@ -554,7 +570,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     /**
      * @return effective dependencyTrackConnectionTimeout
      */
-    @NonNull
+    @Nonnull
     private int getEffectiveConnectionTimeout() {
         return Optional.ofNullable(dependencyTrackConnectionTimeout).filter(v -> v >= 0).orElseGet(descriptor::getDependencyTrackConnectionTimeout);
     }
@@ -562,7 +578,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     /**
      * @return effective dependencyTrackReadTimeout
      */
-    @NonNull
+    @Nonnull
     private int getEffectiveReadTimeout() {
         return Optional.ofNullable(dependencyTrackReadTimeout).filter(v -> v >= 0).orElseGet(descriptor::getDependencyTrackReadTimeout);
     }
@@ -573,7 +589,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      * @return the last build that was actually built and has an analysis result, or {@code null} if none was found
      */
     @Nullable
-    private Run<?, ?> getPreviousBuildWithAnalysisResult(final @NonNull Run<?, ?> run) {
+    private Run<?, ?> getPreviousBuildWithAnalysisResult(final @Nonnull Run<?, ?> run) {
         Run<?, ?> r = run.getPreviousSuccessfulBuild();
         while (r != null && (r.getResult() == null || r.getResult() == Result.NOT_BUILT || r.getAction(ResultAction.class) == null)) {
             r = r.getPreviousSuccessfulBuild();
@@ -581,7 +597,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         return r;
     }
 
-    @NonNull
+    @Nonnull
     private Thresholds getThresholds() {
         final Thresholds thresholds = new Thresholds();
         thresholds.totalFindings.unstableCritical = unstableTotalCritical;
@@ -608,7 +624,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         return thresholds;
     }
     
-    private void updateProjectProperties(final ConsoleLogger logger, final ApiClient apiClient, final String effectiveProjectName, final String effectiveProjectVersion, final ProjectProperties effectiveProjectProperties) throws ApiClientException {
+    private void updateProjectProperties(final ConsoleLogger logger, final ApiClient apiClient, final String effectiveProjectName, final String effectiveProjectVersion, final ProjectData.Properties effectiveProjectProperties) throws ApiClientException {
         // check whether there are settings other than those of the parent project.
         // the parent project is set during upload.
         boolean doUpdateProject = projectProperties != null && ( // noformat
@@ -637,7 +653,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         return projectIdCache;
     }
 
-    private ProjectProperties expandProjectProperties(final EnvVars env) {
+    private ProjectData.Properties expandProjectProperties(final EnvVars env) {
         if (projectProperties != null) {
             final var expandedProperties = new ProjectProperties();
             Optional.ofNullable(projectProperties.getDescription()).map(env::expand).ifPresent(expandedProperties::setDescription);
@@ -648,10 +664,18 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
             Optional.ofNullable(projectProperties.getSwidTagId()).map(env::expand).ifPresent(expandedProperties::setSwidTagId);
             expandedProperties.setTags(projectProperties.getTags().stream().map(env::expand).toList());
             expandedProperties.setIsLatest(projectProperties.getIsLatest());
-            return expandedProperties;
+            return new ProjectData.Properties(
+                    expandedProperties.getTags(),
+                    expandedProperties.getSwidTagId(),
+                    expandedProperties.getGroup(),
+                    expandedProperties.getDescription(),
+                    expandedProperties.getParentId(),
+                    expandedProperties.getParentName(),
+                    expandedProperties.getParentVersion(),
+                    expandedProperties.getIsLatest());
         }
         return null;
     }
 
-    private static record PublishAnalysisResult(@NonNull ResultAction findingsAction, @Nullable ViolationsRunAction violationsAction) {} 
+    private static record PublishAnalysisResult(@Nonnull ResultAction findingsAction, @Nullable ViolationsRunAction violationsAction) {} 
 }

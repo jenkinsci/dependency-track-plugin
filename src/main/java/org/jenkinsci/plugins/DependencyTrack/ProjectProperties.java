@@ -15,14 +15,14 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
-import edu.umd.cs.findbugs.annotations.Nullable;
 import hudson.Extension;
 import hudson.RelativePath;
 import hudson.model.AbstractDescribableImpl;
 import hudson.model.Descriptor;
 import hudson.model.Item;
 import hudson.util.ListBoxModel;
+import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
@@ -101,7 +101,7 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
     @Setter(onMethod_ = {@DataBoundSetter})
     private Boolean isLatest;
 
-    @NonNull
+    @Nonnull
     public List<String> getTags() {
         return normalizeTags(tags);
     }
@@ -122,15 +122,15 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
         }
     }
 
-    private void setTagsIntern(@NonNull final String value) {
+    private void setTagsIntern(@Nonnull final String value) {
         setTagsIntern(value.split("\\s+"));
     }
 
-    private void setTagsIntern(@NonNull final String[] values) {
+    private void setTagsIntern(@Nonnull final String[] values) {
         setTagsIntern(Stream.of(values).collect(Collectors.toSet()));
     }
 
-    private void setTagsIntern(@NonNull final Collection<String> values) {
+    private void setTagsIntern(@Nonnull final Collection<String> values) {
         tags = normalizeTags(values);
     }
 
@@ -164,12 +164,12 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
         this.parentVersion = StringUtils.trimToNull(parentVersion);
     }
 
-    @NonNull
+    @Nonnull
     public String getTagsAsText() {
         return StringUtils.join(getTags(), System.lineSeparator());
     }
 
-    @NonNull
+    @Nonnull
     private List<String> normalizeTags(final Collection<String> values) {
         return (values != null ? values.stream() : Stream.<String>empty())
                 .map(String::trim)

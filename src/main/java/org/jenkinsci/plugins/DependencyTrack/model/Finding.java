@@ -15,7 +15,7 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.model;
 
-import edu.umd.cs.findbugs.annotations.NonNull;
+import jakarta.annotation.Nonnull;
 import java.io.Serializable;
 import lombok.EqualsAndHashCode;
 import lombok.Value;
@@ -42,7 +42,7 @@ public class Finding implements Serializable {
      * {@link #component} as this one and this
      * {@link #vulnerability} {@link Vulnerability#isAliasOf(org.jenkinsci.plugins.DependencyTrack.model.Vulnerability) is an alias of the other one}
      */
-    public boolean isAliasOf(@NonNull final Finding other) {
+    public boolean isAliasOf(@Nonnull final Finding other) {
         return vulnerability != null && component.equals(other.component) && other.getVulnerability() != null && vulnerability.isAliasOf(other.getVulnerability());
     }
 
@@ -54,7 +54,7 @@ public class Finding implements Serializable {
      * {@link #component} as this one and this
      * {@link #vulnerability} {@link Vulnerability#hasAlias(org.jenkinsci.plugins.DependencyTrack.model.Vulnerability) has the others one's vulnerability as an alias}
      */
-    public boolean hasAlias(@NonNull final Finding alias) {
+    public boolean hasAlias(@Nonnull final Finding alias) {
         return vulnerability != null && component.equals(alias.component) && alias.getVulnerability() != null && vulnerability.hasAlias(alias.getVulnerability());
     }
 
