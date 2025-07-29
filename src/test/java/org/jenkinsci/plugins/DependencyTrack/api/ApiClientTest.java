@@ -169,19 +169,28 @@ class ApiClientTest {
             assertCommonHeaders(request);
             QueryStringDecoder query = new QueryStringDecoder(request.uri());
             assertThat(query.parameters())
-                    .contains(entry("limit", List.of("500")), entry("excludeInactive", List.of("true")))
-                    .containsKey("page").extractingByKey("page", as(InstanceOfAssertFactories.list(String.class)))
+                    .containsOnlyKeys(ApiClient.PAGINATED_REQ_PAGE_PARAM, "excludeInactive", ApiClient.PAGINATED_REQ_PAGESIZE_PARAM, "sortName", "sortOrder")
+                    .containsEntry(ApiClient.PAGINATED_REQ_PAGESIZE_PARAM, List.of("500"))
+                    .containsEntry("sortName", List.of("name"))
+                    .containsEntry("sortOrder", List.of("asc"))
+                    .containsEntry("excludeInactive", List.of("true"))
+                    .extractingByKey(ApiClient.PAGINATED_REQ_PAGE_PARAM, as(InstanceOfAssertFactories.list(String.class)))
                     .hasSize(1).first().satisfies(p -> {
-                assertThat(Integer.valueOf(p)).isBetween(1, 3);
+                assertThat(Integer.valueOf(p)).isBetween(1, 2);
             });
-            int page = Integer.parseInt(query.parameters().get("page").get(0));
+            int page = Integer.parseInt(query.parameters().get(ApiClient.PAGINATED_REQ_PAGE_PARAM).get(0));
+            int totalCount = 3;
             return switch (page) {
                 case 1 ->
-                    response.sendString(Mono.just("[{\"name\":\"Project 1\",\"uuid\":\"uuid-1\",\"version\":null},{\"name\":\"Project 2\",\"uuid\":\"uuid-2\",\"version\":\"null\"}]"));
+                    response
+                    .header(ApiClient.PAGINATED_RES_TOTAL_COUNT_HEADER, String.valueOf(totalCount))
+                    .sendString(Mono.just("[{\"name\":\"Project 1\",\"uuid\":\"uuid-1\",\"version\":null},{\"name\":\"Project 2\",\"uuid\":\"uuid-2\",\"version\":\"null\"}]"));
                 case 2 ->
-                    response.sendString(Mono.just("[{\"name\":\"Project 3\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\",\"lastBomImportStr\":\"2007-12-03T10:15:30\",\"tags\":[{\"name\":\"tag1\"},{\"name\":\"tag2\"},{\"name\":null}]}]"));
+                    response
+                    .header(ApiClient.PAGINATED_RES_TOTAL_COUNT_HEADER, String.valueOf(totalCount))
+                    .sendString(Mono.just("[{\"name\":\"Project 3\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\",\"lastBomImportStr\":\"2007-12-03T10:15:30\",\"tags\":[{\"name\":\"tag1\"},{\"name\":\"tag2\"},{\"name\":null}]}]"));
                 default ->
-                    response.sendNotFound();
+                    response.sendString(Mono.just("[]"));
             };
         }))
                 .bindNow();

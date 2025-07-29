@@ -4,6 +4,7 @@
 ### ⚠ Breaking
 ### ⭐ New Features
 ### 🐞 Bugs Fixed
+- The list of projects in the select box did not show all available projects.
 
 ## v6.0.1 - 2025-03-23
 ### ⚠ Breaking
