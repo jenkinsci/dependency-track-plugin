@@ -169,19 +169,28 @@ class ApiClientTest {
             assertCommonHeaders(request);
             QueryStringDecoder query = new QueryStringDecoder(request.uri());
             assertThat(query.parameters())
-                    .contains(entry("limit", List.of("500")), entry("excludeInactive", List.of("true")))
-                    .containsKey("page").extractingByKey("page", as(InstanceOfAssertFactories.list(String.class)))
+                    .containsOnlyKeys(ApiClient.PAGINATED_REQ_PAGE_PARAM, "excludeInactive", ApiClient.PAGINATED_REQ_PAGESIZE_PARAM, "sortName", "sortOrder")
+                    .containsEntry(ApiClient.PAGINATED_REQ_PAGESIZE_PARAM, List.of("500"))
+                    .containsEntry("sortName", List.of("name"))
+                    .containsEntry("sortOrder", List.of("asc"))
+                    .containsEntry("excludeInactive", List.of("true"))
+                    .extractingByKey(ApiClient.PAGINATED_REQ_PAGE_PARAM, as(InstanceOfAssertFactories.list(String.class)))
                     .hasSize(1).first().satisfies(p -> {
-                assertThat(Integer.valueOf(p)).isBetween(1, 3);
+                assertThat(Integer.valueOf(p)).isBetween(1, 2);
             });
-            int page = Integer.parseInt(query.parameters().get("page").get(0));
+            int page = Integer.parseInt(query.parameters().get(ApiClient.PAGINATED_REQ_PAGE_PARAM).get(0));
+            int totalCount = 3;
             return switch (page) {
                 case 1 ->
-                    response.sendString(Mono.just("[{\"name\":\"Project 1\",\"uuid\":\"uuid-1\",\"version\":null},{\"name\":\"Project 2\",\"uuid\":\"uuid-2\",\"version\":\"null\"}]"));
+                    response
+                    .header(ApiClient.PAGINATED_RES_TOTAL_COUNT_HEADER, String.valueOf(totalCount))
+                    .sendString(Mono.just("[{\"name\":\"Project 1\",\"uuid\":\"uuid-1\",\"version\":null},{\"name\":\"Project 2\",\"uuid\":\"uuid-2\",\"version\":\"null\"}]"));
                 case 2 ->
-                    response.sendString(Mono.just("[{\"name\":\"Project 3\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\",\"lastBomImportStr\":\"2007-12-03T10:15:30\",\"tags\":[{\"name\":\"tag1\"},{\"name\":\"tag2\"},{\"name\":null}]}]"));
+                    response
+                    .header(ApiClient.PAGINATED_RES_TOTAL_COUNT_HEADER, String.valueOf(totalCount))
+                    .sendString(Mono.just("[{\"name\":\"Project 3\",\"uuid\":\"uuid-3\",\"version\":\"1.2.3\",\"lastBomImportStr\":\"2007-12-03T10:15:30\",\"tags\":[{\"name\":\"tag1\"},{\"name\":\"tag2\"},{\"name\":null}]}]"));
                 default ->
-                    response.sendNotFound();
+                    response.sendString(Mono.just("[]"));
             };
         }))
                 .bindNow();
@@ -306,11 +315,33 @@ class ApiClientTest {
                 .port(0)
                 .route(routes -> routes.get(ApiClient.PROJECT_VIOLATIONS_URL + "/{uuid}", (request, response) -> {
             assertCommonHeaders(request);
-            assertThat(request.param("uuid")).isNotEmpty();
-            String uuid = request.param("uuid");
-            return switch (uuid) {
-                case "uuid-1" ->
-                    response.sendString(Mono.just("[]"));
+            QueryStringDecoder query = new QueryStringDecoder(request.uri());
+            assertThat(query.parameters())
+                    .containsOnlyKeys(ApiClient.PAGINATED_REQ_PAGE_PARAM, ApiClient.PAGINATED_REQ_PAGESIZE_PARAM)
+                    .containsEntry(ApiClient.PAGINATED_REQ_PAGESIZE_PARAM, List.of("100"))
+                    .extractingByKey(ApiClient.PAGINATED_REQ_PAGE_PARAM, as(InstanceOfAssertFactories.list(String.class)))
+                    .hasSize(1).first().satisfies(p -> {
+                assertThat(Integer.valueOf(p)).isBetween(1, 2);
+            });
+            String projectId = request.param("uuid");
+            assertThat(projectId).isNotEmpty();
+            return switch (projectId) {
+                case "uuid-1" -> {
+                    int page = Integer.parseInt(query.parameters().get(ApiClient.PAGINATED_REQ_PAGE_PARAM).get(0));
+                    int totalCount = 2;
+                    yield switch (page) {
+                        case 1 ->
+                            response
+                            .header(ApiClient.PAGINATED_RES_TOTAL_COUNT_HEADER, String.valueOf(totalCount))
+                            .sendString(Mono.just("[{\"type\":\"SECURITY\",\"component\":{\"uuid\":\"component-1\",\"name\":\"name-2\",\"group\":\"group-2\",\"version\":\"version-2\",\"purl\":\"purl-2\"},\"policyCondition\":{\"policy\":{\"name\":\"my-rule1\",\"violationState\":\"INFO\"}},\"uuid\":\"violation-1\"}]"));
+                        case 2 ->
+                            response
+                            .header(ApiClient.PAGINATED_RES_TOTAL_COUNT_HEADER, String.valueOf(totalCount))
+                            .sendString(Mono.just("[{\"type\":\"SECURITY\",\"component\":{\"uuid\":\"component-2\",\"name\":\"name-2\",\"group\":\"group-2\",\"version\":\"version-2\",\"purl\":\"purl-2\"},\"policyCondition\":{\"policy\":{\"name\":\"my-rule2\",\"violationState\":\"INFO\"}},\"uuid\":\"violation-2\"}]"));
+                        default ->
+                            response.sendString(Mono.just("[]"));
+                    };
+                }
                 default ->
                     response.sendNotFound();
             };
@@ -323,7 +354,7 @@ class ApiClientTest {
                 .hasNoCause()
                 .hasMessage(Messages.ApiClient_Error_RetrieveViolations(HttpResponseStatus.NOT_FOUND.code(), HttpResponseStatus.NOT_FOUND.reasonPhrase()));
 
-        assertThat(uut.getViolations("uuid-1")).isEmpty();
+        assertThat(uut.getViolations("uuid-1")).hasSize(2);
     }
 
     @Test

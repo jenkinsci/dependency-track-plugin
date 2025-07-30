@@ -31,6 +31,7 @@ import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import okhttp3.Response;
 import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.FindingParser;
@@ -70,6 +71,9 @@ public class ApiClient {
     static final String PROJECT_LOOKUP_URL = PROJECT_URL + "/lookup";
     static final String PROJECT_LOOKUP_NAME_PARAM = "name";
     static final String PROJECT_LOOKUP_VERSION_PARAM = "version";
+    static final String PAGINATED_REQ_PAGE_PARAM = "pageNumber";
+    static final String PAGINATED_REQ_PAGESIZE_PARAM = "pageSize";
+    static final String PAGINATED_RES_TOTAL_COUNT_HEADER = "X-Total-Count";
     static final String TEAM_SELF_URL = API_URL + "/team/self";
     static final String VERSION_URL = "/api/version";
 
@@ -156,34 +160,40 @@ public class ApiClient {
 
     @Nonnull
     public List<Project> getProjects() throws ApiClientException {
-        List<Project> projects = new ArrayList<>();
+        final List<Project> projects = new ArrayList<>();
         int page = 1;
         boolean fetchMore = true;
         while (fetchMore) {
-            List<Project> fetchedProjects = getProjectsPaged(page++);
-            fetchMore = !fetchedProjects.isEmpty();
-            projects.addAll(fetchedProjects);
+            final var fetchedProjects = getProjectsPaged(page++);
+            projects.addAll(fetchedProjects.result());
+            // Continue to retrieve further projects if the current result was not empty and the total amount has not yet been reached.
+            fetchMore = !fetchedProjects.isEmpty() && projects.size() < fetchedProjects.totalSize();
         }
         return projects;
     }
 
     @Nonnull
-    private List<Project> getProjectsPaged(final int page) throws ApiClientException {
+    @SuppressWarnings("unchecked")
+    private PagedResult<Project> getProjectsPaged(final int page) throws ApiClientException {
         final var uri = UriComponentsBuilder.fromUriString(PROJECT_URL)
-                .queryParam("limit", "{limit}")
-                .queryParam("excludeInactive", "{excludeInactive}")
-                .queryParam("page", "{page}")
-                .build(500, true, page);
+                .queryParam(PAGINATED_REQ_PAGE_PARAM, "{page}")
+                .queryParam(PAGINATED_REQ_PAGESIZE_PARAM, 500)
+                .queryParam("excludeInactive", true)
+                .queryParam("sortName", "name")
+                .queryParam("sortOrder", "asc")
+                .build(page);
         final var request = createRequest(uri);
         return executeWithRetry(() -> {
             try (var response = httpClient.newCall(request).execute()) {
                 if (response.isSuccessful()) {
-                    return JSONArray.fromObject(response.body().string()).stream()
+                    final var projects = JSONArray.fromObject(response.body().string()).stream()
                             .map(JSONObject.class::cast)
                             .map(ProjectParser::parse)
                             .toList();
+                    final var totalCount = getTotalCountValue(response, projects.size());
+                    return new PagedResult<>(projects, totalCount);
                 }
-                return List.of();
+                return (PagedResult<Project>) PagedResult.EMPTY;
             } catch (IOException e) {
                 throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
             }
@@ -245,17 +255,38 @@ public class ApiClient {
 
     @Nonnull
     public List<Violation> getViolations(@Nonnull final String projectUuid) throws ApiClientException {
-        final var uri = UriComponentsBuilder.fromUriString(PROJECT_VIOLATIONS_URL).pathSegment("{uuid}").build(projectUuid);
+        final List<Violation> violations = new ArrayList<>();
+        int page = 1;
+        boolean fetchMore = true;
+        while (fetchMore) {
+            var fetchedViolations = getViolationsPaged(projectUuid, page++);
+            violations.addAll(fetchedViolations.result());
+            // Continue to retrieve further violations if the current result was not empty and the total amount has not yet been reached.
+            fetchMore = !fetchedViolations.isEmpty() && violations.size() < fetchedViolations.totalSize();
+        }
+        return violations;
+    }
+
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    private PagedResult<Violation> getViolationsPaged(@Nonnull final String projectUuid, final int page) throws ApiClientException {
+        final var uri = UriComponentsBuilder.fromUriString(PROJECT_VIOLATIONS_URL).pathSegment("{uuid}")
+                .queryParam(PAGINATED_REQ_PAGE_PARAM, "{page}")
+                .queryParam(PAGINATED_REQ_PAGESIZE_PARAM, 100)
+                .build(projectUuid, page);
         final var request = createRequest(uri);
         return executeWithRetry(() -> {
             try (var response = httpClient.newCall(request).execute()) {
                 final var body = response.body().string();
-                if (!response.isSuccessful()) {
+                if (response.isSuccessful()) {
+                    final var violations = ViolationParser.parse(body);
+                    final var totalCount = getTotalCountValue(response, violations.size());
+                    return new PagedResult<>(violations, totalCount);
+                } else {
                     final int status = response.code();
                     logger.log(body);
                     throw new ApiClientException(Messages.ApiClient_Error_RetrieveViolations(status, HttpStatus.valueOf(status).getReasonPhrase()));
                 }
-                return ViolationParser.parse(body);
             } catch (ApiClientException e) {
                 throw e;
             } catch (IOException e) {
@@ -396,6 +427,12 @@ public class ApiClient {
                 .addHeader(ACCEPT, APPLICATION_JSON_VALUE)
                 .method(method, bodyPublisher)
                 .build();
+    }
+
+    private static int getTotalCountValue(Response res, int defaultValue) {
+        return Optional.ofNullable(res.header(PAGINATED_RES_TOTAL_COUNT_HEADER))
+                .map(Integer::parseInt)
+                .orElse(defaultValue);
     }
 
     private <T, E extends IOException> T executeWithRetry(RetryAction<T, E> action) throws E {
