@@ -26,13 +26,13 @@ import jakarta.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import jenkins.model.Jenkins;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
-import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.AncestorInPath;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.DataBoundSetter;
@@ -136,44 +136,44 @@ public final class ProjectProperties extends AbstractDescribableImpl<ProjectProp
 
     @DataBoundSetter
     public void setSwidTagId(final String swidTagId) {
-        this.swidTagId = StringUtils.trimToNull(swidTagId);
+        this.swidTagId = PluginUtil.trimToNull(swidTagId);
     }
 
     @DataBoundSetter
     public void setGroup(final String group) {
-        this.group = StringUtils.trimToNull(group);
+        this.group = PluginUtil.trimToNull(group);
     }
 
     @DataBoundSetter
     public void setDescription(final String description) {
-        this.description = StringUtils.trimToNull(description);
+        this.description = PluginUtil.trimToNull(description);
     }
 
     @DataBoundSetter
     public void setParentId(final String parentId) {
-        this.parentId = StringUtils.trimToNull(parentId);
+        this.parentId = PluginUtil.trimToNull(parentId);
     }
 
     @DataBoundSetter
     public void setParentName(final String parentName) {
-        this.parentName = StringUtils.trimToNull(parentName);
+        this.parentName = PluginUtil.trimToNull(parentName);
     }
 
     @DataBoundSetter
     public void setParentVersion(final String parentVersion) {
-        this.parentVersion = StringUtils.trimToNull(parentVersion);
+        this.parentVersion = PluginUtil.trimToNull(parentVersion);
     }
 
     @Nonnull
     public String getTagsAsText() {
-        return StringUtils.join(getTags(), System.lineSeparator());
+        return getTags().stream().collect(Collectors.joining(System.lineSeparator()));
     }
 
     @Nonnull
     private List<String> normalizeTags(final Collection<String> values) {
         return (values != null ? values.stream() : Stream.<String>empty())
                 .map(String::trim)
-                .filter(StringUtils::isNotBlank)
+                .filter(Predicate.not(String::isEmpty))
                 .map(String::toLowerCase)
                 .distinct()
                 .sorted()

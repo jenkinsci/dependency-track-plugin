@@ -418,14 +418,14 @@ class ApiClientTest {
                         requestBody.set(m);
                         completionSignal.countDown();
                     })
-                    .map(body -> ""));
+                    .map(body -> "{\"token\":\"uuid-1\"}"));
         })).bindNow();
 
         final var props = new ProjectData.Properties(null, null, null, null, null, "parent-name", "parent-version", null);
 
         ApiClient uut = createClient();
         var data = new ProjectData(null, "p1", "v1", false, props);
-        assertThat(uut.upload(data, "<test />")).isEqualTo(new UploadResult(true));
+        assertThat(uut.upload(data, "<test />")).isEqualTo(new UploadResult(true, "uuid-1"));
 
         completionSignal.await(5, TimeUnit.SECONDS);
         assertThat(completionSignal.getCount()).isZero();

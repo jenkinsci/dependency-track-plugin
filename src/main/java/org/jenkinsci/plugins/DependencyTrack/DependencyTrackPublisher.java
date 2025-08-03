@@ -39,7 +39,6 @@ import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.api.ApiClient;
 import org.jenkinsci.plugins.DependencyTrack.api.ApiClientException;
 import org.jenkinsci.plugins.DependencyTrack.api.ProjectData;
@@ -303,15 +302,15 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         final boolean effectiveAutocreate = isEffectiveAutoCreateProjects();
         projectIdCache = null;
 
-        if (StringUtils.isBlank(effectiveArtifact)) {
+        if (PluginUtil.isBlank(effectiveArtifact)) {
             logger.log(Messages.Builder_Artifact_Unspecified());
             throw new AbortException(Messages.Builder_Artifact_Unspecified());
         }
-        if (StringUtils.isBlank(projectId) && (StringUtils.isBlank(effectiveProjectName) || StringUtils.isBlank(effectiveProjectVersion))) {
+        if (PluginUtil.isBlank(projectId) && (PluginUtil.isBlank(effectiveProjectName) || PluginUtil.isBlank(effectiveProjectVersion))) {
             logger.log(Messages.Builder_Result_InvalidArguments());
             throw new AbortException(Messages.Builder_Result_InvalidArguments());
         }
-        if (StringUtils.isBlank(projectId) && !effectiveAutocreate) {
+        if (PluginUtil.isBlank(projectId) && !effectiveAutocreate) {
             logger.log(Messages.Builder_Result_ProjectIdMissing());
             throw new AbortException(Messages.Builder_Result_ProjectIdMissing());
         }
@@ -353,12 +352,12 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         linkAction.setProjectVersion(effectiveProjectVersion);
         run.addOrReplaceAction(linkAction);
 
-        logger.log(Messages.Builder_Success(String.format("%s/projects/%s", getEffectiveFrontendUrl(), StringUtils.isNotBlank(projectId) ? projectId : StringUtils.EMPTY)));
+        logger.log(Messages.Builder_Success(String.format("%s/projects/%s", getEffectiveFrontendUrl(), !PluginUtil.isBlank(projectId) ? projectId : "")));
         
         updateProjectProperties(logger, apiClient, effectiveProjectName, effectiveProjectVersion, effectiveProjectProperties);
 
         final var thresholds = getThresholds();
-        if (synchronous && StringUtils.isNotBlank(uploadResult.token())) {
+        if (synchronous && uploadResult.token() != null) {
             final var resultActions = publishAnalysisResult(logger, apiClient, uploadResult.token(), run, effectiveProjectName, effectiveProjectVersion);
             if (thresholds.hasValues()) {
                 final var resultAction = resultActions.findingsAction;
@@ -481,7 +480,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         if (descriptor == null) {
             descriptor = getDescriptor();
         }
-        overrideGlobals = StringUtils.isNotBlank(dependencyTrackUrl) || StringUtils.isNotBlank(dependencyTrackFrontendUrl) || StringUtils.isNotBlank(dependencyTrackApiKey) || autoCreateProjects != null;
+        overrideGlobals = !PluginUtil.isBlank(dependencyTrackUrl) || !PluginUtil.isBlank(dependencyTrackFrontendUrl) || !PluginUtil.isBlank(dependencyTrackApiKey) || autoCreateProjects != null;
         return this;
     }
 
@@ -516,7 +515,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     @Nonnull
     private String getEffectiveUrl() {
         String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElseGet(descriptor::getDependencyTrackUrl);
-        return Optional.ofNullable(url).orElse(StringUtils.EMPTY);
+        return Optional.ofNullable(url).orElse("");
     }
 
     /**
@@ -536,13 +535,13 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      */
     @Nonnull
     private String getEffectiveApiKey(final @Nonnull Run<?, ?> run) {
-        final String credId = Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElseGet(descriptor::getDependencyTrackApiKey);
+        final String credId = Optional.ofNullable(PluginUtil.trimToNull(dependencyTrackApiKey)).orElseGet(descriptor::getDependencyTrackApiKey);
         if (credId != null) {
             StringCredentials cred = CredentialsProvider.findCredentialById(credId, StringCredentials.class, run);
             // for compatibility reasons when updating from v2.x to 3.0: return original value as is because it may be the api-key itself.
             return Optional.ofNullable(CredentialsProvider.track(run, cred)).map(StringCredentials::getSecret).map(Secret::getPlainText).orElse(credId);
         } else {
-            return StringUtils.EMPTY;
+            return "";
         }
     }
 
@@ -644,8 +643,8 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     }
     
     private String lookupProjectId(final ConsoleLogger logger, final ApiClient apiClient, final String effectiveProjectName, final String effectiveProjectVersion) throws ApiClientException {
-        if (StringUtils.isBlank(projectId)) {
-            if (StringUtils.isBlank(projectIdCache)) {
+        if (PluginUtil.isBlank(projectId)) {
+            if (PluginUtil.isBlank(projectIdCache)) {
                 logger.log(Messages.Builder_Project_Lookup(effectiveProjectName, effectiveProjectVersion));
                 projectIdCache = apiClient.lookupProject(effectiveProjectName, effectiveProjectVersion).getUuid();
             }

@@ -17,10 +17,11 @@ package org.jenkinsci.plugins.DependencyTrack.model;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Objects;
+import java.util.function.Predicate;
 import lombok.experimental.UtilityClass;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
 
 @UtilityClass
 public class ProjectParser extends ModelParser {
@@ -55,7 +56,8 @@ public class ProjectParser extends ModelParser {
     private List<String> parseTags(JSONArray tagArray) {
         return tagArray.stream()
                 .map(o -> getKeyOrNull((JSONObject) o, "name"))
-                .filter(StringUtils::isNotBlank)
+                .filter(Objects::nonNull)
+                .filter(Predicate.not(String::isBlank))
                 .toList();
     }
 }

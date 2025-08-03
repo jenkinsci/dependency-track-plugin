@@ -45,7 +45,6 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 import net.sf.json.JSONObject;
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.Symbol;
 import org.jenkinsci.plugins.DependencyTrack.api.ApiClient;
 import org.jenkinsci.plugins.DependencyTrack.api.ApiClientException;
@@ -172,16 +171,16 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
             // url may come from instance-config. if empty, then take it from global config (this)
             final String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElseGet(this::getDependencyTrackUrl);
             // api-key may come from instance-config. if empty, then take it from global config (this)
-            final String apiKey = lookupApiKey(Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElseGet(this::getDependencyTrackApiKey), item);
+            final String apiKey = lookupApiKey(Optional.ofNullable(PluginUtil.trimToNull(dependencyTrackApiKey)).orElseGet(this::getDependencyTrackApiKey), item);
             final ApiClient apiClient = createClient(url, apiKey);
             final List<ListBoxModel.Option> options = apiClient.getProjects().stream()
-                    .map(p -> new ListBoxModel.Option(p.getName().concat(" ").concat(Optional.ofNullable(p.getVersion()).orElse(StringUtils.EMPTY)).trim(), p.getUuid()))
+                    .map(p -> new ListBoxModel.Option(p.getName().concat(" ").concat(Optional.ofNullable(p.getVersion()).orElse("")).trim(), p.getUuid()))
                     .sorted(Comparator.comparing(o -> o.name))
                     .toList();
-            projects.add(new ListBoxModel.Option(Messages.Publisher_ProjectList_Placeholder(), StringUtils.EMPTY));
+            projects.add(new ListBoxModel.Option(Messages.Publisher_ProjectList_Placeholder(), ""));
             projects.addAll(options);
         } catch (ApiClientException e) {
-            projects.add(Messages.Builder_Error_Projects(e.getLocalizedMessage()), StringUtils.EMPTY);
+            projects.add(Messages.Builder_Error_Projects(e.getLocalizedMessage()), "");
         }
         return projects;
     }
@@ -265,8 +264,8 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
         // url may come from instance-config. if empty, then take it from global config (this)
         final String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElseGet(this::getDependencyTrackUrl);
         // api-key may come from instance-config. if empty, then take it from global config (this)
-        final String apiKey = lookupApiKey(Optional.ofNullable(StringUtils.trimToNull(dependencyTrackApiKey)).orElseGet(this::getDependencyTrackApiKey), item);
-        if (doCheckDependencyTrackUrl(url, item).kind == FormValidation.Kind.OK && StringUtils.isNotBlank(apiKey)) {
+        final String apiKey = lookupApiKey(Optional.ofNullable(PluginUtil.trimToNull(dependencyTrackApiKey)).orElseGet(this::getDependencyTrackApiKey), item);
+        if (doCheckDependencyTrackUrl(url, item).kind == FormValidation.Kind.OK && !apiKey.isBlank()) {
             try {
                 final ApiClient apiClient = createClient(url, apiKey);
                 final var poweredBy = apiClient.testConnection();
@@ -414,11 +413,12 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
         return clientFactory.create(baseUrl, apiKey, new ConsoleLogger(), httpClient);
     }
 
+    @NonNull
     private String lookupApiKey(final String credentialId, final Item item) {
         return CredentialsProvider.lookupCredentialsInItem(StringCredentials.class, item, ACL.SYSTEM2, List.of()).stream()
                 .filter(c -> c.getId().equals(credentialId))
                 .map(StringCredentials::getSecret)
                 .map(Secret::getPlainText)
-                .findFirst().orElse(StringUtils.EMPTY);
+                .findFirst().orElse("");
     }
 }

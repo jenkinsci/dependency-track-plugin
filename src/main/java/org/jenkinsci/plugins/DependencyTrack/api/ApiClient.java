@@ -32,7 +32,6 @@ import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
 import okhttp3.Response;
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.FindingParser;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
@@ -112,7 +111,7 @@ public class ApiClient {
             } catch (ApiClientException e) {
                 throw e;
             } catch (IOException e) {
-                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+                throw new ApiClientException(Messages.ApiClient_Error_Connection("", ""), e);
             }
         });
     }
@@ -123,7 +122,7 @@ public class ApiClient {
         return executeWithRetry(() -> {
             try (var response = httpClient.newCall(request).execute()) {
                 if (response.isSuccessful()) {
-                    return StringUtils.trim(response.header("X-Powered-By", StringUtils.EMPTY));
+                    return response.header("X-Powered-By", "").trim();
                 } else {
                     final int status = response.code();
                     logger.log(response.body().string());
@@ -132,7 +131,7 @@ public class ApiClient {
             } catch (ApiClientException e) {
                 throw e;
             } catch (IOException e) {
-                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+                throw new ApiClientException(Messages.ApiClient_Error_Connection("", ""), e);
             }
         });
     }
@@ -153,7 +152,7 @@ public class ApiClient {
             } catch (ApiClientException e) {
                 throw e;
             } catch (IOException e) {
-                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+                throw new ApiClientException(Messages.ApiClient_Error_Connection("", ""), e);
             }
         });
     }
@@ -195,7 +194,7 @@ public class ApiClient {
                 }
                 return (PagedResult<Project>) PagedResult.EMPTY;
             } catch (IOException e) {
-                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+                throw new ApiClientException(Messages.ApiClient_Error_Connection("", ""), e);
             }
         });
     }
@@ -220,14 +219,14 @@ public class ApiClient {
                 final var builder = Project.builder()
                         .name(jsonObject.getString("name"))
                         .uuid(jsonObject.getString("uuid"));
-                if (StringUtils.isNotBlank(version) && !"null".equalsIgnoreCase(version)) {
+                if (version != null && !version.isBlank() && !"null".equalsIgnoreCase(version)) {
                     builder.version(version);
                 }
                 return builder.build();
             } catch (ApiClientException e) {
                 throw e;
             } catch (IOException e) {
-                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+                throw new ApiClientException(Messages.ApiClient_Error_Connection("", ""), e);
             }
         });
     }
@@ -248,7 +247,7 @@ public class ApiClient {
             } catch (ApiClientException e) {
                 throw e;
             } catch (IOException e) {
-                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+                throw new ApiClientException(Messages.ApiClient_Error_Connection("", ""), e);
             }
         });
     }
@@ -290,7 +289,7 @@ public class ApiClient {
             } catch (ApiClientException e) {
                 throw e;
             } catch (IOException e) {
-                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+                throw new ApiClientException(Messages.ApiClient_Error_Connection("", ""), e);
             }
         });
     }
@@ -300,7 +299,7 @@ public class ApiClient {
         final var formBodyBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
         formBodyBuilder.addFormDataPart("bom", bom);
         // Creates the JSON payload that will be sent to Dependency-Track
-        if (StringUtils.isNotBlank(project.id())) {
+        if (project.id() != null && !project.id().isBlank()) {
             formBodyBuilder.addFormDataPart("project", project.id());
         } else {
             formBodyBuilder.addFormDataPart("projectName", project.name())
@@ -322,12 +321,8 @@ public class ApiClient {
                 // Checks the server response
                 switch (status) {
                     case HTTP_OK -> {
-                        if (StringUtils.isNotBlank(body)) {
-                            final var json = JSONObject.fromObject(body);
-                            return new UploadResult(true, StringUtils.trimToNull(json.getString("token")));
-                        } else {
-                            return new UploadResult(true);
-                        }
+                        final var json = JSONObject.fromObject(body);
+                        return new UploadResult(true, json.getString("token"));
                     }
                     case HTTP_BAD_REQUEST ->
                         logger.log(Messages.ApiClient_Payload_Invalid());
@@ -341,7 +336,7 @@ public class ApiClient {
                 logger.log(body);
                 return new UploadResult(false);
             } catch (IOException e) {
-                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+                throw new ApiClientException(Messages.ApiClient_Error_Connection("", ""), e);
             }
         });
     }
@@ -390,7 +385,7 @@ public class ApiClient {
             } catch (ApiClientException e) {
                 throw e;
             } catch (IOException e) {
-                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+                throw new ApiClientException(Messages.ApiClient_Error_Connection("", ""), e);
             }
         });
     }
@@ -411,7 +406,7 @@ public class ApiClient {
             } catch (ApiClientException e) {
                 throw e;
             } catch (IOException e) {
-                throw new ApiClientException(Messages.ApiClient_Error_Connection(StringUtils.EMPTY, StringUtils.EMPTY), e);
+                throw new ApiClientException(Messages.ApiClient_Error_Connection("", ""), e);
             }
         });
     }
