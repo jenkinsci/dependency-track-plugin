@@ -19,7 +19,6 @@ import java.util.Optional;
 import java.util.function.Predicate;
 import net.sf.json.JSONObject;
 import net.sf.json.util.JSONUtils;
-import org.apache.commons.lang.StringUtils;
 
 /**
  *
@@ -36,7 +35,8 @@ abstract class ModelParser {
         return Optional.ofNullable(json.opt(key))
                 .filter(Predicate.not(JSONUtils::isNull))
                 .map(Object::toString)
-                .map(StringUtils::trimToNull)
+                .map(String::trim)
+                .filter(Predicate.not(String::isEmpty))
                 .orElse(null);
     }
 

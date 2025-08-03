@@ -34,7 +34,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import net.sf.json.JSONArray;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.kohsuke.stapler.WebApp;
@@ -100,7 +99,7 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
                 Optional.ofNullable(Jenkins.get().getPlugin("dependency-track"))
                         .map(Plugin::getWrapper)
                         .map(PluginWrapper::getVersion)
-                        .orElse(StringUtils.EMPTY)
+                        .orElse("")
         );
     }
 

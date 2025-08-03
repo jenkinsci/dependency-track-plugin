@@ -18,14 +18,15 @@ package org.jenkinsci.plugins.DependencyTrack;
 import hudson.util.FormValidation;
 import io.jenkins.plugins.okhttp.api.JenkinsOkHttpClient;
 import jakarta.annotation.Nonnull;
+import jakarta.annotation.Nullable;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.Optional;
+import java.util.function.Predicate;
 import lombok.experimental.UtilityClass;
 import okhttp3.OkHttpClient;
-import org.apache.commons.lang.StringUtils;
-import org.springframework.lang.Nullable;
 
 @UtilityClass
 class PluginUtil {
@@ -38,7 +39,7 @@ class PluginUtil {
      */
     @Nonnull
     static FormValidation doCheckUrl(@Nullable final String value) {
-        if (value == null || value.isBlank()) {
+        if (isBlank(value)) {
             return FormValidation.ok();
         }
         try {
@@ -54,7 +55,8 @@ class PluginUtil {
 
     @Nullable
     static String parseBaseUrl(@Nullable final String baseUrl) {
-        return StringUtils.removeEnd(StringUtils.trimToNull(baseUrl), "/");
+        final var trimmed = trimToNull(baseUrl);
+        return trimmed != null && trimmed.endsWith("/") ? trimmed.substring(0, trimmed.length() - 1) : trimmed;
     }
 
     /**
@@ -76,5 +78,17 @@ class PluginUtil {
                 .connectTimeout(Duration.ofSeconds(connectionTimeout))
                 .readTimeout(Duration.ofSeconds(readTimeout))
                 .build();
+    }
+
+    static boolean isBlank(@Nullable final String value) {
+        return value == null || value.isBlank();
+    }
+
+    @Nullable
+    static String trimToNull(@Nullable final String value) {
+        return Optional.ofNullable(value)
+                .map(String::trim)
+                .filter(Predicate.not(String::isEmpty))
+                .orElse(null);
     }
 }

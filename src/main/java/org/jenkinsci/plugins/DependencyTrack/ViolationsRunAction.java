@@ -34,7 +34,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import net.sf.json.JSONArray;
 import org.apache.commons.codec.digest.DigestUtils;
-import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Violation;
 import org.kohsuke.stapler.WebApp;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
@@ -98,7 +97,7 @@ public class ViolationsRunAction implements RunAction2, SimpleBuildStep.LastBuil
                 Optional.ofNullable(Jenkins.get().getPlugin("dependency-track"))
                         .map(Plugin::getWrapper)
                         .map(PluginWrapper::getVersion)
-                        .orElse(StringUtils.EMPTY)
+                        .orElse("")
         );
     }
 
