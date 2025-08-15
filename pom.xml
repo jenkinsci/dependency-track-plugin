@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>5.19</version>
+        <version>5.21</version>
         <relativePath />
     </parent>
 
@@ -47,6 +47,7 @@
         <npm.path>npm</npm.path>
         <npm.suffix />
         <spotbugs.excludeFilterFile>spotbugs-excludes.xml</spotbugs.excludeFilterFile>
+        <ban-junit4-imports.skip>false</ban-junit4-imports.skip>
     </properties>
     
     <profiles>
