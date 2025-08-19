@@ -117,8 +117,8 @@
                                         </tstamp>
                                         <echo level="info" message="Update CHANGELOG with version: v${project.version} - ${build.date}" />
                                         <replace file="CHANGELOG.md" encoding="${project.build.sourceEncoding}" summary="true">
-                                            <replacetoken>## Unreleased</replacetoken>
-                                            <replacevalue><![CDATA[## Unreleased
+                                            <replacetoken>## [Unreleased]</replacetoken>
+                                            <replacevalue><![CDATA[## [Unreleased]
 ### ⚠ Breaking
 ### ⭐ New Features
 ### 🐞 Bugs Fixed

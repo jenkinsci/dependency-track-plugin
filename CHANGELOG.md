@@ -1,6 +1,6 @@
 # Dependency-Track Jenkins Plugin - Changelog
 
-## Unreleased
+## [Unreleased]
 ### ⚠ Breaking
 ### ⭐ New Features
 ### 🐞 Bugs Fixed
