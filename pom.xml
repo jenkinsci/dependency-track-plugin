@@ -13,7 +13,7 @@
     <artifactId>dependency-track</artifactId>
 
     <name>OWASP Dependency-Track Plugin</name>
-    <version>6.0.2-SNAPSHOT</version>
+    <version>6.0.2</version>
     <packaging>hpi</packaging>
     <inceptionYear>2018</inceptionYear>
     <organization>
@@ -502,7 +502,7 @@
         <connection>scm:git:${project.scm.url}</connection>
         <url>https://github.com/jenkinsci/dependency-track-plugin.git</url>
         <developerConnection>scm:git:${project.scm.url}</developerConnection>
-        <tag>HEAD</tag>
+        <tag>v6.0.2</tag>
     </scm>
 
     <issueManagement>
