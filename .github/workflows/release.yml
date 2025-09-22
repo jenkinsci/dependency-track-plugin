@@ -36,9 +36,9 @@ jobs:
           node-version: 'lts/*'
 
       - name: Set up Maven
-        uses: stCarolas/setup-maven@v5
+        uses: stCarolas/setup-maven@d6af6abeda15e98926a57b5aa970a96bb37f97d1
         with:
-          maven-version: 3.9.9
+          maven-version: 3.9.11
 
       - name: Configure Git User
         run: |
@@ -60,14 +60,14 @@ jobs:
 
       - name: Get Changelog Entry
         id: changelog_reader
-        uses: mindsers/changelog-reader-action@v2
+        uses: mindsers/changelog-reader-action@32aa5b4c155d76c94e4ec883a223c947b2f02656
         with:
           validation_level: none
           version: v${{ steps.current_version.outputs.version }}
           path: ./target/checkout/CHANGELOG.md
 
       - name: Create Release
-        uses: ncipollo/release-action@v1.20.0
+        uses: ncipollo/release-action@b7eabc95ff50cbeeedec83973935c8f306dfcd0b
         with:
           artifacts: target/checkout/target/dependency-track.hpi
           artifactContentType: application/zip
