@@ -162,7 +162,7 @@
                 <configuration>
                     <showDeprecation>true</showDeprecation>
                     <showWarnings>true</showWarnings>
-                    <compilerArgs>
+                    <compilerArgs combine.children="append">
                         <arg>-Xlint:unchecked</arg>
                     </compilerArgs>
                 </configuration>
