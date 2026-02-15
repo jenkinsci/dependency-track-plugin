@@ -24,7 +24,6 @@ import io.netty.handler.codec.http.multipart.HttpData;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.List;
@@ -41,9 +40,6 @@ import org.jenkinsci.plugins.DependencyTrack.model.ProjectParser;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.io.TempDir;
-import org.jvnet.hudson.test.JenkinsRule;
-import org.jvnet.hudson.test.junit.jupiter.WithJenkins;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import reactor.core.publisher.Mono;
@@ -68,7 +64,6 @@ import static org.mockito.Mockito.when;
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
 @ExtendWith(MockitoExtension.class)
-@WithJenkins
 class ApiClientTest {
 
     private static final String API_KEY = "api-key";
@@ -112,7 +107,7 @@ class ApiClientTest {
     }
 
     @Test
-    void testConnectionTest(JenkinsRule r) throws ApiClientException {
+    void testConnectionTest() throws ApiClientException {
         server = HttpServer.create()
                 // no ipv6 due to https://bugs.openjdk.java.net/browse/JDK-8220663
                 .host("localhost")
@@ -144,7 +139,7 @@ class ApiClientTest {
     }
 
     @Test
-    void testConnectionTestInternalError(JenkinsRule r) {
+    void testConnectionTestInternalError() {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
@@ -161,7 +156,7 @@ class ApiClientTest {
     }
 
     @Test
-    void getProjectsTest(JenkinsRule r) throws ApiClientException {
+    void getProjectsTest() throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
@@ -221,7 +216,7 @@ class ApiClientTest {
     }
 
     @Test
-    void lookupProjectTest(JenkinsRule r) throws ApiClientException {
+    void lookupProjectTest() throws ApiClientException {
         String projectName = "test-project";
         String projectVersion = "1.2.3";
         server = HttpServer.create()
@@ -267,7 +262,7 @@ class ApiClientTest {
     }
 
     @Test
-    void getFindingsTest(JenkinsRule r) throws ApiClientException {
+    void getFindingsTest() throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
@@ -309,7 +304,7 @@ class ApiClientTest {
     }
 
     @Test
-    void getViolationsTest(JenkinsRule r) throws ApiClientException {
+    void getViolationsTest() throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
@@ -373,7 +368,7 @@ class ApiClientTest {
     }
 
     @Test
-    void uploadBomTestWithUuid(@TempDir Path tmp, JenkinsRule r) throws IOException, InterruptedException {
+    void uploadBomTestWithUuid() throws IOException, InterruptedException {
         final AtomicReference<Map<String, String>> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
@@ -403,7 +398,7 @@ class ApiClientTest {
     }
 
     @Test
-    void uploadBomTestWithName(@TempDir Path tmp, JenkinsRule r) throws IOException, InterruptedException {
+    void uploadBomTestWithName() throws IOException, InterruptedException {
         final AtomicReference<Map<String, String>> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
@@ -433,7 +428,7 @@ class ApiClientTest {
     }
 
     @Test
-    void uploadBomTestWithErrors(JenkinsRule r) throws IOException {
+    void uploadBomTestWithErrors() throws IOException {
         ApiClient uut;
         var data = new ProjectData(null, "p1", "v1", true, null);
 
@@ -475,7 +470,7 @@ class ApiClientTest {
     }
 
     @Test
-    void uploadVexTestWithUuid(@TempDir Path tmp, JenkinsRule r) throws IOException, InterruptedException {
+    void uploadVexTestWithUuid() throws IOException, InterruptedException {
         final AtomicReference<Map<String, String>> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
@@ -503,7 +498,7 @@ class ApiClientTest {
     }
 
     @Test
-    void uploadVexTestWithName(@TempDir Path tmp, JenkinsRule r) throws IOException, InterruptedException {
+    void uploadVexTestWithName() throws IOException, InterruptedException {
         final AtomicReference<Map<String, String>> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
@@ -531,7 +526,7 @@ class ApiClientTest {
     }
 
     @Test
-    void uploadVexTestWithErrors(JenkinsRule r) throws IOException {
+    void uploadVexTestWithErrors() throws IOException {
         ApiClient uut;
         var data = new ProjectData(null, "p1", "v1", true, null);
 
@@ -573,7 +568,7 @@ class ApiClientTest {
     }
 
     @Test
-    void isTokenBeingProcessedTest(JenkinsRule r) throws ApiClientException {
+    void isTokenBeingProcessedTest() throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
@@ -616,7 +611,7 @@ class ApiClientTest {
     }
 
     @Test
-    void updateProjectPropertiesTest(JenkinsRule r) throws InterruptedException {
+    void updateProjectPropertiesTest() throws InterruptedException {
         final AtomicReference<String> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
@@ -658,7 +653,7 @@ class ApiClientTest {
     }
 
     @Test
-    void updateProjectPropertiesTestWithStatus304(JenkinsRule r) throws InterruptedException {
+    void updateProjectPropertiesTestWithStatus304() throws InterruptedException {
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
                 .host("localhost")
@@ -706,7 +701,7 @@ class ApiClientTest {
     }
 
     @Test
-    void getTeamPermissionsTest(JenkinsRule r) throws ApiClientException {
+    void getTeamPermissionsTest() throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
@@ -746,7 +741,7 @@ class ApiClientTest {
     }
 
     @Test
-    void testGetVersion(JenkinsRule r) throws ApiClientException {
+    void testGetVersion() throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
@@ -783,7 +778,7 @@ class ApiClientTest {
     }
 
     @Test
-    void testWithContextPath(JenkinsRule r) {
+    void testWithContextPath() {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
