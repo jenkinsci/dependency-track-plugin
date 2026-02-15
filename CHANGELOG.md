@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 ### ⚠ Breaking
+- require Jenkins 2.550 or newer
+- require Java 21 or newer (required since Jenkins 2.545)
+
 ### ⭐ New Features
 ### 🐞 Bugs Fixed
 

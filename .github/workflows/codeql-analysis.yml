@@ -32,7 +32,7 @@ jobs:
         # CodeQL supports [ 'cpp', 'csharp', 'go', 'java', 'javascript', 'python' ]
         # Learn more:
         # https://docs.github.com/en/free-pro-team@latest/github/finding-security-vulnerabilities-and-errors-in-your-code/configuring-code-scanning#changing-the-languages-that-are-analyzed
-        java: [17]
+        java: [21]
 
     steps:
     - name: Checkout repository
@@ -50,7 +50,7 @@ jobs:
       uses: stCarolas/setup-maven@d6af6abeda15e98926a57b5aa970a96bb37f97d1
       if: matrix.language == 'java'
       with:
-        maven-version: 3.9.11
+        maven-version: 3.9.12
 
     - name: Set up Node.js
       uses: actions/setup-node@v6

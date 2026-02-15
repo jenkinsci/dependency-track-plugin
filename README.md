@@ -26,6 +26,7 @@ Asynchronous publishing simply uploads the SBOM to Dependency-Track and the job 
 ## Version Compatibility Matrix
 Plugin Version | Dependency-Track | Jenkins | Java
 ---------------| ---------------- | ------- | ----
+7.x (next) | 4.12+ | 2.545+ | 21+
 6.x (current) | 4.12+ | 2.479.1+ | 17+
 5.2.x (previous) | 4.9+ | 2.440.1+ | 11+
 
