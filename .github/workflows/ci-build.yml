@@ -12,7 +12,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: [17,21,25]
+        java: [21,25]
     steps:
       - uses: actions/checkout@v6
         with:
@@ -31,7 +31,7 @@ jobs:
       - name: Set up Maven
         uses: stCarolas/setup-maven@d6af6abeda15e98926a57b5aa970a96bb37f97d1
         with:
-          maven-version: 3.9.11
+          maven-version: 3.9.12
       - name: check Sonar pre-conditions
         id: check_sonar
         continue-on-error: true
@@ -42,7 +42,7 @@ jobs:
         shell: bash
       - name: Build with Sonar
         id: build_sonar
-        if: matrix.java == 17 && steps.check_sonar.outcome == 'success' && !startsWith(github.head_ref, 'dependabot/')
+        if: matrix.java == 21 && steps.check_sonar.outcome == 'success' && !startsWith(github.head_ref, 'dependabot/')
         env:
           SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
           SONAR_ORGANIZATION: ${{ secrets.SONARCLOUD_ORGANIZATION }}
@@ -61,7 +61,7 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONARCLOUD_TOKEN }}
           SONAR_ORGANIZATION: ${{ secrets.SONARCLOUD_ORGANIZATION }}
       - uses: actions/upload-artifact@v6
-        if: matrix.java == 17 && success()
+        if: matrix.java == 21 && success()
         with:
           path: target/dependency-track.hpi
           name: dependency-track.hpi

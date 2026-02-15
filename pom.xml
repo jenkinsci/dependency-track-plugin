@@ -6,14 +6,14 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>5.2102.v5f5fe09fccf1</version>
+        <version>6.2132.v968a_e56c6941</version>
         <relativePath />
     </parent>
 
     <artifactId>dependency-track</artifactId>
 
     <name>OWASP Dependency-Track Plugin</name>
-    <version>6.0.3-SNAPSHOT</version>
+    <version>7.0.0-SNAPSHOT</version>
     <packaging>hpi</packaging>
     <inceptionYear>2018</inceptionYear>
     <organization>
@@ -37,9 +37,9 @@
     </licenses>
 
     <properties>
-        <jenkins.version>2.479.1</jenkins.version>
+        <jenkins.version>2.550</jenkins.version>
         <hpi.compatibleSinceVersion>3.0.0</hpi.compatibleSinceVersion>
-        <configuration-as-code.version>1932.v75cb_b_f1b_698d</configuration-as-code.version>
+        <configuration-as-code.version>2037.v8e5349845172</configuration-as-code.version>
         <byte-buddy.version>1.18.4</byte-buddy.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -48,6 +48,8 @@
         <npm.suffix />
         <spotbugs.excludeFilterFile>spotbugs-excludes.xml</spotbugs.excludeFilterFile>
         <ban-junit4-imports.skip>false</ban-junit4-imports.skip>
+        <hpi.strictBundledArtifacts>true</hpi.strictBundledArtifacts>
+        <hpi.bundledArtifacts>spring-retry</hpi.bundledArtifacts>
     </properties>
     
     <profiles>
@@ -86,7 +88,7 @@
                                 </goals>
                                 <phase>initialize</phase>
                                 <configuration>
-                                    <nodeVersion>v22.19.0</nodeVersion>
+                                    <nodeVersion>v24.13.1</nodeVersion>
                                     <nodeDownloadRoot>https://repo.jenkins-ci.org/nodejs-dist/</nodeDownloadRoot>
                                     <npmRegistryURL>https://repo.jenkins-ci.org/api/npm/npm/</npmRegistryURL>
                                     <installDirectory>${project.build.directory}</installDirectory>
@@ -378,7 +380,6 @@
                 <configuration>
                     <statelessTestsetReporter implementation="org.apache.maven.plugin.surefire.extensions.junit5.JUnit5Xml30StatelessReporter">
                         <disable>false</disable>
-                        <version>3.0.2</version>
                         <usePhrasedFileName>false</usePhrasedFileName>
                         <usePhrasedTestSuiteClassName>true</usePhrasedTestSuiteClassName>
                         <usePhrasedTestCaseClassName>true</usePhrasedTestCaseClassName>
@@ -423,6 +424,11 @@
                 <artifactId>byte-buddy-agent</artifactId>
                 <version>${byte-buddy.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.jenkins-ci.plugins</groupId>
+                <artifactId>scm-api</artifactId>
+                <version>728.vc30dcf7a_0df5</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
     <dependencies>
@@ -435,12 +441,12 @@
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>credentials</artifactId>
-            <version>1419.v2337d1ceceef</version>
+            <version>1489.v375944c125ee</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>plain-credentials</artifactId>
-            <version>183.va_de8f1dd5a_2b_</version>
+            <version>199.v9f8e1f741799</version>
         </dependency>
         <dependency>
             <groupId>io.jenkins.plugins</groupId>
@@ -450,7 +456,7 @@
         <dependency>
             <groupId>org.springframework.retry</groupId>
             <artifactId>spring-retry</artifactId>
-            <version>2.0.11</version>
+            <version>2.0.12</version>
         </dependency>
         <dependency>
             <groupId>io.jenkins</groupId>
@@ -483,7 +489,7 @@
         <dependency>
             <groupId>io.projectreactor.netty</groupId>
             <artifactId>reactor-netty</artifactId>
-            <version>[1.1.0,1.2.99)</version>
+            <version>[1.1.0,1.3.99)</version>
             <scope>test</scope>
         </dependency>
         <dependency>

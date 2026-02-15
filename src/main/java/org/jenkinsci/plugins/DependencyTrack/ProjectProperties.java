@@ -17,7 +17,7 @@ package org.jenkinsci.plugins.DependencyTrack;
 
 import hudson.Extension;
 import hudson.RelativePath;
-import hudson.model.AbstractDescribableImpl;
+import hudson.model.Describable;
 import hudson.model.Descriptor;
 import hudson.model.Item;
 import hudson.util.ListBoxModel;
@@ -48,7 +48,7 @@ import static org.jenkinsci.plugins.DependencyTrack.PluginUtil.areAllElementsOfT
 @Getter
 @lombok.NoArgsConstructor(onConstructor_ = {@DataBoundConstructor})
 @EqualsAndHashCode(callSuper = false, doNotUseGetters = true)
-public final class ProjectProperties extends AbstractDescribableImpl<ProjectProperties> implements Serializable {
+public final class ProjectProperties implements Describable<ProjectProperties>, Serializable {
 
     private static final long serialVersionUID = 5343757342998957784L;
 

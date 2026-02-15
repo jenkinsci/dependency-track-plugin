@@ -50,6 +50,7 @@ import org.springframework.retry.support.RetryTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
+import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
@@ -65,7 +66,8 @@ public class ApiClient {
     static final String PROJECT_FINDINGS_URL = API_URL + "/finding/project";
     static final String PROJECT_VIOLATIONS_URL = API_URL + "/violation/project";
     static final String BOM_URL = API_URL + "/bom";
-    static final String BOM_TOKEN_URL = API_URL + "/event/token";
+    static final String VEX_URL = API_URL + "/vex";
+    static final String TOKEN_URL = API_URL + "/event/token";
     static final String PROJECT_URL = API_URL + "/project";
     static final String PROJECT_LOOKUP_URL = PROJECT_URL + "/lookup";
     static final String PROJECT_LOOKUP_NAME_PARAM = "name";
@@ -295,10 +297,24 @@ public class ApiClient {
     }
 
     @Nonnull
-    public UploadResult upload(@Nonnull final ProjectData project, @Nonnull final String bom) throws ApiClientException {
+    public UploadResult uploadVex(@Nonnull final ProjectData project, @Nonnull final String vex) throws ApiClientException {
+        final var formBodyBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
+        formBodyBuilder.addFormDataPart("vex", vex);
+        // Creates the payload that will be sent to Dependency-Track
+        if (project.id() != null && !project.id().isBlank()) {
+            formBodyBuilder.addFormDataPart("project", project.id());
+        } else {
+            formBodyBuilder.addFormDataPart("projectName", project.name())
+                    .addFormDataPart("projectVersion", project.version());
+        }
+        return upload(VEX_URL, formBodyBuilder.build());
+    }
+
+    @Nonnull
+    public UploadResult uploadBom(@Nonnull final ProjectData project, @Nonnull final String bom) throws ApiClientException {
         final var formBodyBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
         formBodyBuilder.addFormDataPart("bom", bom);
-        // Creates the JSON payload that will be sent to Dependency-Track
+        // Creates the payload that will be sent to Dependency-Track
         if (project.id() != null && !project.id().isBlank()) {
             formBodyBuilder.addFormDataPart("project", project.id());
         } else {
@@ -313,7 +329,12 @@ public class ApiClient {
             Optional.ofNullable(properties.parentVersion()).ifPresent(value -> formBodyBuilder.addFormDataPart("parentVersion", value));
             Optional.ofNullable(properties.isLatest()).map(String::valueOf).ifPresent(value -> formBodyBuilder.addFormDataPart("isLatest", value));
         }
-        final var request = createRequest(URI.create(BOM_URL), "POST", formBodyBuilder.build());
+        return upload(BOM_URL, formBodyBuilder.build());
+    }
+
+    @Nonnull
+    private UploadResult upload(@Nonnull final String uri, @Nonnull final RequestBody bodyPublisher) throws ApiClientException {
+        final var request = createRequest(URI.create(uri), "POST", bodyPublisher);
         return executeWithRetry(() -> {
             try (var response = httpClient.newCall(request).execute()) {
                 final var body = response.body().string();
@@ -326,7 +347,7 @@ public class ApiClient {
                     }
                     case HTTP_BAD_REQUEST ->
                         logger.log(Messages.ApiClient_Payload_Invalid());
-                    case HTTP_UNAUTHORIZED ->
+                    case HTTP_UNAUTHORIZED, HTTP_FORBIDDEN ->
                         logger.log(Messages.ApiClient_Unauthorized());
                     case HTTP_NOT_FOUND ->
                         logger.log(Messages.ApiClient_Project_NotFound());
@@ -391,7 +412,7 @@ public class ApiClient {
     }
 
     public boolean isTokenBeingProcessed(@Nonnull final String token) throws ApiClientException {
-        final var uri = UriComponentsBuilder.fromUriString(BOM_TOKEN_URL).pathSegment("{token}").build(token);
+        final var uri = UriComponentsBuilder.fromUriString(TOKEN_URL).pathSegment("{token}").build(token);
         final var request = createRequest(uri);
         return executeWithRetry(() -> {
             try (var response = httpClient.newCall(request).execute()) {

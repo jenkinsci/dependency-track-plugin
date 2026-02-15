@@ -33,6 +33,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 import java.util.Set;
@@ -152,6 +153,19 @@ class DependencyTrackPublisherTest {
     }
 
     @Test
+    void fileReadErrorTest() throws IOException, InterruptedException {
+        var workDir = mock(FilePath.class);
+        var artifact = mock(FilePath.class);
+        when(workDir.child("foo")).thenReturn(artifact);
+        when(artifact.exists()).thenReturn(true);
+        when(artifact.read()).thenThrow(new IOException("fileReadErrorTest"));
+        
+        var uut = new DependencyTrackPublisher("foo", false, clientFactory);
+        uut.setProjectId("id");
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Error_Processing("foo", "fileReadErrorTest"));
+    }
+
+    @Test
     void doNotThrowNPEinGetEffectiveApiKey(@TempDir Path tmpWork) throws IOException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
@@ -159,25 +173,22 @@ class DependencyTrackPublisherTest {
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, clientFactory);
         uut.setProjectId("uuid-1");
 
-        when(client.upload(any(ProjectData.class), anyString())).thenThrow(new ApiClientException(org.jenkinsci.plugins.DependencyTrack.api.Messages.ApiClient_Error_Connection("", "")));
+        when(client.uploadBom(any(ProjectData.class), anyString())).thenThrow(new ApiClientException(org.jenkinsci.plugins.DependencyTrack.api.Messages.ApiClient_Error_Connection("", "")));
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).isInstanceOf(ApiClientException.class).hasMessage(org.jenkinsci.plugins.DependencyTrack.api.Messages.ApiClient_Error_Connection("", ""));
     }
 
     @Test
-    void testPerformAsync(@TempDir Path tmpWork) throws IOException {
+    void testPerformAsyncNoVex(@TempDir Path tmpWork) throws IOException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
-        final var props = new ProjectProperties();
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, clientFactory);
         uut.setProjectId("uuid-1");
         uut.setDependencyTrackApiKey(apikeyId);
-        uut.setProjectProperties(props);
-        uut.setUnstableTotalCritical(1);
 
-        when(client.upload(any(ProjectData.class), anyString()))
-                .thenReturn(new UploadResult(true))
+        when(client.uploadBom(any(ProjectData.class), eq("")))
+                .thenReturn(new UploadResult(true, "token-1"))
                 .thenReturn(new UploadResult(false));
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
@@ -186,8 +197,57 @@ class DependencyTrackPublisherTest {
         verify(client, never()).getViolations(anyString());
         verify(client, never()).lookupProject(anyString(), anyString());
         verify(client, never()).updateProjectProperties(eq("uuid-1"), any(ProjectData.Properties.class));
+        verify(client, never()).uploadVex(any(ProjectData.class), anyString());
+        verify(client, never()).isTokenBeingProcessed(anyString());
+        verify(client).uploadBom(assertArg(data -> {
+            assertThat(data.id()).isEqualTo("uuid-1");
+            assertThat(data.name()).isNull();
+            assertThat(data.version()).isNull();
+            assertThat(data.autoCreate()).isFalse();
+            assertThat(data.properties()).isNull();
+        }), eq(""));
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Upload_Failed());
+    }
+
+    @Test
+    void testPerformAsyncWithVex(@TempDir Path tmpWork) throws IOException {
+        var bomFile = tmpWork.resolve("bom.xml");
+        Files.writeString(bomFile, "<bom />");
+        var vexFile = tmpWork.resolve("vex.xml");
+        Files.writeString(vexFile, "<vex />");
+        FilePath workDir = new FilePath(tmpWork.toFile());
+        final DependencyTrackPublisher uut = new DependencyTrackPublisher(bomFile.getFileName().toString(), false, clientFactory);
+        uut.setProjectId("uuid-1");
+        uut.setDependencyTrackApiKey(apikeyId);
+        uut.setVex(vexFile.getFileName().toString());
+
+        when(client.uploadBom(any(ProjectData.class), eq("<bom />"))).thenReturn(new UploadResult(true, "token-1"));
+        when(client.uploadVex(any(ProjectData.class), eq("<vex />"))).thenReturn(new UploadResult(true, "token-2"));
+        when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
+
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
+        verify(client, never()).getFindings(anyString());
+        verify(client, never()).getTeamPermissions();
+        verify(client, never()).getViolations(anyString());
+        verify(client, never()).lookupProject(anyString(), anyString());
+        verify(client, never()).updateProjectProperties(eq("uuid-1"), any(ProjectData.Properties.class));
+        verify(client, times(2)).isTokenBeingProcessed("token-1");
+        verify(client, never()).isTokenBeingProcessed("token-2");
+        verify(client).uploadBom(assertArg(data -> {
+            assertThat(data.id()).isEqualTo("uuid-1");
+            assertThat(data.name()).isNull();
+            assertThat(data.version()).isNull();
+            assertThat(data.autoCreate()).isFalse();
+            assertThat(data.properties()).isNull();
+        }), eq("<bom />"));
+        verify(client).uploadVex(assertArg(data -> {
+            assertThat(data.id()).isEqualTo("uuid-1");
+            assertThat(data.name()).isNull();
+            assertThat(data.version()).isNull();
+            assertThat(data.autoCreate()).isFalse();
+            assertThat(data.properties()).isNull();
+        }), eq("<vex />"));
     }
 
     @Test
@@ -201,14 +261,15 @@ class DependencyTrackPublisherTest {
         uut.setDependencyTrackApiKey(apikeyId);
         uut.setAutoCreateProjects(Boolean.TRUE);
 
-        when(client.upload(any(ProjectData.class), anyString())).thenReturn(new UploadResult(true, "token-1"));
+        when(client.uploadBom(any(ProjectData.class), anyString())).thenReturn(new UploadResult(true, "token-1"));
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
         verify(client, never()).lookupProject(anyString(), anyString());
         verify(client, never()).getFindings(anyString());
         verify(client, never()).getTeamPermissions();
         verify(client, never()).getViolations(anyString());
-        verify(client).upload(assertArg(data -> {
+        verify(client, never()).isTokenBeingProcessed(anyString());
+        verify(client).uploadBom(assertArg(data -> {
             assertThat(data.id()).isNull();
             assertThat(data.name()).isEqualTo("name-1");
             assertThat(data.version()).isEqualTo("my.value");
@@ -218,7 +279,7 @@ class DependencyTrackPublisherTest {
     }
 
     @Test
-    void testPerformSync(@TempDir Path tmpWork) throws IOException {
+    void testPerformSyncNoVex(@TempDir Path tmpWork) throws IOException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
@@ -227,11 +288,11 @@ class DependencyTrackPublisherTest {
         uut.setDependencyTrackApiKey(apikeyId);
         uut.setUnstableTotalCritical(1);
 
-        when(client.upload(any(ProjectData.class), anyString())).thenReturn(new UploadResult(true, "token-1"));
+        when(client.uploadBom(any(ProjectData.class), eq(""))).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(List.of());
         when(client.getTeamPermissions()).thenReturn(Team.builder().name("test-team").permissions(Set.of()).build());
-        
+
         Run buildWithResultAction = mock(Run.class);
         when(buildWithResultAction.getResult()).thenReturn(Result.SUCCESS);
         when(buildWithResultAction.getAction(ResultAction.class)).thenReturn(new ResultAction(List.of(), new SeverityDistribution(42)));
@@ -248,13 +309,67 @@ class DependencyTrackPublisherTest {
         verify(client).getFindings("uuid-1");
         verify(client).getTeamPermissions();
         verify(buildWithResultAction, times(2)).getAction(ResultAction.class);
-        verify(client).upload(assertArg(data -> {
+        verify(client, never()).uploadVex(any(ProjectData.class), anyString());
+        verify(client).uploadBom(assertArg(data -> {
             assertThat(data.id()).isEqualTo("uuid-1");
             assertThat(data.name()).isNull();
             assertThat(data.version()).isNull();
             assertThat(data.autoCreate()).isFalse();
             assertThat(data.properties()).isNull();
-        }), anyString());
+        }), eq(""));
+    }
+
+    @Test
+    void testPerformSyncWithVex(@TempDir Path tmpWork) throws IOException {
+        var bomFile = tmpWork.resolve("bom.xml");
+        Files.writeString(bomFile, "<bom />");
+        var vexFile = tmpWork.resolve("vex.xml");
+        Files.writeString(vexFile, "<vex />");
+        FilePath workDir = new FilePath(tmpWork.toFile());
+        DependencyTrackPublisher uut = new DependencyTrackPublisher(bomFile.getFileName().toString(), true, clientFactory);
+        uut.setProjectId("uuid-1");
+        uut.setDependencyTrackApiKey(apikeyId);
+        uut.setUnstableTotalCritical(1);
+        uut.setVex(vexFile.getFileName().toString());
+
+        when(client.uploadBom(any(ProjectData.class), eq("<bom />"))).thenReturn(new UploadResult(true, "token-1"));
+        when(client.uploadVex(any(ProjectData.class), eq("<vex />"))).thenReturn(new UploadResult(true, "token-2"));
+        when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
+        when(client.isTokenBeingProcessed("token-2")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
+        when(client.getFindings("uuid-1")).thenReturn(List.of());
+        when(client.getTeamPermissions()).thenReturn(Team.builder().name("test-team").permissions(Set.of()).build());
+
+        Run buildWithResultAction = mock(Run.class);
+        when(buildWithResultAction.getResult()).thenReturn(Result.SUCCESS);
+        when(buildWithResultAction.getAction(ResultAction.class)).thenReturn(new ResultAction(List.of(), new SeverityDistribution(42)));
+        Run buildWithNoResultAction = mock(Run.class);
+        when(buildWithNoResultAction.getResult()).thenReturn(Result.SUCCESS);
+        when(buildWithNoResultAction.getPreviousSuccessfulBuild()).thenReturn(buildWithResultAction);
+        Run abortedBuild = mock(Run.class);
+        when(abortedBuild.getResult()).thenReturn(Result.NOT_BUILT);
+        when(abortedBuild.getPreviousSuccessfulBuild()).thenReturn(buildWithNoResultAction);
+        when(build.getPreviousSuccessfulBuild()).thenReturn(abortedBuild);
+
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
+        verify(client, times(2)).isTokenBeingProcessed("token-1");
+        verify(client, times(2)).isTokenBeingProcessed("token-2");
+        verify(client).getFindings("uuid-1");
+        verify(client).getTeamPermissions();
+        verify(buildWithResultAction, times(2)).getAction(ResultAction.class);
+        verify(client).uploadBom(assertArg(data -> {
+            assertThat(data.id()).isEqualTo("uuid-1");
+            assertThat(data.name()).isNull();
+            assertThat(data.version()).isNull();
+            assertThat(data.autoCreate()).isFalse();
+            assertThat(data.properties()).isNull();
+        }), eq("<bom />"));
+        verify(client).uploadVex(assertArg(data -> {
+            assertThat(data.id()).isEqualTo("uuid-1");
+            assertThat(data.name()).isNull();
+            assertThat(data.version()).isNull();
+            assertThat(data.autoCreate()).isFalse();
+            assertThat(data.properties()).isNull();
+        }), eq("<vex />"));
     }
 
     @Test
@@ -266,11 +381,11 @@ class DependencyTrackPublisherTest {
         uut.setProjectId("uuid-1");
         uut.setDependencyTrackApiKey(apikeyId);
 
-        when(client.upload(any(ProjectData.class), anyString())).thenReturn(new UploadResult(true, "token-1"));
+        when(client.uploadBom(any(ProjectData.class), anyString())).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(List.of());
         when(client.getTeamPermissions()).thenReturn(Team.builder().name("test-team").permissions(Set.of()).build());
-        
+
         Run abortedBuild = mock(Run.class);
         when(abortedBuild.getResult()).thenReturn(Result.NOT_BUILT);
         when(build.getPreviousSuccessfulBuild()).thenReturn(abortedBuild);
@@ -292,7 +407,7 @@ class DependencyTrackPublisherTest {
         uut.setDependencyTrackApiKey(apikeyId);
         uut.setWarnOnViolationWarn(true);
 
-        when(client.upload(any(ProjectData.class), anyString())).thenReturn(new UploadResult(true, "token-1"));
+        when(client.uploadBom(any(ProjectData.class), anyString())).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(List.of());
         when(client.getTeamPermissions()).thenReturn(Team.builder().name("test-team").permissions(Set.of(VIEW_POLICY_VIOLATION.toString())).build());
@@ -316,7 +431,7 @@ class DependencyTrackPublisherTest {
         uut.setDependencyTrackApiKey(apikeyId);
         uut.setFailOnViolationFail(true);
 
-        when(client.upload(any(ProjectData.class), anyString())).thenReturn(new UploadResult(true, "token-1"));
+        when(client.uploadBom(any(ProjectData.class), anyString())).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(List.of());
         when(client.getTeamPermissions()).thenReturn(Team.builder().name("test-team").permissions(Set.of(VIEW_POLICY_VIOLATION.toString())).build());
@@ -347,7 +462,7 @@ class DependencyTrackPublisherTest {
         uut.setProjectProperties(props);
         final var team = Team.builder().name("test-team").permissions(Set.of(VIEW_POLICY_VIOLATION.toString())).build();
 
-        when(client.upload(any(ProjectData.class), anyString())).thenReturn(new UploadResult(true, "token-1"));
+        when(client.uploadBom(any(ProjectData.class), anyString())).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(List.of());
         when(client.getTeamPermissions()).thenReturn(team);
@@ -394,7 +509,7 @@ class DependencyTrackPublisherTest {
         uut.setDependencyTrackConnectionTimeout(1);
         uut.setDependencyTrackReadTimeout(1);
 
-        when(client.upload(any(ProjectData.class), anyString())).thenReturn(new UploadResult(false));
+        when(client.uploadBom(any(ProjectData.class), anyString())).thenReturn(new UploadResult(false));
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Upload_Failed());
     }
@@ -436,7 +551,7 @@ class DependencyTrackPublisherTest {
 
     @Test
     void deserializationTest(@TempDir Path tmpWork) throws IOException, ClassNotFoundException {
-         File tmp = tmpWork.resolve("bom.xml").toFile();
+        File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
         uut.setAutoCreateProjects(Boolean.TRUE);

@@ -20,6 +20,7 @@ import io.jenkins.plugins.okhttp.api.JenkinsOkHttpClient;
 import jakarta.annotation.Nonnull;
 import jakarta.annotation.Nullable;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Collection;
@@ -43,11 +44,11 @@ class PluginUtil {
             return FormValidation.ok();
         }
         try {
-            URL url = new URL(value);
+            URL url = URI.create(value).toURL();
             if (!url.getProtocol().toLowerCase().matches("https?")) {
                 return FormValidation.error(Messages.Publisher_ConnectionTest_InvalidProtocols());
             }
-        } catch (MalformedURLException e) {
+        } catch (MalformedURLException | IllegalArgumentException e) {
             return FormValidation.error(Messages.Publisher_ConnectionTest_UrlMalformed());
         }
         return FormValidation.ok();

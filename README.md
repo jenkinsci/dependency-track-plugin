@@ -26,6 +26,7 @@ Asynchronous publishing simply uploads the SBOM to Dependency-Track and the job 
 ## Version Compatibility Matrix
 Plugin Version | Dependency-Track | Jenkins | Java
 ---------------| ---------------- | ------- | ----
+7.x (next) | 4.12+ | 2.545+ | 21+
 6.x (current) | 4.12+ | 2.479.1+ | 17+
 5.2.x (previous) | 4.9+ | 2.440.1+ | 11+
 
@@ -72,7 +73,9 @@ Once configured with a valid URL and API key, simply configure a job to publish 
 
 **Dependency-Track project version**: Specifies the version of the project for automatic creation of project during the upload process. This is an alternative to specifying the unique ID. It must be used together with a project name. Only avaible if "Auto Create projects" is enabled. The use of environment variables in the form `${VARIABLE}` is supported here.
 
-**Artifact:** Specifies the file to upload. Paths are relative from the Jenkins workspace. The use of environment variables in the form `${VARIABLE}` is supported here.
+**Artifact:** Specifies the BOM file to upload. Paths are relative from the Jenkins workspace. The use of environment variables in the form `${VARIABLE}` is supported here.
+
+**Vex:** Specifies the VEX file to upload. Paths are relative from the Jenkins workspace. The use of environment variables in the form `${VARIABLE}` is supported here.
 
 **Enable synchronous publishing mode**: Uploads a SBOM to Dependency-Track and waits for Dependency-Track to process and return results. The results returned are identical to the auditable findings but exclude findings that have previously been suppressed. Analysis decisions and vulnerability details are included in the response. Synchronous mode is possible with Dependency-Track v3.3.1 and higher. The provided API key requires the `VIEW_VULNERABILITY` permission to use this feature with Dependency-Track v4.4 and newer! If the provided API key has the permission `VIEW_POLICY_VIOLATION`, then the results of policy violations are returned as well.
 

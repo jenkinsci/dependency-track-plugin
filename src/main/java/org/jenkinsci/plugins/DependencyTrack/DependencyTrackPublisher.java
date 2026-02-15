@@ -254,6 +254,12 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      * fail
      */
     private boolean failOnViolationFail;
+    
+    /**
+     * Retrieves the path and filename of the VEX-file. This is a per-build
+     * config item.
+     */
+    private String vex;
 
     @Getter(AccessLevel.NONE)
     @Setter(AccessLevel.NONE)
@@ -315,35 +321,29 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
             throw new AbortException(Messages.Builder_Result_ProjectIdMissing());
         }
 
-        final FilePath artifactFilePath = new FilePath(workspace, effectiveArtifact);
-        if (!artifactFilePath.exists()) {
-            logger.log(Messages.Builder_Artifact_NonExist(effectiveArtifact));
-            throw new AbortException(Messages.Builder_Artifact_NonExist(effectiveArtifact));
-        }
-
-        String bom = null;
-        logger.log(Messages.Builder_Artifact_Reading(effectiveArtifact));
-        try (var in = artifactFilePath.read()) {
-            bom = new String(in.readAllBytes(), Charset.defaultCharset());
-        } catch (IOException | InterruptedException e) {
-            var msg = Messages.Builder_Error_Processing(effectiveArtifact, e.getLocalizedMessage());
-            log.warn(msg, e);
-            if (e instanceof InterruptedException) {
-                Thread.currentThread().interrupt();
-            }
-            throw new AbortException(msg);
-        }
-
+        final String bom = readArtifact(logger, workspace, effectiveArtifact);
         final String effectiveUrl = getEffectiveUrl();
         final String effectiveApiKey = getEffectiveApiKey(run);
         final var effectiveProjectProperties = expandProjectProperties(env);
-        logger.log(Messages.Builder_Publishing(effectiveUrl, effectiveArtifact));
         final ApiClient apiClient = clientFactory.create(effectiveUrl, effectiveApiKey, logger, PluginUtil.newHttpClient(getEffectiveConnectionTimeout(), getEffectiveReadTimeout()));
         final var projectData = new ProjectData(projectId, effectiveProjectName, effectiveProjectVersion, effectiveAutocreate, effectiveProjectProperties);
-        final var uploadResult = apiClient.upload(projectData, bom);
 
+        logger.log(Messages.Builder_Publishing(effectiveUrl, effectiveArtifact));
+        var uploadResult = apiClient.uploadBom(projectData, bom);
         if (!uploadResult.success()) {
             throw new AbortException(Messages.Builder_Upload_Failed());
+        }
+
+        if (!PluginUtil.isBlank(vex)) {
+            final String effectiveVex = env.expand(vex);
+            final String vexData = readArtifact(logger, workspace, effectiveVex);
+            // must wait for bom proccesing to finish before uploading vex
+            waitWhileTokenIsBeingProcessed(logger, apiClient, uploadResult.token());
+            logger.log(Messages.Builder_Publishing(effectiveUrl, effectiveVex));
+            uploadResult = apiClient.uploadVex(projectData, vexData);
+            if (!uploadResult.success()) {
+                throw new AbortException(Messages.Builder_Upload_Failed());
+            }
         }
 
         // add ResultLinkAction even if it may not contain a projectId. but we want to store name and version for the future.
@@ -364,8 +364,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
                 evaluateRiskGates(run, logger, resultAction.getSeverityDistribution(), thresholds);
             }
             if (resultActions.violationsAction != null) {
-                final var violationsAction = resultActions.violationsAction;
-                evaluateViolations(run, logger, violationsAction.getViolations());
+                evaluateViolations(run, logger, resultActions.violationsAction.getViolations());
             }
         }
         if (!synchronous && thresholds.hasValues()) {
@@ -373,7 +372,26 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         }
     }
 
-    private PublishAnalysisResult publishAnalysisResult(final ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build, final String effectiveProjectName, final String effectiveProjectVersion) throws InterruptedException, ApiClientException, AbortException {
+    private String readArtifact(final ConsoleLogger logger, final FilePath workspace, final String artifact) throws InterruptedException, IOException {
+        final FilePath artifactFilePath = workspace.child(artifact);
+        if (!artifactFilePath.exists()) {
+            logger.log(Messages.Builder_Artifact_NonExist(artifact));
+            throw new AbortException(Messages.Builder_Artifact_NonExist(artifact));
+        }
+        logger.log(Messages.Builder_Artifact_Reading(artifact));
+        try (var in = artifactFilePath.read()) {
+            return new String(in.readAllBytes(), Charset.defaultCharset());
+        } catch (IOException | InterruptedException e) {
+            var msg = Messages.Builder_Error_Processing(artifact, e.getLocalizedMessage());
+            log.warn(msg, e);
+            if (e instanceof InterruptedException) {
+                Thread.currentThread().interrupt();
+            }
+            throw new AbortException(msg);
+        }
+    }
+
+    private void waitWhileTokenIsBeingProcessed(final ConsoleLogger logger, final ApiClient apiClient, final String token) throws InterruptedException, ApiClientException, AbortException {
         final long timeout = System.currentTimeMillis() + (60000L * getEffectivePollingTimeout());
         final long interval = 1000L * getEffectivePollingInterval();
         logger.log(Messages.Builder_Polling());
@@ -386,6 +404,11 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
                 throw new AbortException(Messages.Builder_Polling_Timeout_Exceeded());
             }
         }
+    }
+    
+    private PublishAnalysisResult publishAnalysisResult(final ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build, final String effectiveProjectName, final String effectiveProjectVersion) throws InterruptedException, ApiClientException, AbortException {
+        waitWhileTokenIsBeingProcessed(logger, apiClient, token);
+
         final String effectiveProjectId = lookupProjectId(logger, apiClient, effectiveProjectName, effectiveProjectVersion);
         logger.log(Messages.Builder_Findings_Processing());
         final List<Finding> findings = apiClient.getFindings(effectiveProjectId);

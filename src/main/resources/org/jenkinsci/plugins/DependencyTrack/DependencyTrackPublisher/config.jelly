@@ -35,6 +35,10 @@ limitations under the License.
             <f:textbox id="artifact"/>
         </f:entry>
 
+        <f:entry title="${%vex}" field="vex">
+            <f:textbox id="vex"/>
+        </f:entry>
+
         <f:optionalProperty field="projectProperties" title="${%projectProperties}" />
 
         <f:optionalBlock inline="true" field="overrideGlobals" title="${%overrideGlobals}">
