@@ -373,7 +373,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     }
 
     private String readArtifact(final ConsoleLogger logger, final FilePath workspace, final String artifact) throws InterruptedException, IOException {
-        final FilePath artifactFilePath = new FilePath(workspace, artifact);
+        final FilePath artifactFilePath = workspace.child(artifact);
         if (!artifactFilePath.exists()) {
             logger.log(Messages.Builder_Artifact_NonExist(artifact));
             throw new AbortException(Messages.Builder_Artifact_NonExist(artifact));

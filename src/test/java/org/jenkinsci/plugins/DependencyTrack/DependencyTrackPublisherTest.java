@@ -153,6 +153,19 @@ class DependencyTrackPublisherTest {
     }
 
     @Test
+    void fileReadErrorTest() throws IOException, InterruptedException {
+        var workDir = mock(FilePath.class);
+        var artifact = mock(FilePath.class);
+        when(workDir.child("foo")).thenReturn(artifact);
+        when(artifact.exists()).thenReturn(true);
+        when(artifact.read()).thenThrow(new IOException("fileReadErrorTest"));
+        
+        var uut = new DependencyTrackPublisher("foo", false, clientFactory);
+        uut.setProjectId("id");
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Error_Processing("foo", "fileReadErrorTest"));
+    }
+
+    @Test
     void doNotThrowNPEinGetEffectiveApiKey(@TempDir Path tmpWork) throws IOException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
