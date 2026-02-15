@@ -373,7 +373,7 @@ class ApiClientTest {
     }
 
     @Test
-    void uploadTestWithUuid(@TempDir Path tmp, JenkinsRule r) throws IOException, InterruptedException {
+    void uploadBomTestWithUuid(@TempDir Path tmp, JenkinsRule r) throws IOException, InterruptedException {
         final AtomicReference<Map<String, String>> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
@@ -395,7 +395,7 @@ class ApiClientTest {
 
         ApiClient uut = createClient();
         var data = new ProjectData("uuid-1", null, null, false, props);
-        assertThat(uut.upload(data, "<test />")).isEqualTo(new UploadResult(true, "uuid-1"));
+        assertThat(uut.uploadBom(data, "<test />")).isEqualTo(new UploadResult(true, "uuid-1"));
 
         completionSignal.await(5, TimeUnit.SECONDS);
         assertThat(completionSignal.getCount()).isZero();
@@ -403,7 +403,7 @@ class ApiClientTest {
     }
 
     @Test
-    void uploadTestWithName(@TempDir Path tmp, JenkinsRule r) throws IOException, InterruptedException {
+    void uploadBomTestWithName(@TempDir Path tmp, JenkinsRule r) throws IOException, InterruptedException {
         final AtomicReference<Map<String, String>> requestBody = new AtomicReference<>();
         final CountDownLatch completionSignal = new CountDownLatch(1);
         server = HttpServer.create()
@@ -425,7 +425,7 @@ class ApiClientTest {
 
         ApiClient uut = createClient();
         var data = new ProjectData(null, "p1", "v1", false, props);
-        assertThat(uut.upload(data, "<test />")).isEqualTo(new UploadResult(true, "uuid-1"));
+        assertThat(uut.uploadBom(data, "<test />")).isEqualTo(new UploadResult(true, "uuid-1"));
 
         completionSignal.await(5, TimeUnit.SECONDS);
         assertThat(completionSignal.getCount()).isZero();
@@ -433,31 +433,31 @@ class ApiClientTest {
     }
 
     @Test
-    void uploadTestWithErrors(JenkinsRule r) throws IOException {
+    void uploadBomTestWithErrors(JenkinsRule r) throws IOException {
         ApiClient uut;
         var data = new ProjectData(null, "p1", "v1", true, null);
 
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.post(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.BAD_REQUEST).send())).bindNow();
         uut = createClient();
-        assertThat(uut.upload(data, "")).isEqualTo(new UploadResult(false));
+        assertThat(uut.uploadBom(data, "")).isEqualTo(new UploadResult(false));
         verify(logger).log(Messages.ApiClient_Payload_Invalid());
         server.disposeNow();
 
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.post(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.UNAUTHORIZED).send())).bindNow();
         uut = createClient();
-        assertThat(uut.upload(data, "")).isEqualTo(new UploadResult(false));
+        assertThat(uut.uploadBom(data, "")).isEqualTo(new UploadResult(false));
         verify(logger).log(Messages.ApiClient_Unauthorized());
         server.disposeNow();
 
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.post(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.NOT_FOUND).send())).bindNow();
         uut = createClient();
-        assertThat(uut.upload(data, "")).isEqualTo(new UploadResult(false));
+        assertThat(uut.uploadBom(data, "")).isEqualTo(new UploadResult(false));
         verify(logger).log(Messages.ApiClient_Project_NotFound());
         server.disposeNow();
 
         server = HttpServer.create().host("localhost").port(0).route(routes -> routes.post(ApiClient.BOM_URL, (request, response) -> response.status(HttpResponseStatus.GONE).send())).bindNow();
         uut = createClient();
-        assertThat(uut.upload(data, "")).isEqualTo(new UploadResult(false));
+        assertThat(uut.uploadBom(data, "")).isEqualTo(new UploadResult(false));
         verify(logger).log(Messages.ApiClient_Error_Connection(HttpResponseStatus.GONE.code(), HttpResponseStatus.GONE.reasonPhrase()));
         server.disposeNow();
         
@@ -468,7 +468,105 @@ class ApiClientTest {
         doThrow(new java.net.SocketTimeoutException("oops"))
                 .when(call).execute();
 
-        assertThatCode(() -> uutWithMock.upload(data, ""))
+        assertThatCode(() -> uutWithMock.uploadBom(data, ""))
+                .hasMessage(Messages.ApiClient_Error_Connection("", ""))
+                .hasCauseInstanceOf(java.net.SocketTimeoutException.class);
+        verify(httpClient, times(2)).newCall(any(okhttp3.Request.class));
+    }
+
+    @Test
+    void uploadVexTestWithUuid(@TempDir Path tmp, JenkinsRule r) throws IOException, InterruptedException {
+        final AtomicReference<Map<String, String>> requestBody = new AtomicReference<>();
+        final CountDownLatch completionSignal = new CountDownLatch(1);
+        server = HttpServer.create()
+                .host("localhost")
+                .port(0)
+                .route(routes -> routes.post(ApiClient.VEX_URL, (request, response) -> {
+            assertCommonHeaders(request);
+            assertThat(request.isMultipart()).isTrue();
+            return response.sendString(request.receiveForm()
+                    .collectMap(HttpData::getName, v -> Uncheck.apply(HttpData::getString, v))
+                    .doOnSuccess(m -> {
+                        requestBody.set(m);
+                        completionSignal.countDown();
+                    })
+                    .map(body -> "{\"token\":\"uuid-1\"}"));
+        })).bindNow();
+
+        ApiClient uut = createClient();
+        var data = new ProjectData("uuid-1", null, null, false, null);
+        assertThat(uut.uploadVex(data, "<test />")).isEqualTo(new UploadResult(true, "uuid-1"));
+
+        completionSignal.await(5, TimeUnit.SECONDS);
+        assertThat(completionSignal.getCount()).isZero();
+        assertThat(requestBody).hasValueSatisfying(body -> assertThat(body).containsOnly(entry("vex", "<test />"), entry("project", "uuid-1")));
+    }
+
+    @Test
+    void uploadVexTestWithName(@TempDir Path tmp, JenkinsRule r) throws IOException, InterruptedException {
+        final AtomicReference<Map<String, String>> requestBody = new AtomicReference<>();
+        final CountDownLatch completionSignal = new CountDownLatch(1);
+        server = HttpServer.create()
+                .host("localhost")
+                .port(0)
+                .route(routes -> routes.post(ApiClient.VEX_URL, (request, response) -> {
+            assertCommonHeaders(request);
+            assertThat(request.isMultipart()).isTrue();
+           return response.sendString(request.receiveForm()
+                    .collectMap(HttpData::getName, v -> Uncheck.apply(HttpData::getString, v))
+                    .doOnSuccess(m -> {
+                        requestBody.set(m);
+                        completionSignal.countDown();
+                    })
+                    .map(body -> "{\"token\":\"uuid-1\"}"));
+        })).bindNow();
+
+        ApiClient uut = createClient();
+        var data = new ProjectData(null, "p1", "v1", false, null);
+        assertThat(uut.uploadVex(data, "<test />")).isEqualTo(new UploadResult(true, "uuid-1"));
+
+        completionSignal.await(5, TimeUnit.SECONDS);
+        assertThat(completionSignal.getCount()).isZero();
+        assertThat(requestBody).hasValueSatisfying(body -> assertThat(body).containsOnly(entry("vex", "<test />"), entry("projectName", "p1"), entry("projectVersion", "v1")));
+    }
+
+    @Test
+    void uploadVexTestWithErrors(JenkinsRule r) throws IOException {
+        ApiClient uut;
+        var data = new ProjectData(null, "p1", "v1", true, null);
+
+        server = HttpServer.create().host("localhost").port(0).route(routes -> routes.post(ApiClient.VEX_URL, (request, response) -> response.status(HttpResponseStatus.BAD_REQUEST).send())).bindNow();
+        uut = createClient();
+        assertThat(uut.uploadVex(data, "")).isEqualTo(new UploadResult(false));
+        verify(logger).log(Messages.ApiClient_Payload_Invalid());
+        server.disposeNow();
+
+        server = HttpServer.create().host("localhost").port(0).route(routes -> routes.post(ApiClient.VEX_URL, (request, response) -> response.status(HttpResponseStatus.UNAUTHORIZED).send())).bindNow();
+        uut = createClient();
+        assertThat(uut.uploadVex(data, "")).isEqualTo(new UploadResult(false));
+        verify(logger).log(Messages.ApiClient_Unauthorized());
+        server.disposeNow();
+
+        server = HttpServer.create().host("localhost").port(0).route(routes -> routes.post(ApiClient.VEX_URL, (request, response) -> response.status(HttpResponseStatus.NOT_FOUND).send())).bindNow();
+        uut = createClient();
+        assertThat(uut.uploadVex(data, "")).isEqualTo(new UploadResult(false));
+        verify(logger).log(Messages.ApiClient_Project_NotFound());
+        server.disposeNow();
+
+        server = HttpServer.create().host("localhost").port(0).route(routes -> routes.post(ApiClient.VEX_URL, (request, response) -> response.status(HttpResponseStatus.GONE).send())).bindNow();
+        uut = createClient();
+        assertThat(uut.uploadVex(data, "")).isEqualTo(new UploadResult(false));
+        verify(logger).log(Messages.ApiClient_Error_Connection(HttpResponseStatus.GONE.code(), HttpResponseStatus.GONE.reasonPhrase()));
+        server.disposeNow();
+        
+        final var httpClient = mock(OkHttpClient.class);
+        final var call = mock(okhttp3.Call.class);
+        final var uutWithMock = createClient(httpClient);
+        when(httpClient.newCall(any(okhttp3.Request.class))).thenReturn(call);
+        doThrow(new java.net.SocketTimeoutException("oops"))
+                .when(call).execute();
+
+        assertThatCode(() -> uutWithMock.uploadVex(data, ""))
                 .hasMessage(Messages.ApiClient_Error_Connection("", ""))
                 .hasCauseInstanceOf(java.net.SocketTimeoutException.class);
         verify(httpClient, times(2)).newCall(any(okhttp3.Request.class));
@@ -479,7 +577,7 @@ class ApiClientTest {
         server = HttpServer.create()
                 .host("localhost")
                 .port(0)
-                .route(routes -> routes.get(ApiClient.BOM_TOKEN_URL + "/{uuid}", (request, response) -> {
+                .route(routes -> routes.get(ApiClient.TOKEN_URL + "/{uuid}", (request, response) -> {
             assertCommonHeaders(request);
             assertThat(request.param("uuid")).isNotEmpty();
             String uuid = request.param("uuid");

@@ -6,6 +6,8 @@
 - require Java 21 or newer (required since Jenkins 2.545)
 
 ### ⭐ New Features
+- Support uploading VEX files ([#271](https://github.com/jenkinsci/dependency-track-plugin/issues/271))
+
 ### 🐞 Bugs Fixed
 
 ## [v6.0.2] - 2025-08-20
