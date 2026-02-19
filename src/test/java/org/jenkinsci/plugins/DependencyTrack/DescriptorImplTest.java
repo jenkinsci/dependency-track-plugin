@@ -142,23 +142,23 @@ class DescriptorImplTest {
             CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
             uut = new DescriptorImpl(factory);
 
-            assertThat(uut.doTestConnectionGlobal("http:///url.tld", credentialsid, false, null))
+            assertThat(uut.doTestConnectionGlobal("http:///url.tld", credentialsid, null))
                     .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                     .hasMessage(Messages.Publisher_ConnectionTest_VersionWarning("3.8.0", "4.12.0"))
                     .hasNoCause();
 
-            assertThat(uut.doTestConnectionGlobal("http:///url.tld/", credentialsid, false, null))
+            assertThat(uut.doTestConnectionGlobal("http:///url.tld/", credentialsid, null))
                     .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                     .hasMessageStartingWith(Messages.Publisher_ConnectionTest_Error("test"))
                     .hasNoCause();
 
-            assertThat(uut.doTestConnectionGlobal("http:///url.tld/", credentialsid, false, null))
+            assertThat(uut.doTestConnectionGlobal("http:///url.tld/", credentialsid, null))
                     .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                     .hasMessageStartingWith(Messages.Publisher_ConnectionTest_Error(null))
                     .hasMessageContaining(ApiClientException.class.getCanonicalName())
                     .hasNoCause();
 
-            assertThat(uut.doTestConnectionGlobal("url", "", false, null))
+            assertThat(uut.doTestConnectionGlobal("url", "", null))
                     .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                     .hasMessage(Messages.Publisher_ConnectionTest_InputError())
                     .hasNoCause();
@@ -170,7 +170,7 @@ class DescriptorImplTest {
         final User anonymous = User.getOrCreateByIdOrFullName(ACL.ANONYMOUS_USERNAME);
         // without propper global permissions
         try (ACLContext ignored = ACL.as(anonymous)) {
-            assertThatThrownBy(() -> uut.doTestConnectionGlobal("foo", "", false, null)).isInstanceOf(AccessDeniedException3.class);
+            assertThatThrownBy(() -> uut.doTestConnectionGlobal("foo", "", null)).isInstanceOf(AccessDeniedException3.class);
         }
         // test for item permissions
         FreeStyleProject project;
@@ -179,10 +179,10 @@ class DescriptorImplTest {
         }
         try (ACLContext ignored = ACL.as(anonymous)) {
             // without item permissions
-            assertThatThrownBy(() -> uut.doTestConnectionGlobal("foo", "", false, project)).isInstanceOf(AccessDeniedException3.class);
+            assertThatThrownBy(() -> uut.doTestConnectionGlobal("foo", "", project)).isInstanceOf(AccessDeniedException3.class);
             // now grant Item.CONFIGURE
             mockAuthorizationStrategy.grant(Item.CONFIGURE).onItems(project).to(anonymous);
-            assertThatCode(() -> uut.doTestConnectionGlobal("foo", "", false, project)).doesNotThrowAnyException();
+            assertThatCode(() -> uut.doTestConnectionGlobal("foo", "", project)).doesNotThrowAnyException();
         }
     }
 
@@ -206,7 +206,7 @@ class DescriptorImplTest {
             uut.setDependencyTrackApiKey(credentialsid);
             uut.setDependencyTrackUrl("http:///url.tld/");
 
-            assertThat(uut.doTestConnectionJob("", "", false, false, false, null))
+            assertThat(uut.doTestConnectionJob("", "", false, false, null))
                     .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
                     .hasNoCause();
         }
@@ -235,7 +235,7 @@ class DescriptorImplTest {
             CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
             uut = new DescriptorImpl(factory);
 
-            assertThat(uut.doTestConnectionJob("http:///url.tld", credentialsid, true, false, false, null))
+            assertThat(uut.doTestConnectionJob("http:///url.tld", credentialsid, false, false, null))
                     .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
                     .hasNoCause()
                     .extracting(FormValidation::renderHtml).asString()
@@ -244,7 +244,7 @@ class DescriptorImplTest {
                     .contains(Messages.Publisher_PermissionTest_Okay(BOM_UPLOAD))
                     .contains(Messages.Publisher_PermissionTest_Okay(VIEW_PORTFOLIO))
                     .contains(Messages.Publisher_PermissionTest_Okay(VULNERABILITY_ANALYSIS))
-                    .contains(Messages.Publisher_PermissionTest_Okay(PROJECT_CREATION_UPLOAD))
+                    .contains(Messages.Publisher_PermissionTest_Optional(PROJECT_CREATION_UPLOAD))
                     .contains(Messages.Publisher_PermissionTest_Optional(PORTFOLIO_MANAGEMENT))
                     .contains(Messages.Publisher_PermissionTest_Optional(VIEW_POLICY_VIOLATION))
                     .contains(team.getPermissions().toArray(String[]::new));
@@ -275,7 +275,7 @@ class DescriptorImplTest {
             CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
             uut = new DescriptorImpl(factory);
 
-            assertThat(uut.doTestConnectionJob("http:///url.tld", credentialsid, true, true, true, null))
+            assertThat(uut.doTestConnectionJob("http:///url.tld", credentialsid, true, true, null))
                     .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)
                     .hasNoCause()
                     .extracting(FormValidation::renderHtml).asString()
@@ -284,7 +284,7 @@ class DescriptorImplTest {
                     .contains(Messages.Publisher_PermissionTest_Okay(BOM_UPLOAD))
                     .contains(Messages.Publisher_PermissionTest_Okay(VIEW_PORTFOLIO))
                     .contains(Messages.Publisher_PermissionTest_Okay(VULNERABILITY_ANALYSIS))
-                    .contains(Messages.Publisher_PermissionTest_Okay(PROJECT_CREATION_UPLOAD))
+                    .contains(Messages.Publisher_PermissionTest_Optional(PROJECT_CREATION_UPLOAD))
                     .contains(Messages.Publisher_PermissionTest_Missing(PORTFOLIO_MANAGEMENT))
                     .contains(Messages.Publisher_PermissionTest_Missing(VIEW_VULNERABILITY))
                     .contains(Messages.Publisher_PermissionTest_Missing(VIEW_POLICY_VIOLATION))
@@ -315,7 +315,7 @@ class DescriptorImplTest {
             CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(apikey)));
             uut = new DescriptorImpl(factory);
 
-            assertThat(uut.doTestConnectionJob("http:///url.tld", credentialsid, true, false, false, null))
+            assertThat(uut.doTestConnectionJob("http:///url.tld", credentialsid, false, false, null))
                     .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.WARNING)
                     .hasNoCause()
                     .extracting(FormValidation::renderHtml).asString()
@@ -324,7 +324,7 @@ class DescriptorImplTest {
                     .contains(Messages.Publisher_PermissionTest_Okay(BOM_UPLOAD))
                     .contains(Messages.Publisher_PermissionTest_Okay(VIEW_PORTFOLIO))
                     .contains(Messages.Publisher_PermissionTest_Okay(VULNERABILITY_ANALYSIS))
-                    .contains(Messages.Publisher_PermissionTest_Okay(PROJECT_CREATION_UPLOAD))
+                    .contains(Messages.Publisher_PermissionTest_Optional(PROJECT_CREATION_UPLOAD))
                     .contains(Messages.Publisher_PermissionTest_Warning("DUMMY_PERM"))
                     .contains(team.getPermissions().toArray(String[]::new));
         }
@@ -389,7 +389,6 @@ class DescriptorImplTest {
         JSONObject formData = new JSONObject()
                 .element("dependencyTrackUrl", "https://foo.bar/")
                 .element("dependencyTrackApiKey", "api-key")
-                .element("dependencyTrackAutoCreateProjects", true)
                 .element("dependencyTrackPollingTimeout", 7);
 
         assertThat(uut.configure(req, formData)).isTrue();

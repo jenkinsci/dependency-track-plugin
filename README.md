@@ -39,8 +39,6 @@ To setup, navigate to Jenkins > System Configuration and complete the Dependency
 
 **API key**: API Key used for authentication.
 
-**Auto Create Projects**: auto creation of projects by giving a project name and version. The API key provided requires the `PROJECT_CREATION_UPLOAD` permission to use this feature.
-
 **Dependency-Track Frontend URL**: URL to the Frontend of your Dependency-Track instance. Use this if you run backend and frontend on different servers. If omitted, "Dependency-Track Backend URL" will be used instead.
 
 **Polling Timeout**: Defines the maximum number of minutes to wait for Dependency-Track to process a job when using synchronous publishing.
@@ -90,7 +88,7 @@ Once configured with a valid URL and API key, simply configure a job to publish 
 
  The use of environment variables in the form `${VARIABLE}` is supported here.
 
-**Override global settings**: Allows to override global settings for "Auto Create Projects", "Dependency-Track URL", "Dependency-Track Frontend URL", "API key", "Polling Interval" and the various timeouts.
+**Override global settings**: Allows to override global settings for "Dependency-Track URL", "Dependency-Track Frontend URL", "API key", "Polling Interval" and the various timeouts.
 
 ### Thresholds
 

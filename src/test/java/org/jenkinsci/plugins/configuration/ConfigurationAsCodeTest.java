@@ -26,7 +26,6 @@ class ConfigurationAsCodeTest {
                 .returns("https://example.org/deptrack", DescriptorImpl::getDependencyTrackUrl)
                 .returns("https://ui.example.org", DescriptorImpl::getDependencyTrackFrontendUrl)
                 .returns("R4nD0m", DescriptorImpl::getDependencyTrackApiKey)
-                .returns(false, DescriptorImpl::isDependencyTrackAutoCreateProjects)
                 .returns(5, DescriptorImpl::getDependencyTrackPollingTimeout)
                 .returns(1, DescriptorImpl::getDependencyTrackPollingInterval)
                 .returns(1, DescriptorImpl::getDependencyTrackConnectionTimeout)

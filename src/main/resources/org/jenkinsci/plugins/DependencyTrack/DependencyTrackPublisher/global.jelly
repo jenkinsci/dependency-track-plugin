@@ -24,9 +24,6 @@ limitations under the License.
         <f:entry title="${%dependencytrack.apikey}" field="dependencyTrackApiKey">
             <c:select id="dependencytrack.apikey" />
         </f:entry>
-        <f:entry title="${%dependencytrack.autocreate}" field="dependencyTrackAutoCreateProjects">
-            <f:checkbox id="dependencytrack.autocreate" default="false"/>
-        </f:entry>
         <f:advanced>
             <f:entry title="${%dependencytrack.url.frontend}" field="dependencyTrackFrontendUrl">
                 <f:textbox id="dependencytrack.url.frontend" checkMethod="post" />
@@ -44,7 +41,7 @@ limitations under the License.
                 <f:number id="dependencytrack.read.timeout" default="5" clazz="non-negative-number-required" min="0" />
             </f:entry>
         </f:advanced>
-        <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnectionGlobal" with="dependencyTrackUrl,dependencyTrackApiKey,dependencyTrackAutoCreateProjects" />
+        <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnectionGlobal" with="dependencyTrackUrl,dependencyTrackApiKey" />
     </f:section>
 
 </j:jelly>

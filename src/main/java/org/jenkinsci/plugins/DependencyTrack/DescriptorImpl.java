@@ -95,14 +95,6 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
     private String dependencyTrackApiKey;
 
     /**
-     * Specifies whether the API key provided has the PROJECT_CREATION_UPLOAD
-     * permission.
-     */
-    @Getter
-    @Setter(onMethod_ = {@DataBoundSetter})
-    private boolean dependencyTrackAutoCreateProjects;
-
-    /**
      * Specifies the maximum number of minutes to wait for synchronous jobs to
      * complete.
      */
@@ -233,13 +225,13 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
     }
 
     @POST
-    public FormValidation doTestConnectionGlobal(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @QueryParameter final boolean dependencyTrackAutoCreateProjects, @AncestorInPath @Nullable Item item) {
-        return testConnection(dependencyTrackUrl, dependencyTrackApiKey, dependencyTrackAutoCreateProjects, false, false, item);
+    public FormValidation doTestConnectionGlobal(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable Item item) {
+        return testConnection(dependencyTrackUrl, dependencyTrackApiKey, false, false, item);
     }
 
     @POST
-    public FormValidation doTestConnectionJob(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @QueryParameter final boolean autoCreateProjects, @QueryParameter final boolean synchronous, @QueryParameter final boolean projectProperties, @AncestorInPath @Nullable Item item) {
-        return testConnection(dependencyTrackUrl, dependencyTrackApiKey, autoCreateProjects, synchronous, projectProperties, item);
+    public FormValidation doTestConnectionJob(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @QueryParameter final boolean synchronous, @QueryParameter final boolean projectProperties, @AncestorInPath @Nullable Item item) {
+        return testConnection(dependencyTrackUrl, dependencyTrackApiKey, synchronous, projectProperties, item);
     }
 
     /**
@@ -250,12 +242,11 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
      * @param dependencyTrackUrl the base URL to Dependency-Track
      * @param dependencyTrackApiKey the credential-id of the API key to use for
      * authentication
-     * @param autoCreateProjects if auto-create projects is enabled or not
      * @param synchronous if sync-mode is enabled or not
      * @param item used to check permission and lookup credentials
      * @return FormValidation
      */
-    private FormValidation testConnection(final String dependencyTrackUrl, final String dependencyTrackApiKey, final boolean autoCreateProjects, final boolean synchronous, final boolean updateProjectProperties, @AncestorInPath @Nullable Item item) {
+    private FormValidation testConnection(final String dependencyTrackUrl, final String dependencyTrackApiKey, final boolean synchronous, final boolean updateProjectProperties, @AncestorInPath @Nullable Item item) {
         if (item == null) {
             Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         } else {
@@ -277,7 +268,7 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
                 if (actualVersion.isOlderThan(requiredVersion)) {
                     return FormValidation.error(Messages.Publisher_ConnectionTest_VersionWarning(actualVersion, requiredVersion));
                 }
-                return checkTeamPermissions(apiClient, poweredBy, autoCreateProjects, synchronous, updateProjectProperties);
+                return checkTeamPermissions(apiClient, poweredBy, synchronous, updateProjectProperties);
             } catch (ApiClientException e) {
                 return FormValidation.error(e, Messages.Publisher_ConnectionTest_Error(e.getMessage()));
             }
@@ -285,15 +276,11 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
         return FormValidation.error(Messages.Publisher_ConnectionTest_InputError());
     }
 
-    private FormValidation checkTeamPermissions(final ApiClient apiClient, final String poweredBy, final boolean autoCreateProjects, final boolean synchronous, final boolean projectProperties) throws ApiClientException {
+    private FormValidation checkTeamPermissions(final ApiClient apiClient, final String poweredBy, final boolean synchronous, final boolean projectProperties) throws ApiClientException {
         final Set<String> requiredPermissions = Stream.of(BOM_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS).map(Enum::toString).collect(Collectors.toSet());
         final Set<String> optionalPermissions = new HashSet<>();
 
-        if (autoCreateProjects) {
-            requiredPermissions.add(PROJECT_CREATION_UPLOAD.toString());
-        } else {
-            optionalPermissions.add(PROJECT_CREATION_UPLOAD.toString());
-        }
+        optionalPermissions.add(PROJECT_CREATION_UPLOAD.toString());
         if (synchronous) {
             requiredPermissions.add(VIEW_VULNERABILITY.toString());
             requiredPermissions.add(VIEW_POLICY_VIOLATION.toString());
