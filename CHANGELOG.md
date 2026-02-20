@@ -10,6 +10,7 @@
 - Support uploading VEX files ([#271](https://github.com/jenkinsci/dependency-track-plugin/issues/271))
 
 ### 🐞 Bugs Fixed
+- Polling timeout took longer than intended
 
 ## [v6.0.2] - 2025-08-20
 ### ⚠ Breaking

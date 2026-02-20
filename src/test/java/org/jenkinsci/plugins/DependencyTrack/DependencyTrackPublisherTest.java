@@ -35,8 +35,10 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.List;
 import java.util.Set;
+import lombok.extern.slf4j.Slf4j;
 import org.jenkinsci.plugins.DependencyTrack.api.ApiClient;
 import org.jenkinsci.plugins.DependencyTrack.api.ApiClientException;
 import org.jenkinsci.plugins.DependencyTrack.api.ProjectData;
@@ -59,6 +61,7 @@ import org.mockito.quality.Strictness;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatCode;
+import static org.awaitility.Awaitility.await;
 import static org.jenkinsci.plugins.DependencyTrack.model.Permissions.VIEW_POLICY_VIOLATION;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -76,6 +79,7 @@ import static org.mockito.Mockito.when;
  */
 @MockitoSettings(strictness = Strictness.LENIENT)
 @WithJenkins
+@Slf4j
 class DependencyTrackPublisherTest {
 
     @Mock
@@ -117,7 +121,6 @@ class DependencyTrackPublisherTest {
 
     @Test
     void testPerformPrechecks(@TempDir Path tmpWork) throws IOException {
-        when(listener.getLogger()).thenReturn(System.err);
         FilePath workDir = new FilePath(tmpWork.toFile());
 
         // artifact missing
@@ -566,4 +569,27 @@ class DependencyTrackPublisherTest {
         }
     }
 
+    @Test
+    void verifyPollingTimeout(@TempDir Path tmpWork) throws IOException {
+        var bom = tmpWork.resolve("bom.xml").toFile();
+        bom.createNewFile();
+        var workDir = new FilePath(tmpWork.toFile());
+        var uut = new DependencyTrackPublisher(bom.getName(), true, clientFactory);
+        var intervalSeconds = 1;
+        var timeoutMinutes = 1;
+        uut.setProjectId("uuid-1");
+        uut.setDependencyTrackApiKey(apikeyId);
+        uut.setDependencyTrackPollingInterval(intervalSeconds);
+        uut.setDependencyTrackPollingTimeout(timeoutMinutes);
+
+        when(client.uploadBom(any(ProjectData.class), eq(""))).thenReturn(new UploadResult(true, "token-1"));
+        when(client.isTokenBeingProcessed("token-1")).thenReturn(true);
+
+        await().between(Duration.ofMinutes(timeoutMinutes), Duration.ofMinutes(timeoutMinutes).plusSeconds(intervalSeconds))
+                .logging(log::info)
+                .alias("Polling Timeout")
+                .untilAsserted(() -> assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener))
+                .isInstanceOf(AbortException.class)
+                .hasMessage(Messages.Builder_Polling_Timeout_Exceeded()));
+    }
 }
