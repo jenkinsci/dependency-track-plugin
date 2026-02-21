@@ -1,5 +1,4 @@
 dependencyTrackApiKey: "R4nD0m"
-dependencyTrackAutoCreateProjects: false
 dependencyTrackConnectionTimeout: 1
 dependencyTrackFrontendUrl: "https://ui.example.org"
 dependencyTrackPollingInterval: 1

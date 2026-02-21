@@ -144,12 +144,6 @@ class DependencyTrackPublisherTest {
         final DependencyTrackPublisher uut5 = new DependencyTrackPublisher("foo", false, clientFactory);
         uut5.setProjectId("uuid-1");
         assertThatCode(() -> uut5.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Artifact_NonExist("foo"));
-
-        // uuid missing
-        final DependencyTrackPublisher uut6 = new DependencyTrackPublisher(artifact.getName(), false, clientFactory);
-        uut6.setProjectName("name");
-        uut6.setProjectVersion("version");
-        assertThatCode(() -> uut6.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Result_ProjectIdMissing());
     }
 
     @Test
@@ -203,7 +197,6 @@ class DependencyTrackPublisherTest {
             assertThat(data.id()).isEqualTo("uuid-1");
             assertThat(data.name()).isNull();
             assertThat(data.version()).isNull();
-            assertThat(data.autoCreate()).isFalse();
             assertThat(data.properties()).isNull();
         }), eq(""));
 
@@ -238,14 +231,12 @@ class DependencyTrackPublisherTest {
             assertThat(data.id()).isEqualTo("uuid-1");
             assertThat(data.name()).isNull();
             assertThat(data.version()).isNull();
-            assertThat(data.autoCreate()).isFalse();
             assertThat(data.properties()).isNull();
         }), eq("<bom />"));
         verify(client).uploadVex(assertArg(data -> {
             assertThat(data.id()).isEqualTo("uuid-1");
             assertThat(data.name()).isNull();
             assertThat(data.version()).isNull();
-            assertThat(data.autoCreate()).isFalse();
             assertThat(data.properties()).isNull();
         }), eq("<vex />"));
     }
@@ -259,7 +250,6 @@ class DependencyTrackPublisherTest {
         uut.setProjectName("name-1");
         uut.setProjectVersion("${my.var}");
         uut.setDependencyTrackApiKey(apikeyId);
-        uut.setAutoCreateProjects(Boolean.TRUE);
 
         when(client.uploadBom(any(ProjectData.class), anyString())).thenReturn(new UploadResult(true, "token-1"));
 
@@ -273,7 +263,6 @@ class DependencyTrackPublisherTest {
             assertThat(data.id()).isNull();
             assertThat(data.name()).isEqualTo("name-1");
             assertThat(data.version()).isEqualTo("my.value");
-            assertThat(data.autoCreate()).isTrue();
             assertThat(data.properties()).isNull();
         }), anyString());
     }
@@ -314,7 +303,6 @@ class DependencyTrackPublisherTest {
             assertThat(data.id()).isEqualTo("uuid-1");
             assertThat(data.name()).isNull();
             assertThat(data.version()).isNull();
-            assertThat(data.autoCreate()).isFalse();
             assertThat(data.properties()).isNull();
         }), eq(""));
     }
@@ -360,14 +348,12 @@ class DependencyTrackPublisherTest {
             assertThat(data.id()).isEqualTo("uuid-1");
             assertThat(data.name()).isNull();
             assertThat(data.version()).isNull();
-            assertThat(data.autoCreate()).isFalse();
             assertThat(data.properties()).isNull();
         }), eq("<bom />"));
         verify(client).uploadVex(assertArg(data -> {
             assertThat(data.id()).isEqualTo("uuid-1");
             assertThat(data.name()).isNull();
             assertThat(data.version()).isNull();
-            assertThat(data.autoCreate()).isFalse();
             assertThat(data.properties()).isNull();
         }), eq("<vex />"));
     }
@@ -458,7 +444,6 @@ class DependencyTrackPublisherTest {
         uut.setProjectName("name-1");
         uut.setProjectVersion("version-1");
         uut.setDependencyTrackApiKey(apikeyId);
-        uut.setAutoCreateProjects(Boolean.TRUE);
         uut.setProjectProperties(props);
         final var team = Team.builder().name("test-team").permissions(Set.of(VIEW_POLICY_VIOLATION.toString())).build();
 
@@ -501,7 +486,6 @@ class DependencyTrackPublisherTest {
         };
         final DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, factory);
         uut.setProjectId("uuid-1");
-        uut.setAutoCreateProjects(Boolean.TRUE);
         uut.setDependencyTrackUrl("http://test.tld");
         uut.setDependencyTrackApiKey(apikeyId);
         uut.setDependencyTrackPollingInterval(1);
@@ -519,7 +503,6 @@ class DependencyTrackPublisherTest {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
-        uut.setAutoCreateProjects(Boolean.TRUE);
         uut.setDependencyTrackUrl("foo");
         uut.setDependencyTrackFrontendUrl("foo-ui");
         uut.setDependencyTrackApiKey("bar");
@@ -539,7 +522,6 @@ class DependencyTrackPublisherTest {
                 assertThat(actual.getDependencyTrackUrl()).isNull();
                 assertThat(actual.getDependencyTrackFrontendUrl()).isNull();
                 assertThat(actual.getDependencyTrackApiKey()).isNull();
-                assertThat(actual.getAutoCreateProjects()).isNull();
                 assertThat(actual.getDependencyTrackPollingInterval()).isNull();
                 assertThat(actual.getDependencyTrackPollingTimeout()).isNull();
                 assertThat(actual.getDependencyTrackConnectionTimeout()).isNull();
@@ -554,7 +536,6 @@ class DependencyTrackPublisherTest {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
-        uut.setAutoCreateProjects(Boolean.TRUE);
         uut.setDependencyTrackUrl("foo");
         uut.setDependencyTrackFrontendUrl("foo-ui");
         uut.setDependencyTrackApiKey("bar");
@@ -575,7 +556,6 @@ class DependencyTrackPublisherTest {
                 assertThat(actual.getDependencyTrackUrl()).isEqualTo("foo");
                 assertThat(actual.getDependencyTrackFrontendUrl()).isEqualTo("foo-ui");
                 assertThat(actual.getDependencyTrackApiKey()).isEqualTo("bar");
-                assertThat(actual.getAutoCreateProjects()).isTrue();
                 assertThat(actual.getDependencyTrackPollingInterval()).isOne();
                 assertThat(actual.getDependencyTrackPollingTimeout()).isOne();
                 assertThat(actual.getDependencyTrackConnectionTimeout()).isOne();

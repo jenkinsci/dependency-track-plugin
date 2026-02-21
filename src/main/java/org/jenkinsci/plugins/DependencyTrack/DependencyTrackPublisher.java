@@ -134,12 +134,6 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     private Integer dependencyTrackReadTimeout;
 
     /**
-     * Specifies whether the API key provided has the PROJECT_CREATION_UPLOAD
-     * permission.
-     */
-    private Boolean autoCreateProjects;
-
-    /**
      * Threshold level for total number of critical findings for job status
      * UNSTABLE
      */
@@ -305,7 +299,6 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         final String effectiveProjectName = env.expand(projectName);
         final String effectiveProjectVersion = env.expand(projectVersion);
         final String effectiveArtifact = env.expand(artifact);
-        final boolean effectiveAutocreate = isEffectiveAutoCreateProjects();
         projectIdCache = null;
 
         if (PluginUtil.isBlank(effectiveArtifact)) {
@@ -316,17 +309,13 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
             logger.log(Messages.Builder_Result_InvalidArguments());
             throw new AbortException(Messages.Builder_Result_InvalidArguments());
         }
-        if (PluginUtil.isBlank(projectId) && !effectiveAutocreate) {
-            logger.log(Messages.Builder_Result_ProjectIdMissing());
-            throw new AbortException(Messages.Builder_Result_ProjectIdMissing());
-        }
 
         final String bom = readArtifact(logger, workspace, effectiveArtifact);
         final String effectiveUrl = getEffectiveUrl();
         final String effectiveApiKey = getEffectiveApiKey(run);
         final var effectiveProjectProperties = expandProjectProperties(env);
         final ApiClient apiClient = clientFactory.create(effectiveUrl, effectiveApiKey, logger, PluginUtil.newHttpClient(getEffectiveConnectionTimeout(), getEffectiveReadTimeout()));
-        final var projectData = new ProjectData(projectId, effectiveProjectName, effectiveProjectVersion, effectiveAutocreate, effectiveProjectProperties);
+        final var projectData = new ProjectData(projectId, effectiveProjectName, effectiveProjectVersion, true, effectiveProjectProperties);
 
         logger.log(Messages.Builder_Publishing(effectiveUrl, effectiveArtifact));
         var uploadResult = apiClient.uploadBom(projectData, bom);
@@ -481,7 +470,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
      * @return A Descriptor Implementation
      */
     @Override
-    public DescriptorImpl getDescriptor() {
+    public final DescriptorImpl getDescriptor() {
         return (DescriptorImpl) super.getDescriptor();
     }
 
@@ -503,7 +492,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         if (descriptor == null) {
             descriptor = getDescriptor();
         }
-        overrideGlobals = !PluginUtil.isBlank(dependencyTrackUrl) || !PluginUtil.isBlank(dependencyTrackFrontendUrl) || !PluginUtil.isBlank(dependencyTrackApiKey) || autoCreateProjects != null;
+        overrideGlobals = !PluginUtil.isBlank(dependencyTrackUrl) || !PluginUtil.isBlank(dependencyTrackFrontendUrl) || !PluginUtil.isBlank(dependencyTrackApiKey);
         return this;
     }
 
@@ -519,15 +508,10 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
             dependencyTrackUrl = null;
             dependencyTrackFrontendUrl = null;
             dependencyTrackApiKey = null;
-            autoCreateProjects = null;
             dependencyTrackPollingTimeout = null;
             dependencyTrackPollingInterval = null;
             dependencyTrackConnectionTimeout = null;
             dependencyTrackReadTimeout = null;
-        }
-        if (!isEffectiveAutoCreateProjects()) {
-            projectName = null;
-            projectVersion = null;
         }
         return this;
     }
@@ -566,13 +550,6 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         } else {
             return "";
         }
-    }
-
-    /**
-     * @return effective autoCreateProjects
-     */
-    public boolean isEffectiveAutoCreateProjects() {
-        return Optional.ofNullable(autoCreateProjects).orElseGet(descriptor::isDependencyTrackAutoCreateProjects);
     }
 
     /**
