@@ -31,6 +31,8 @@ import jakarta.annotation.Nullable;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.charset.Charset;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import jenkins.tasks.SimpleBuildStep;
@@ -381,17 +383,17 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     }
 
     private void waitWhileTokenIsBeingProcessed(final ConsoleLogger logger, final ApiClient apiClient, final String token) throws InterruptedException, ApiClientException, AbortException {
-        final long timeout = System.currentTimeMillis() + (60000L * getEffectivePollingTimeout());
-        final long interval = 1000L * getEffectivePollingInterval();
+        final var end = LocalDateTime.now().plusMinutes(getEffectivePollingTimeout());
+        final var interval = Duration.ofSeconds(getEffectivePollingInterval());
         logger.log(Messages.Builder_Polling());
         Thread.sleep(interval);
         while (apiClient.isTokenBeingProcessed(token)) {
-            Thread.sleep(interval);
-            if (timeout < System.currentTimeMillis()) {
+            if (LocalDateTime.now().isAfter(end)) {
                 logger.log(Messages.Builder_Polling_Timeout_Exceeded());
                 // XXX this seems like a fatal error
                 throw new AbortException(Messages.Builder_Polling_Timeout_Exceeded());
             }
+            Thread.sleep(interval);
         }
     }
     
@@ -553,7 +555,12 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     }
 
     /**
+     * the effective maximum number of minutes to wait for synchronous jobs to
+     * complete.
+     *
      * @return effective dependencyTrackPollingTimeout
+     * @see #dependencyTrackPollingTimeout
+     * @see DescriptorImpl#dependencyTrackPollingTimeout
      */
     @Nonnull
     private int getEffectivePollingTimeout() {
@@ -561,7 +568,12 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     }
 
     /**
+     * the effective number of seconds to wait between two checks for
+     * Dependency-Track to process a job (Synchronous Publishing Mode).
+     *
      * @return effective dependencyTrackPollingInterval
+     * @see #dependencyTrackPollingInterval
+     * @see DescriptorImpl#dependencyTrackPollingInterval
      */
     @Nonnull
     private int getEffectivePollingInterval() {
@@ -569,7 +581,11 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     }
 
     /**
+     * effective connection-timeout in seconds for every call to DT
+     *
      * @return effective dependencyTrackConnectionTimeout
+     * @see #dependencyTrackConnectionTimeout
+     * @see DescriptorImpl#dependencyTrackConnectionTimeout
      */
     @Nonnull
     private int getEffectiveConnectionTimeout() {
@@ -577,7 +593,11 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     }
 
     /**
+     * effective read-timeout in seconds for every call to DT
+     *
      * @return effective dependencyTrackReadTimeout
+     * @see #dependencyTrackReadTimeout
+     * @see DescriptorImpl#dependencyTrackReadTimeout
      */
     @Nonnull
     private int getEffectiveReadTimeout() {
