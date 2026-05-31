@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 ### ⚠ Breaking
-- require Jenkins 2.550 or newer
+- require Jenkins 2.555.1 or newer
 - require Java 21 or newer (required since Jenkins 2.545)
 - remove the "auto-create" option. it is now always "true". Users of [Configuration as Code](https://www.jenkins.io/projects/jcasc/) will have to remove the `dependencyTrackAutoCreateProjects` parameter.
 

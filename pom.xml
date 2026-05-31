@@ -6,7 +6,7 @@
     <parent>
         <groupId>org.jenkins-ci.plugins</groupId>
         <artifactId>plugin</artifactId>
-        <version>6.2138.v03274d462c13</version>
+        <version>6.2189.v695a_c41f5249</version>
         <relativePath />
     </parent>
 
@@ -37,10 +37,10 @@
     </licenses>
 
     <properties>
-        <jenkins.version>2.550</jenkins.version>
+        <jenkins.version>2.555.1</jenkins.version>
         <hpi.compatibleSinceVersion>7.0.0</hpi.compatibleSinceVersion>
-        <configuration-as-code.version>2037.v8e5349845172</configuration-as-code.version>
-        <byte-buddy.version>1.18.7</byte-buddy.version>
+        <configuration-as-code.version>2081.v2d0940662a_34</configuration-as-code.version>
+        <byte-buddy.version>1.18.8</byte-buddy.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.javadoc.skip>true</maven.javadoc.skip>
@@ -153,7 +153,7 @@
                 <plugin>
                     <groupId>org.sonarsource.scanner.maven</groupId>
                     <artifactId>sonar-maven-plugin</artifactId>
-                    <version>5.5.0.6356</version>
+                    <version>5.6.0.6792</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -435,13 +435,13 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.44</version>
+            <version>1.18.46</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
             <artifactId>credentials</artifactId>
-            <version>1495.v2cc3d2266b_75</version>
+            <version>1502.v5c95e620ddfe</version>
         </dependency>
         <dependency>
             <groupId>org.jenkins-ci.plugins</groupId>
@@ -473,7 +473,7 @@
         <dependency>
             <groupId>org.assertj</groupId>
             <artifactId>assertj-core</artifactId>
-            <version>[3.20.0,)</version>
+            <version>[3.20.0,3.99.99)</version>
             <scope>test</scope>
         </dependency>
         <dependency>
