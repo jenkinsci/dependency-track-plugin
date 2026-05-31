@@ -294,7 +294,7 @@
                         </goals>
                         <configuration>
                             <outputDirectory>${basedir}/src/main/webapp/js/libs</outputDirectory>
-                            <overwrite>true</overwrite>
+                            <changeDetection>content</changeDetection>
                             <nonFilteredFileExtensions>js</nonFilteredFileExtensions>
                             <resources>
                                 <resource>
@@ -327,7 +327,7 @@
                         </goals>
                         <configuration>
                             <outputDirectory>${basedir}/src/main/webapp/css</outputDirectory>
-                            <overwrite>true</overwrite>
+                            <changeDetection>content</changeDetection>
                             <nonFilteredFileExtensions>css</nonFilteredFileExtensions>
                             <resources>
                                 <resource>
