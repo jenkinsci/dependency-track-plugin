@@ -15,36 +15,33 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
-import hudson.model.InvisibleAction;
 import hudson.model.Job;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.sf.json.JSONArray;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
-import org.kohsuke.stapler.WebApp;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 
+/**
+ * Action for showing a trend chart of vulnerability findings.
+ *
+ * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
+ */
 @RequiredArgsConstructor
-public class JobAction extends InvisibleAction {
+public final class JobAction extends AbstactJobAction {
 
-    @Getter
     @NonNull
     private final Job<?, ?> project;
-
-    @Override
-    public String getUrlName() {
-        return "dtrackTrend";
-    }
 
     /**
      * Returns whether the trend chart is visible or not.
      *
      * @return {@code true} if the trend is visible, false otherwise
      */
+    @Override
     public boolean isTrendVisible() {
         return project.getBuilds().stream()
                 .map(run -> run.getAction(ResultAction.class))
@@ -66,14 +63,6 @@ public class JobAction extends InvisibleAction {
                 .map(ResultAction::getSeverityDistribution)
                 .toList();
         return JSONArray.fromObject(severityDistributions);
-    }
-
-    public String getBindUrl() {
-        return WebApp.getCurrent().boundObjectTable.bind(this).getURL();
-    }
-
-    public String getCrumb() {
-        return WebApp.getCurrent().getCrumbIssuer().issueCrumb();
     }
 
 }

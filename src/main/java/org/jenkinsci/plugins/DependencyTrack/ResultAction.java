@@ -15,66 +15,33 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
-import hudson.Plugin;
-import hudson.PluginWrapper;
 import hudson.model.Action;
-import hudson.model.Run;
-import jakarta.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import jenkins.model.Jenkins;
-import jenkins.model.RunAction2;
-import jenkins.tasks.SimpleBuildStep;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import net.sf.json.JSONArray;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
-import org.kohsuke.stapler.WebApp;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 
+/**
+ * Action for storing the result of vulnerability findings.
+ *
+ * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
+ */
 @Getter
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @RequiredArgsConstructor
-public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction, Serializable {
+public final class ResultAction extends AbstractRunAction implements Serializable {
 
     private static final long serialVersionUID = 9144544646132489130L;
 
-    private transient Run<?, ?> run; // transient: see RunAction2, and JENKINS-45892
     private final List<Finding> findings;
     private final SeverityDistribution severityDistribution;
-
-    /**
-     * the URL of the Dependency-Track Server to which these results are
-     * belonging to
-     */
-    @Setter
-    @EqualsAndHashCode.Include
-    private String dependencyTrackUrl;
-
-    /**
-     * the ID of the project to which these results are belonging to
-     */
-    @Setter
-    @EqualsAndHashCode.Include
-    private String projectId;
-
-    /**
-     * the name of the project to which these results are belonging to
-     */
-    @Setter
-    private String projectName;
-
-    @Override
-    public String getIconFileName() {
-        return "/plugin/dependency-track/icons/dt-logo-symbol.svg";
-    }
 
     @Override
     public String getDisplayName() {
@@ -87,36 +54,12 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
     }
 
     @Override
-    public void onAttached(Run<?, ?> run) {
-        this.run = run;
-    }
-
-    @Override
-    public void onLoad(Run<?, ?> run) {
-        this.run = run;
-    }
-
-    @Override
     public Collection<? extends Action> getProjectActions() {
         return Set.of(new JobAction(run.getParent()));
     }
 
-    @Nonnull
-    public String getVersionHash() {
-        return DigestUtils.sha256Hex(
-                Optional.ofNullable(Jenkins.get().getPlugin("dependency-track"))
-                        .map(Plugin::getWrapper)
-                        .map(PluginWrapper::getVersion)
-                        .orElse("")
-        );
-    }
-
     public boolean hasFindings() {
         return findings != null && !findings.isEmpty();
-    }
-
-    public String getNameOrId() {
-        return !PluginUtil.isBlank(projectName) ? projectName : projectId;
     }
 
     /**
@@ -128,14 +71,6 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
     public JSONArray getFindingsJson() {
         run.checkPermission(hudson.model.Item.READ);
         return JSONArray.fromObject(findings);
-    }
-
-    public String getBindUrl() {
-        return WebApp.getCurrent().boundObjectTable.bind(this).getURL();
-    }
-
-    public String getCrumb() {
-        return WebApp.getCurrent().getCrumbIssuer().issueCrumb();
     }
 
 }

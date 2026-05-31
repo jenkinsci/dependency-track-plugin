@@ -15,64 +15,31 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
-import hudson.Plugin;
-import hudson.PluginWrapper;
 import hudson.model.Action;
-import hudson.model.Run;
-import jakarta.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
-import jenkins.model.Jenkins;
-import jenkins.model.RunAction2;
-import jenkins.tasks.SimpleBuildStep;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import net.sf.json.JSONArray;
-import org.apache.commons.codec.digest.DigestUtils;
 import org.jenkinsci.plugins.DependencyTrack.model.Violation;
-import org.kohsuke.stapler.WebApp;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 
+/**
+ * Action for storing the result of policy violations.
+ *
+ * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
+ */
 @Getter
-@EqualsAndHashCode(onlyExplicitlyIncluded = true)
+@EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @RequiredArgsConstructor
-public class ViolationsRunAction implements RunAction2, SimpleBuildStep.LastBuildAction, Serializable {
+public final class ViolationsRunAction extends AbstractRunAction implements Serializable {
 
     private static final long serialVersionUID = 8223620580665511318L;
 
-    private transient Run<?, ?> run; // transient: see RunAction2, and JENKINS-45892
     private final List<Violation> violations;
-
-    /**
-     * the URL of the Dependency-Track Server to which these results are
-     * belonging to
-     */
-    @Setter
-    @EqualsAndHashCode.Include
-    private String dependencyTrackUrl;
-
-    /**
-     * the ID of the project to which these results are belonging to
-     */
-    @Setter
-    @EqualsAndHashCode.Include
-    private String projectId;
-
-    /**
-     * the name of the project to which these results are belonging to
-     */
-    @Setter
-    private String projectName;
-
-    @Override
-    public String getIconFileName() {
-        return "/plugin/dependency-track/icons/dt-logo-symbol.svg";
-    }
 
     @Override
     public String getDisplayName() {
@@ -85,36 +52,12 @@ public class ViolationsRunAction implements RunAction2, SimpleBuildStep.LastBuil
     }
 
     @Override
-    public void onAttached(Run<?, ?> run) {
-        this.run = run;
-    }
-
-    @Override
-    public void onLoad(Run<?, ?> run) {
-        this.run = run;
-    }
-
-    @Override
     public Collection<? extends Action> getProjectActions() {
         return Set.of(new ViolationsJobAction(run.getParent()));
     }
 
-    @Nonnull
-    public String getVersionHash() {
-        return DigestUtils.sha256Hex(
-                Optional.ofNullable(Jenkins.get().getPlugin("dependency-track"))
-                        .map(Plugin::getWrapper)
-                        .map(PluginWrapper::getVersion)
-                        .orElse("")
-        );
-    }
-
     public boolean hasViolations() {
         return violations != null && !violations.isEmpty();
-    }
-
-    public String getNameOrId() {
-        return !PluginUtil.isBlank(projectName) ? projectName : projectId;
     }
 
     /**
@@ -126,14 +69,6 @@ public class ViolationsRunAction implements RunAction2, SimpleBuildStep.LastBuil
     public JSONArray getViolationsJson() {
         run.checkPermission(hudson.model.Item.READ);
         return JSONArray.fromObject(violations);
-    }
-
-    public String getBindUrl() {
-        return WebApp.getCurrent().boundObjectTable.bind(this).getURL();
-    }
-
-    public String getCrumb() {
-        return WebApp.getCurrent().getCrumbIssuer().issueCrumb();
     }
 
 }

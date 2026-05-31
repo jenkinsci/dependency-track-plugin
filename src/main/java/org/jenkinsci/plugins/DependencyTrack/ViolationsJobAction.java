@@ -15,42 +15,35 @@
  */
 package org.jenkinsci.plugins.DependencyTrack;
 
-import hudson.model.InvisibleAction;
 import hudson.model.Job;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
 import org.jenkinsci.plugins.DependencyTrack.model.ViolationState;
-import org.kohsuke.stapler.WebApp;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 /**
+ * Action for showing a trend chart of policy violations.
  *
  * @author Ronny "Sephiroth" Perinke <sephiroth@sephiroth-j.de>
  */
 @RequiredArgsConstructor
-public class ViolationsJobAction extends InvisibleAction {
+public final class ViolationsJobAction extends AbstactJobAction {
 
-    @Getter
     @NonNull
     private final Job<?, ?> project;
-
-    @Override
-    public String getUrlName() {
-        return "dtrackTrend";
-    }
 
     /**
      * Returns whether the policy violations trend chart is visible or not.
      *
      * @return {@code true} if the trend is visible, false otherwise
      */
+    @Override
     public boolean isTrendVisible() {
         return project.getBuilds().stream()
                 .map(run -> run.getAction(ViolationsRunAction.class))
@@ -84,13 +77,5 @@ public class ViolationsJobAction extends InvisibleAction {
                 })
                 .toList();
         return JSONArray.fromObject(distributions);
-    }
-
-    public String getBindUrl() {
-        return WebApp.getCurrent().boundObjectTable.bind(this).getURL();
-    }
-
-    public String getCrumb() {
-        return WebApp.getCurrent().getCrumbIssuer().issueCrumb();
     }
 }
