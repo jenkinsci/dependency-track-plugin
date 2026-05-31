@@ -18,6 +18,10 @@ Publishing SBOMs can be performed asynchronously or synchronously.
 
 Asynchronous publishing simply uploads the SBOM to Dependency-Track and the job continues. Synchronous publishing waits for Dependency-Track to process the SBOM after being uploaded. Synchronous publishing has the benefit of displaying interactive job trends and per build findings.
 
+> [!IMPORTANT]
+> **Content-Security-Policy protection in Jenkins 2.539+**
+> Starting with version 2.539, [Jenkins sets a Content Security Policy (CSP) header](https://www.jenkins.io/doc/book/security/csp/) that prevents the display of findings and policy violations. Administrators can [configure Jenkins](https://www.jenkins.io/doc/book/security/configuring-content-security-policy/) to override the default policy by adding "unsafe-eval" to the "script-src" directive, which restores the display functionality. Other features of the plugin are not affected by CSP.
+
 ![job trend](docs/images/jenkins-job-trend.png)
 
 ![build summary](docs/images/jenkins-build-summary.png)
