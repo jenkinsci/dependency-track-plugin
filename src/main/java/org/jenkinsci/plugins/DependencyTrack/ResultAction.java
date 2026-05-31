@@ -40,7 +40,7 @@ import org.kohsuke.stapler.WebApp;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 @Getter
-@EqualsAndHashCode
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @RequiredArgsConstructor
 public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction, Serializable {
 
@@ -55,13 +55,21 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
      * belonging to
      */
     @Setter
+    @EqualsAndHashCode.Include
     private String dependencyTrackUrl;
 
     /**
      * the ID of the project to which these results are belonging to
      */
     @Setter
+    @EqualsAndHashCode.Include
     private String projectId;
+
+    /**
+     * the name of the project to which these results are belonging to
+     */
+    @Setter
+    private String projectName;
 
     @Override
     public String getIconFileName() {
@@ -70,7 +78,7 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
 
     @Override
     public String getDisplayName() {
-        return Messages.Result_DT_Report();
+        return Messages.Result_DT_Report(getNameOrId());
     }
 
     @Override
@@ -105,6 +113,10 @@ public class ResultAction implements RunAction2, SimpleBuildStep.LastBuildAction
 
     public boolean hasFindings() {
         return findings != null && !findings.isEmpty();
+    }
+
+    public String getNameOrId() {
+        return !PluginUtil.isBlank(projectName) ? projectName : projectId;
     }
 
     /**

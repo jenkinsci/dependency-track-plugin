@@ -66,12 +66,13 @@ public class ResultLinkAction implements Action, Serializable {
 
     @Override
     public String getDisplayName() {
-        return isEnabled() ? Messages.Result_DT_Project() : null;
+        var name = !PluginUtil.isBlank(projectName) ? projectName : projectId;
+        return isEnabled() ? Messages.Result_DT_Project(name) : null;
     }
 
     @Override
     public String getUrlName() {
-        return isEnabled() ? String.format("%s/projects/%s", dependencyTrackUrl, URLEncoder.encode(projectId, StandardCharsets.UTF_8)) : null;
+        return isEnabled() ? "%s/projects/%s".formatted(dependencyTrackUrl, URLEncoder.encode(projectId, StandardCharsets.UTF_8)) : null;
     }
 
     private boolean isEnabled() {

@@ -337,12 +337,6 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
             }
         }
 
-        // add ResultLinkAction even if it may not contain a projectId. but we want to store name and version for the future.
-        final ResultLinkAction linkAction = new ResultLinkAction(getEffectiveFrontendUrl(), projectId);
-        linkAction.setProjectName(effectiveProjectName);
-        linkAction.setProjectVersion(effectiveProjectVersion);
-        run.addOrReplaceAction(linkAction);
-
         logger.log(Messages.Builder_Success(String.format("%s/projects/%s", getEffectiveFrontendUrl(), !PluginUtil.isBlank(projectId) ? projectId : "")));
         
         updateProjectProperties(logger, apiClient, effectiveProjectName, effectiveProjectVersion, effectiveProjectProperties);
@@ -351,8 +345,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         if (synchronous && uploadResult.token() != null) {
             final var resultActions = publishAnalysisResult(logger, apiClient, uploadResult.token(), run, effectiveProjectName, effectiveProjectVersion);
             if (thresholds.hasValues()) {
-                final var resultAction = resultActions.findingsAction;
-                evaluateRiskGates(run, logger, resultAction.getSeverityDistribution(), thresholds);
+                evaluateRiskGates(run, logger, resultActions.findingsAction, thresholds);
             }
             if (resultActions.violationsAction != null) {
                 evaluateViolations(run, logger, resultActions.violationsAction.getViolations());
@@ -408,6 +401,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         final var findingsAction = new ResultAction(findings, severityDistribution);
         findingsAction.setDependencyTrackUrl(getEffectiveFrontendUrl());
         findingsAction.setProjectId(effectiveProjectId);
+        findingsAction.setProjectName(effectiveProjectName);
         build.addOrReplaceAction(findingsAction);
 
         final var team = apiClient.getTeamPermissions();
@@ -419,12 +413,13 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
             violationsAction = new ViolationsRunAction(violations);
             violationsAction.setDependencyTrackUrl(getEffectiveFrontendUrl());
             violationsAction.setProjectId(effectiveProjectId);
+            violationsAction.setProjectName(effectiveProjectName);
             build.addOrReplaceAction(violationsAction);
         } else {
             logger.log(Messages.Builder_Violations_Skipped(VIEW_POLICY_VIOLATION, team.getName()));
         }
 
-        // update ResultLinkAction with one that surely contains a projectId
+        // add ResultLinkAction with one that surely contains a projectId
         final ResultLinkAction linkAction = new ResultLinkAction(getEffectiveFrontendUrl(), effectiveProjectId);
         linkAction.setProjectName(effectiveProjectName);
         linkAction.setProjectVersion(effectiveProjectVersion);
@@ -433,7 +428,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         return new PublishAnalysisResult(findingsAction, violationsAction);
     }
 
-    private void evaluateRiskGates(final Run<?, ?> build, final ConsoleLogger logger, final SeverityDistribution currentDistribution, final Thresholds thresholds) throws AbortException {
+    private void evaluateRiskGates(final Run<?, ?> build, final ConsoleLogger logger, final ResultAction currentResult, final Thresholds thresholds) throws AbortException {
         // Get previous results and evaluate to thresholds
         final SeverityDistribution previousDistribution = Optional.ofNullable(getPreviousBuildWithAnalysisResult(build))
                 .map(previousBuild -> previousBuild.getAction(ResultAction.class))
@@ -445,7 +440,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
             logger.log(Messages.Builder_Threshold_NoComparison());
         }
         final RiskGate riskGate = new RiskGate(thresholds);
-        final Result result = riskGate.evaluate(currentDistribution, previousDistribution);
+        final Result result = riskGate.evaluate(currentResult.getSeverityDistribution(), previousDistribution);
         if (result.isWorseOrEqualTo(Result.UNSTABLE) && result.isCompleteBuild()) {
             logger.log(Messages.Builder_Threshold_Exceed());
             // allow build to proceed, but mark overall build unstable

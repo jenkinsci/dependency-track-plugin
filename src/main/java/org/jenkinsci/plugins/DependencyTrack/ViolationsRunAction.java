@@ -39,7 +39,7 @@ import org.kohsuke.stapler.WebApp;
 import org.kohsuke.stapler.bind.JavaScriptMethod;
 
 @Getter
-@EqualsAndHashCode
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @RequiredArgsConstructor
 public class ViolationsRunAction implements RunAction2, SimpleBuildStep.LastBuildAction, Serializable {
 
@@ -53,13 +53,21 @@ public class ViolationsRunAction implements RunAction2, SimpleBuildStep.LastBuil
      * belonging to
      */
     @Setter
+    @EqualsAndHashCode.Include
     private String dependencyTrackUrl;
 
     /**
      * the ID of the project to which these results are belonging to
      */
     @Setter
+    @EqualsAndHashCode.Include
     private String projectId;
+
+    /**
+     * the name of the project to which these results are belonging to
+     */
+    @Setter
+    private String projectName;
 
     @Override
     public String getIconFileName() {
@@ -68,7 +76,7 @@ public class ViolationsRunAction implements RunAction2, SimpleBuildStep.LastBuil
 
     @Override
     public String getDisplayName() {
-        return Messages.Result_DT_ReportViolations();
+        return Messages.Result_DT_ReportViolations(getNameOrId());
     }
 
     @Override
@@ -103,6 +111,10 @@ public class ViolationsRunAction implements RunAction2, SimpleBuildStep.LastBuil
 
     public boolean hasViolations() {
         return violations != null && !violations.isEmpty();
+    }
+
+    public String getNameOrId() {
+        return !PluginUtil.isBlank(projectName) ? projectName : projectId;
     }
 
     /**
