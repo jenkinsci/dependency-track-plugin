@@ -20,6 +20,7 @@ Asynchronous publishing simply uploads the SBOM to Dependency-Track and the job 
 
 > [!IMPORTANT]
 > **Content-Security-Policy protection in Jenkins 2.539+**
+> 
 > Starting with version 2.539, [Jenkins sets a Content Security Policy (CSP) header](https://www.jenkins.io/doc/book/security/csp/) that prevents the display of findings and policy violations. Administrators can [configure Jenkins](https://www.jenkins.io/doc/book/security/configuring-content-security-policy/) to override the default policy by adding "unsafe-eval" to the "script-src" directive, which restores the display functionality. Other features of the plugin are not affected by CSP.
 
 ![job trend](docs/images/jenkins-job-trend.png)
