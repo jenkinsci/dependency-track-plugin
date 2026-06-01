@@ -39,6 +39,7 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
+import org.assertj.core.api.InstanceOfAssertFactories;
 import org.jenkinsci.plugins.DependencyTrack.api.ApiClient;
 import org.jenkinsci.plugins.DependencyTrack.api.ApiClientException;
 import org.jenkinsci.plugins.DependencyTrack.api.ProjectData;
@@ -308,6 +309,9 @@ class DependencyTrackPublisherTest {
             assertThat(data.version()).isNull();
             assertThat(data.properties()).isNull();
         }), eq(""));
+        verify(build).addOrReplaceAction(any(ResultAction.class));
+        verify(build).addOrReplaceAction(any(ResultLinkAction.class));
+        verify(build, never()).addOrReplaceAction(any(ViolationsRunAction.class));
     }
 
     @Test
@@ -408,6 +412,9 @@ class DependencyTrackPublisherTest {
         verify(client).getTeamPermissions();
         verify(client).getViolations("uuid-1");
         verify(build).setResult(Result.UNSTABLE);
+        verify(build).addOrReplaceAction(any(ResultAction.class));
+        verify(build).addOrReplaceAction(any(ResultLinkAction.class));
+        verify(build).addOrReplaceAction(any(ViolationsRunAction.class));
     }
 
     @Test
@@ -427,6 +434,9 @@ class DependencyTrackPublisherTest {
         when(client.getViolations("uuid-1")).thenReturn(List.of(new Violation("uuid-1", ViolationType.SECURITY, ViolationState.FAIL, "rule-1", null)));
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).isInstanceOf(AbortException.class).hasMessage(Messages.Builder_Violations_Exceed());
+        verify(build).addOrReplaceAction(any(ResultAction.class));
+        verify(build).addOrReplaceAction(any(ResultLinkAction.class));
+        verify(build).addOrReplaceAction(any(ViolationsRunAction.class));
     }
 
     @Test
@@ -474,6 +484,9 @@ class DependencyTrackPublisherTest {
             assertThat(actualProps.isLatest()).isTrue();
         }));
         verify(client).lookupProject("name-1", "version-1");
+        verify(build).addOrReplaceAction(any(ResultAction.class));
+        verify(build).addOrReplaceAction(any(ResultLinkAction.class));
+        verify(build).addOrReplaceAction(any(ViolationsRunAction.class));
     }
 
     @Test

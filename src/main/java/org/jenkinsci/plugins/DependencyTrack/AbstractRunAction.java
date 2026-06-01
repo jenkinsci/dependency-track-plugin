@@ -19,6 +19,7 @@ import hudson.Plugin;
 import hudson.PluginWrapper;
 import hudson.model.Run;
 import jakarta.annotation.Nonnull;
+import java.io.Serializable;
 import java.util.Optional;
 import jenkins.model.Jenkins;
 import jenkins.model.RunAction2;
@@ -38,7 +39,7 @@ import org.kohsuke.stapler.WebApp;
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public abstract sealed class AbstractRunAction implements RunAction2, SimpleBuildStep.LastBuildAction permits ResultAction, ViolationsRunAction {
+public abstract sealed class AbstractRunAction implements RunAction2, SimpleBuildStep.LastBuildAction, Serializable permits ResultAction, ViolationsRunAction {
     
     protected transient Run<?, ?> run; // transient: see RunAction2, and JENKINS-45892
 

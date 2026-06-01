@@ -16,7 +16,6 @@
 package org.jenkinsci.plugins.DependencyTrack;
 
 import hudson.model.Action;
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Set;
@@ -36,7 +35,7 @@ import org.kohsuke.stapler.bind.JavaScriptMethod;
 @Getter
 @EqualsAndHashCode(onlyExplicitlyIncluded = true, callSuper = true)
 @RequiredArgsConstructor
-public final class ResultAction extends AbstractRunAction implements Serializable {
+public final class ResultAction extends AbstractRunAction {
 
     private static final long serialVersionUID = 9144544646132489130L;
 

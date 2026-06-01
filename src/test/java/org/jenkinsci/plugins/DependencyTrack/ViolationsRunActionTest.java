@@ -97,4 +97,25 @@ class ViolationsRunActionTest {
         assertThat(new ViolationsRunAction(List.of()).hasViolations()).isFalse();
         assertThat(new ViolationsRunAction(testViolations).hasViolations()).isTrue();
     }
+
+    @Test
+    void coverageTest(JenkinsRule j) throws IOException {
+        final MockAuthorizationStrategy mockAuthorizationStrategy = new MockAuthorizationStrategy();
+        j.jenkins.setAuthorizationStrategy(mockAuthorizationStrategy);
+        j.jenkins.setSecurityRealm(j.createDummySecurityRealm());
+
+        FreeStyleProject project;
+        try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
+            mockAuthorizationStrategy.grant(Job.CREATE).onRoot().to(ACL.SYSTEM_USERNAME);
+            project = j.createFreeStyleProject();
+        }
+        final FreeStyleBuild b1 = new FreeStyleBuild(project);
+        final ViolationsRunAction uut = new ViolationsRunAction(testViolations);
+        uut.onLoad(b1);
+        uut.setProjectId("id");
+
+        assertThat(uut.getDisplayName()).isEqualTo(Messages.Result_DT_ReportViolations("id"));
+        assertThat(uut.getUrlName()).isEqualTo("dependency-track-violations");
+        assertThat(uut.getProjectActions()).hasExactlyElementsOfTypes(ViolationsJobAction.class);
+    }
 }

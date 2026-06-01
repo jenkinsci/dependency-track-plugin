@@ -95,4 +95,26 @@ class ResultActionTest {
         assertThat(new ResultAction(List.of(), new SeverityDistribution(1)).hasFindings()).isFalse();
         assertThat(new ResultAction(testFindings, new SeverityDistribution(1)).hasFindings()).isTrue();
     }
+
+    @Test
+    void coverageTest(JenkinsRule j) throws IOException {
+        final MockAuthorizationStrategy mockAuthorizationStrategy = new MockAuthorizationStrategy();
+        j.jenkins.setAuthorizationStrategy(mockAuthorizationStrategy);
+        j.jenkins.setSecurityRealm(j.createDummySecurityRealm());
+
+        FreeStyleProject project;
+        try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
+            mockAuthorizationStrategy.grant(Job.CREATE).onRoot().to(ACL.SYSTEM_USERNAME);
+            project = j.createFreeStyleProject();
+        }
+        final FreeStyleBuild b1 = new FreeStyleBuild(project);
+        final ResultAction uut = new ResultAction(testFindings, new SeverityDistribution(1));
+        uut.onLoad(b1);
+        uut.setProjectName("name");
+        uut.setProjectId("id");
+
+        assertThat(uut.getDisplayName()).isEqualTo(Messages.Result_DT_Report("name"));
+        assertThat(uut.getUrlName()).isEqualTo("dependency-track-findings");
+        assertThat(uut.getProjectActions()).hasExactlyElementsOfTypes(JobAction.class);
+    }
 }
