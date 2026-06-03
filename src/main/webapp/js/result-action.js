@@ -1,27 +1,6 @@
 'use strict';
-
 // create vue.js based table
 (function () {
-    function getNativeFunction(clazz, func) {
-        const frame = document.createElement('iframe');
-        frame.style.display = 'none';
-        document.body.appendChild(frame);
-        const nativeClazz = frame.contentWindow[clazz];
-        frame.parentNode.removeChild(frame);
-        return nativeClazz.prototype[func];
-    }
-
-// make String.trim() work again like it should
-// otherwise sorting the vue.js-table will not work
-    if (String.prototype.trim.toString().indexOf('[native code]') === -1) {
-        String.prototype.trim = getNativeFunction('String', 'trim');
-    }
-// restore Array.filter ... damn ancient prototype.js!
-// otherwise "updateAriaDescribedby" in boostrape-vue (2.21+) will not work because 3rd arg in filter callback is undefined
-    if (Array.prototype.filter.toString().indexOf('[native code]') === -1) {
-        Array.prototype.filter = getNativeFunction('Array', 'filter');
-    }
-
     const actionUrl = new URL(document.currentScript.dataset.actionUrl, window.location.origin);
     if (!(actionUrl.origin === window.location.origin
             && /^https?:$/.test(actionUrl.protocol)
@@ -32,11 +11,6 @@
 
     const crumbHeaderName = document.head.dataset.crumbHeader || 'Jenkins-Crumb';
     const crumbValue = document.head.dataset.crumbValue || document.currentScript.dataset.crumbValue || '';
-    const fetchHeaders = new Headers([
-        ['Content-Type', 'application/x-stapler-method-invocation;charset=UTF-8'],
-        ['Crumb', crumbValue],
-        [crumbHeaderName, crumbValue],
-    ]);
 
     /**
      * update severity-bar
@@ -99,7 +73,11 @@
                     credentials: 'same-origin',
                     cache: 'default',
                     body: '[]',
-                    headers: fetchHeaders,
+                    headers: new Headers([
+                        ['Content-Type', 'application/x-stapler-method-invocation;charset=UTF-8'],
+                        ['Crumb', crumbValue],
+                        [crumbHeaderName, crumbValue],
+                    ]),
                 })
                 .then(response => {
                     if (response.ok) {
