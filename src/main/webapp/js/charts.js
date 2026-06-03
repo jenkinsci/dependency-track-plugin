@@ -58,11 +58,6 @@ const initChart = data => {
         yAxis: [
             {
                 id: 'Vulnerabilities',
-                name: 'Vulnerabilities',
-                nameLocation: 'center',
-                boundaryGap: false,
-                nameGap: 30,
-                nameRotate: 90,
                 type: 'value'
             }
         ],
@@ -158,9 +153,6 @@ const initChart = data => {
                     label: { formatter: i18n['tooltip.title'] }
                 },
             },
-            yAxis: [
-                { id: 'Vulnerabilities', name: i18n['yAxis.title'] },
-            ],
             series: [
                 { id: 'Critical', name: i18n['seriesTitle.critical'] },
                 { id: 'High', name: i18n['seriesTitle.high'] },

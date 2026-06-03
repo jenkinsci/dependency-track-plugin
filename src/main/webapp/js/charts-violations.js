@@ -58,11 +58,6 @@ const initChart = data => {
         yAxis: [
             {
                 id: 'Violations',
-                name: 'Violations',
-                nameLocation: 'center',
-                boundaryGap: false,
-                nameGap: 30,
-                nameRotate: 90,
                 type: 'value'
             }
         ],
@@ -128,9 +123,6 @@ const initChart = data => {
                     label: { formatter: i18n['tooltip.title'] }
                 },
             },
-            yAxis: [
-                { id: 'Violations', name: i18n['yAxis.title'] },
-            ],
             series: [
                 { id: 'Fail', name: i18n['seriesTitle.fail'] },
                 { id: 'Warn', name: i18n['seriesTitle.warn'] },
