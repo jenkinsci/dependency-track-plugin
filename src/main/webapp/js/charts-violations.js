@@ -1,26 +1,25 @@
 import { init as echartsInit } from './libs/echarts.esm.min.js';
 const currentScript = document.currentScript || document.querySelector('script[type="module"][src$="/plugin/dependency-track/js/charts-violations.js"][data-action-url]');
 
-    const actionUrl = new URL(currentScript.dataset.actionUrl, window.location.origin);
-    if (!(actionUrl.origin === window.location.origin
-            && /^https?:$/.test(actionUrl.protocol)
-            && actionUrl.pathname.startsWith(`${document.head.dataset.rooturl}/$stapler/bound/`)
-    )) {
-        throw new Error('malicious URL in data-action-url detected!');
-    }
+const actionUrl = new URL(currentScript.dataset.actionUrl, window.location.origin);
+if (!(actionUrl.origin === window.location.origin
+        && /^https?:$/.test(actionUrl.protocol)
+        && actionUrl.pathname.startsWith(`${document.head.dataset.rooturl}/$stapler/bound/`)
+        )) {
+    throw new Error('malicious URL in data-action-url detected!');
+}
 
-    const crumbHeaderName = document.head.dataset.crumbHeader || 'Jenkins-Crumb';
-    const crumbValue = document.head.dataset.crumbValue || currentScript.dataset.crumbValue || '';
-    const fetchHeaders = new Headers([
-        ['Content-Type', 'application/x-stapler-method-invocation;charset=UTF-8'],
-        ['Crumb', crumbValue],
-        [crumbHeaderName, crumbValue],
-    ]);
+const crumbHeaderName = document.head.dataset.crumbHeader || 'Jenkins-Crumb';
+const crumbValue = document.head.dataset.crumbValue || currentScript.dataset.crumbValue || '';
 
+const initChart = data => {
     const container = document.getElementById('dtrackTrend-history-chart-violations');
     const textColor = window.getComputedStyle(container).getPropertyValue('color');
     const fontFamily = window.getComputedStyle(container).getPropertyValue('font-family');
-    const chart = echartsInit(container);
+    const chart = echartsInit(container, null, {
+        width: 500,
+        height: 210,
+    });
     chart.setOption({
         tooltip: {
             trigger: 'axis',
@@ -54,6 +53,7 @@ const currentScript = document.currentScript || document.querySelector('script[t
                 formatter: '#{value}',
             },
             triggerEvent: true,
+            data: data.map(run => run.buildNumber),
         },
         yAxis: [
             {
@@ -80,6 +80,7 @@ const currentScript = document.currentScript || document.querySelector('script[t
                 emphasis: {
                     focus: 'series',
                 },
+                data: data.map(run => run.fail),
             },
             {
                 id: 'Warn',
@@ -89,6 +90,7 @@ const currentScript = document.currentScript || document.querySelector('script[t
                 emphasis: {
                     focus: 'series',
                 },
+                data: data.map(run => run.warn),
             },
             {
                 id: 'Info',
@@ -98,17 +100,14 @@ const currentScript = document.currentScript || document.querySelector('script[t
                 emphasis: {
                     focus: 'series',
                 },
+                data: data.map(run => run.info),
             }
         ]
     });
-    chart.resize();
     chart.on('click', 'xAxis', event => {
         if (event.targetType === 'axisLabel' && event.value) {
             window.location += parseInt(event.value, 10) + '/dependency-track-violations';
         }
-    });
-    window.addEventListener('resize', () => {
-        chart.resize();
     });
 
     window.fetch(`${document.head.dataset.rooturl}/i18n/resourceBundle/?baseName=org.jenkinsci.plugins.DependencyTrack.ViolationsJobAction.floatingBox`, {
@@ -121,7 +120,7 @@ const currentScript = document.currentScript || document.querySelector('script[t
             [crumbHeaderName, crumbValue],
         ]),
     })
-    .then(response => response.ok ? response.json().then(json => json.data) : {})
+    .then(response => response.ok ? response.json().then(json => json.data) : { })
     .then(i18n => {
         chart.setOption({
             tooltip: {
@@ -139,42 +138,29 @@ const currentScript = document.currentScript || document.querySelector('script[t
             ]
         });
     });
-    
-    window.fetch(`${actionUrl.href}/getViolationsTrend`, {
-        method: 'POST',
-        mode: 'same-origin',
-        credentials: 'same-origin',
-        cache: 'default',
-        body: '[]',
-        headers: fetchHeaders,
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.json().then(data => Array.isArray(data) ? data : []);
-        } else {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-    })
-    .then(data => {
-        if (data.length) {
-            chart.setOption({
-                xAxis: {
-                    data: data.map(run => run.buildNumber),
-                },
-                series: [
-                    {
-                        id: 'Fail',
-                        data: data.map(run => run.fail)
-                    },
-                    {
-                        id: 'Warn',
-                        data: data.map(run => run.warn)
-                    },
-                    {
-                        id: 'Info',
-                        data: data.map(run => run.info)
-                    }
-                ]
-            });
-        }
-    });
+};
+
+window.fetch(`${actionUrl.href}/getViolationsTrend`, {
+    method: 'POST',
+    mode: 'same-origin',
+    credentials: 'same-origin',
+    cache: 'default',
+    body: '[]',
+    headers: new Headers([
+        ['Content-Type', 'application/x-stapler-method-invocation;charset=UTF-8'],
+        ['Crumb', crumbValue],
+        [crumbHeaderName, crumbValue],
+    ]),
+})
+.then(response => {
+    if (response.ok) {
+        return response.json().then(data => Array.isArray(data) ? data : []);
+    } else {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+})
+.then(data => {
+    if (data.length) {
+        initChart(data);
+    }
+});

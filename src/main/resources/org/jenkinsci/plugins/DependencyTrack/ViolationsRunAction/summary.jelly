@@ -5,7 +5,7 @@
         <h3><a href="${from.urlName}/" title="${%summary.title(from.nameOrId)}">${%summary.text(from.nameOrId)}</a></h3>
         <j:choose>
             <j:when test="${from.hasViolations()}">
-                <figure id="${from.urlName}-summary-chart" style="margin:0; width: 500px; height: 210px;"/>
+                <figure id="${from.urlName}-summary-chart" style="margin:0;"/>
                 <script src="${resURL}/plugin/dependency-track/js/violations-summary.js?v=${from.versionHash}" type="module" async="async" data-action-url="${it.bindUrl}" data-crumb-value="${it.crumb}"></script>
             </j:when>
             <j:otherwise><p>${%summary.noFindings}</p></j:otherwise>

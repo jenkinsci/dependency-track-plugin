@@ -6,7 +6,7 @@
             <h3 class="test-trend-caption">
                 ${%chart.title}
             </h3>
-            <figure id="${from.urlName}-history-chart" style="margin: 0; width: 500px; height: 210px;"/>
+            <figure id="${from.urlName}-history-chart" style="margin: 0;"/>
 
             <script src="${resURL}/plugin/dependency-track/js/charts.js" type="module" async="async" data-action-url="${from.bindUrl}" data-crumb-value="${from.crumb}"></script>
         </aside>

@@ -1,26 +1,37 @@
 import { init as echartsInit } from './libs/echarts.esm.min.js';
 const currentScript = document.currentScript || document.querySelector('script[type="module"][src*="/plugin/dependency-track/js/result-summary.js"][data-action-url]');
 
-    const actionUrl = new URL(currentScript.dataset.actionUrl, window.location.origin);
-    if (!(actionUrl.origin === window.location.origin
-            && /^https?:$/.test(actionUrl.protocol)
-            && actionUrl.pathname.startsWith(`${document.head.dataset.rooturl}/$stapler/bound/`)
-    )) {
-        throw new Error('malicious URL in data-action-url detected!');
-    }
+const actionUrl = new URL(currentScript.dataset.actionUrl, window.location.origin);
+if (!(actionUrl.origin === window.location.origin
+        && /^https?:$/.test(actionUrl.protocol)
+        && actionUrl.pathname.startsWith(`${document.head.dataset.rooturl}/$stapler/bound/`)
+)) {
+    throw new Error('malicious URL in data-action-url detected!');
+}
 
-    const crumbHeaderName = document.head.dataset.crumbHeader || 'Jenkins-Crumb';
-    const crumbValue = document.head.dataset.crumbValue || currentScript.dataset.crumbValue || '';
-    const fetchHeaders = new Headers([
-        ['Content-Type', 'application/x-stapler-method-invocation;charset=UTF-8'],
-        ['Crumb', crumbValue],
-        [crumbHeaderName, crumbValue],
-    ]);
+const crumbHeaderName = document.head.dataset.crumbHeader || 'Jenkins-Crumb';
+const crumbValue = document.head.dataset.crumbValue || currentScript.dataset.crumbValue || '';
 
+const initChart = data => {
     const container = document.getElementById('dependency-track-findings-summary-chart');
     const textColor = window.getComputedStyle(container).getPropertyValue('color');
     const fontFamily = window.getComputedStyle(container).getPropertyValue('font-family');
-    const chart = echartsInit(container);
+    const chartData = [
+        { name: 'CRITICAL', value: 0, color: '#dc0000' },
+        { name: 'HIGH', value: 0, color: '#fd8c00' },
+        { name: 'MEDIUM', value: 0, color: '#fdc500' },
+        { name: 'LOW', value: 0, color: '#4cae4c' },
+        { name: 'INFO', value: 0, color: '#357abd' },
+        { name: 'UNASSIGNED', value: 0, color: '#c0c0c0' },
+    ];
+    data.forEach(finding => {
+        chartData.find(item => item.name === finding.vulnerability.severity).value++;
+    });
+
+    const chart = echartsInit(container, null, {
+        width: 500,
+        height: 210,
+    });
     chart.setOption({
         tooltip: {
             trigger: 'item',
@@ -58,6 +69,9 @@ const currentScript = document.currentScript || document.querySelector('script[t
                 emphasis: {
                     focus: 'item',
                 },
+                data: chartData.map(item => {
+                    return { value: item.value, itemStyle: { color: item.color } };
+                }),
             },
         ]
     });
@@ -83,45 +97,29 @@ const currentScript = document.currentScript || document.querySelector('script[t
             }
         });
     });
+};
 
-    window.fetch(`${actionUrl.href}/getFindingsJson`, {
-        method: 'POST',
-        mode: 'same-origin',
-        credentials: 'same-origin',
-        cache: 'default',
-        body: '[]',
-        headers: fetchHeaders,
-    })
-    .then(response => {
-        if (response.ok) {
-            return response.json().then(data => Array.isArray(data) ? data : []);
-        } else {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-    })
-    .then(data => {
-        if (data.length) {
-            const chartData = [
-                { name: 'CRITICAL', value: 0, color: '#dc0000' },
-                { name: 'HIGH', value: 0, color: '#fd8c00' },
-                { name: 'MEDIUM', value: 0, color: '#fdc500' },
-                { name: 'LOW', value: 0, color: '#4cae4c' },
-                { name: 'INFO', value: 0, color: '#357abd' },
-                { name: 'UNASSIGNED', value: 0, color: '#c0c0c0' },
-            ];
-            data.forEach(finding => {
-                chartData.find(item => item.name === finding.vulnerability.severity).value++;
-            });
-            chart.setOption({
-                series: [
-                    {
-                        id: 'Vulnerabilities',
-                        data: chartData.map(item => {
-                            return { value: item.value, itemStyle: { color: item.color } };
-                        }),
-                    },
-                ]
-            });
-        }
-    });
-
+window.fetch(`${actionUrl.href}/getFindingsJson`, {
+    method: 'POST',
+    mode: 'same-origin',
+    credentials: 'same-origin',
+    cache: 'default',
+    body: '[]',
+    headers: new Headers([
+        ['Content-Type', 'application/x-stapler-method-invocation;charset=UTF-8'],
+        ['Crumb', crumbValue],
+        [crumbHeaderName, crumbValue],
+    ]),
+})
+.then(response => {
+    if (response.ok) {
+        return response.json().then(data => Array.isArray(data) ? data : []);
+    } else {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+})
+.then(data => {
+    if (data.length) {
+        initChart(data);
+    }
+});
