@@ -22,14 +22,12 @@ limitations under the License.
             <f:select id="projectId"/>
         </f:entry>
 
-        <j:if test="${instance != null ? instance.isEffectiveAutoCreateProjects() : descriptor.isDependencyTrackAutoCreateProjects()}">
         <f:entry title="${%projectName}" field="projectName">
             <f:textbox id="projectName"/>
         </f:entry>
         <f:entry title="${%projectVersion}" field="projectVersion">
             <f:textbox id="projectVersion"/>
         </f:entry>
-        </j:if>
 
         <f:entry title="${%artifact}" field="artifact">
             <f:textbox id="artifact"/>
@@ -63,7 +61,7 @@ limitations under the License.
             <f:entry title="${%dependencytrack.read.timeout}" field="dependencyTrackReadTimeout">
                 <f:number id="dependencytrack.read.timeout" clazz="non-negative-number" min="0" />
             </f:entry>
-            <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnectionJob" with="dependencyTrackUrl,dependencyTrackApiKey,autoCreateProjects,synchronous,projectProperties" />
+            <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnectionJob" with="dependencyTrackUrl,dependencyTrackApiKey,synchronous,projectProperties" />
         </f:optionalBlock>
     </f:section>
 
