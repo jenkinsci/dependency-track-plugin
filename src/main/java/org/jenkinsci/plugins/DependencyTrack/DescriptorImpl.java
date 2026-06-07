@@ -32,14 +32,11 @@ import hudson.util.VersionNumber;
 import jakarta.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 import jenkins.model.Jenkins;
 import lombok.Getter;
 import lombok.NonNull;
@@ -55,8 +52,6 @@ import org.kohsuke.stapler.DataBoundSetter;
 import org.kohsuke.stapler.QueryParameter;
 import org.kohsuke.stapler.StaplerRequest2;
 import org.kohsuke.stapler.verb.POST;
-
-import static org.jenkinsci.plugins.DependencyTrack.model.Permissions.*;
 
 /**
  * <p>
@@ -144,12 +139,12 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
     }
 
     /**
-     * Retrieve the projects to populate the dropdown.
+     * Retrieve the projects to populate the dropdown of existing projects.
      *
      * @param dependencyTrackUrl the base URL to Dependency-Track
      * @param dependencyTrackApiKey the API key to use for authentication
      * @param item used to lookup credentials in job config. ignored in global
-     * @return ListBoxModel
+     * @return ListBoxModel of project names and their id
      */
     @POST
     public ListBoxModel doFillProjectIdItems(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable final Item item) {
@@ -177,6 +172,13 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
         return projects;
     }
 
+    /**
+     * Retrieve the credentials to populate the dropdown of possible api keys.
+     *
+     * @param credentialsId the current credential value of secret
+     * @param item used to lookup credentials in job config. ignored in global
+     * @return ListBoxModel of credentials
+     */
     @POST
     public ListBoxModel doFillDependencyTrackApiKeyItems(@QueryParameter final String credentialsId, @AncestorInPath final Item item) {
         StandardListBoxModel result = new StandardListBoxModel();
@@ -224,11 +226,36 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
         return doCheckDependencyTrackUrl(value, item);
     }
 
+    /**
+     * performs the connection including permission check for the global
+     * configuration
+     *
+     * @param dependencyTrackUrl value of the URL as specified in the global
+     * config
+     * @param dependencyTrackApiKey credential-Id of the api key as specified in
+     * the global config
+     * @param item used to check jenkins permissions
+     * @return
+     */
     @POST
     public FormValidation doTestConnectionGlobal(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable Item item) {
         return testConnection(dependencyTrackUrl, dependencyTrackApiKey, false, false, item);
     }
 
+    /**
+     * performs the connection including permission check for the job
+     * configuration
+     *
+     * @param dependencyTrackUrl value of the URL as specified in the job config
+     * @param dependencyTrackApiKey credential-Id of the api key as specified in
+     * the job config
+     * @param synchronous value for synchronous publishing as specified in the
+     * job config
+     * @param projectProperties value for setting project properties as
+     * specified in the job config
+     * @param item used to check jenkins permissions
+     * @return
+     */
     @POST
     public FormValidation doTestConnectionJob(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @QueryParameter final boolean synchronous, @QueryParameter final boolean projectProperties, @AncestorInPath @Nullable Item item) {
         return testConnection(dependencyTrackUrl, dependencyTrackApiKey, synchronous, projectProperties, item);
@@ -277,22 +304,8 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
     }
 
     private FormValidation checkTeamPermissions(final ApiClient apiClient, final String poweredBy, final boolean synchronous, final boolean projectProperties) throws ApiClientException {
-        final Set<String> requiredPermissions = Stream.of(BOM_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS).map(Enum::toString).collect(Collectors.toSet());
-        final Set<String> optionalPermissions = new HashSet<>();
-
-        optionalPermissions.add(PROJECT_CREATION_UPLOAD.toString());
-        if (synchronous) {
-            requiredPermissions.add(VIEW_VULNERABILITY.toString());
-            requiredPermissions.add(VIEW_POLICY_VIOLATION.toString());
-        } else {
-            optionalPermissions.add(VIEW_VULNERABILITY.toString());
-            optionalPermissions.add(VIEW_POLICY_VIOLATION.toString());
-        }
-        if (projectProperties) {
-            requiredPermissions.add(PORTFOLIO_MANAGEMENT.toString());
-        } else {
-            optionalPermissions.add(PORTFOLIO_MANAGEMENT.toString());
-        }
+        final Set<String> requiredPermissions = PluginUtil.buildRequiredPermissions(synchronous, projectProperties);
+        final Set<String> optionalPermissions = PluginUtil.buildOptionalPermissions(synchronous, projectProperties);
 
         final Team team = apiClient.getTeamPermissions();
         final Set<String> allPermissions = new TreeSet<>(team.getPermissions());

@@ -24,10 +24,14 @@ import java.net.URI;
 import java.net.URL;
 import java.time.Duration;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import lombok.experimental.UtilityClass;
 import okhttp3.OkHttpClient;
+
+import static org.jenkinsci.plugins.DependencyTrack.model.Permissions.*;
 
 @UtilityClass
 class PluginUtil {
@@ -91,5 +95,50 @@ class PluginUtil {
                 .map(String::trim)
                 .filter(Predicate.not(String::isEmpty))
                 .orElse(null);
+    }
+
+    /**
+     * creates the set of required permissions depending on the given options.
+     *
+     * @param synchronous value for synchronous publishing as specified in the
+     * job config
+     * @param projectProperties value for setting project properties as
+     * @return set of required permissions
+     */
+    static Set<String> buildRequiredPermissions(final boolean synchronous, final boolean projectProperties) {
+        final Set<String> requiredPermissions = HashSet.newHashSet(6);
+        requiredPermissions.add(BOM_UPLOAD.toString());
+        requiredPermissions.add(VIEW_PORTFOLIO.toString());
+        requiredPermissions.add(VULNERABILITY_ANALYSIS.toString());
+        if (synchronous) {
+            requiredPermissions.add(VIEW_VULNERABILITY.toString());
+            requiredPermissions.add(VIEW_POLICY_VIOLATION.toString());
+        }
+        if (projectProperties) {
+            requiredPermissions.add(PORTFOLIO_MANAGEMENT.toString());
+        }
+        return requiredPermissions;
+    }
+
+
+    /**
+     * creates the set of optional permissions depending on the given options.
+     *
+     * @param synchronous value for synchronous publishing as specified in the
+     * job config
+     * @param projectProperties value for setting project properties as
+     * @return set of optional permissions
+     */
+    static Set<String> buildOptionalPermissions(final boolean synchronous, final boolean projectProperties) {
+        final Set<String> optionalPermissions = HashSet.newHashSet(4);
+        optionalPermissions.add(PROJECT_CREATION_UPLOAD.toString());
+        if (!synchronous) {
+            optionalPermissions.add(VIEW_VULNERABILITY.toString());
+            optionalPermissions.add(VIEW_POLICY_VIOLATION.toString());
+        }
+        if (!projectProperties) {
+            optionalPermissions.add(PORTFOLIO_MANAGEMENT.toString());
+        }
+        return optionalPermissions;
     }
 }
