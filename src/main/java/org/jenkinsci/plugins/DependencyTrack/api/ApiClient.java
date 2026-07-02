@@ -235,17 +235,38 @@ public class ApiClient {
 
     @Nonnull
     public List<Finding> getFindings(@Nonnull final String projectUuid) throws ApiClientException {
-        final var uri = UriComponentsBuilder.fromUriString(PROJECT_FINDINGS_URL).pathSegment("{uuid}").build(projectUuid);
+        final List<JSONObject> findings = new ArrayList<>();
+        int page = 1;
+        boolean fetchMore = true;
+        while (fetchMore) {
+            var fetchedFindings = getFindingsPaged(projectUuid, page++);
+            findings.addAll(fetchedFindings.result());
+            // Continue to retrieve further findings if the current result was not empty and the total amount has not yet been reached.
+            fetchMore = !fetchedFindings.isEmpty() && findings.size() < fetchedFindings.totalSize();
+        }
+        // because the request is paged and the parser eliminates aliases, we must collect the raw results first and parse them at the end
+        return FindingParser.parse(findings);
+    }
+
+    @Nonnull
+    private PagedResult<JSONObject> getFindingsPaged(@Nonnull final String projectUuid, final int page) throws ApiClientException {
+        final var uri = UriComponentsBuilder.fromUriString(PROJECT_FINDINGS_URL).pathSegment("{uuid}")
+                .queryParam(PAGINATED_REQ_PAGE_PARAM, "{page}")
+                .queryParam(PAGINATED_REQ_PAGESIZE_PARAM, 100)
+                .build(projectUuid, page);
         final var request = createRequest(uri);
         return executeWithRetry(() -> {
             try (var response = httpClient.newCall(request).execute()) {
                 final var body = response.body().string();
-                if (!response.isSuccessful()) {
+                if (response.isSuccessful()) {
+                    final var findings = JSONArray.fromObject(body).stream().map(JSONObject.class::cast).toList();
+                    final var totalCount = getTotalCountValue(response, findings.size());
+                    return new PagedResult<>(findings, totalCount);
+                } else {
                     final int status = response.code();
                     logger.log(body);
                     throw new ApiClientException(Messages.ApiClient_Error_RetrieveFindings(status, HttpStatus.valueOf(status).getReasonPhrase()));
                 }
-                return FindingParser.parse(body);
             } catch (ApiClientException e) {
                 throw e;
             } catch (IOException e) {
@@ -269,7 +290,6 @@ public class ApiClient {
     }
 
     @Nonnull
-    @SuppressWarnings("unchecked")
     private PagedResult<Violation> getViolationsPaged(@Nonnull final String projectUuid, final int page) throws ApiClientException {
         final var uri = UriComponentsBuilder.fromUriString(PROJECT_VIOLATIONS_URL).pathSegment("{uuid}")
                 .queryParam(PAGINATED_REQ_PAGE_PARAM, "{page}")
