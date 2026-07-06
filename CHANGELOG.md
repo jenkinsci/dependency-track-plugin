@@ -3,6 +3,8 @@
 ## [Unreleased]
 ### ⚠ Breaking
 ### ⭐ New Features
+- Support Dependency-Track v5 ([#442](https://github.com/jenkinsci/dependency-track-plugin/issues/442))
+
 ### 🐞 Bugs Fixed
 
 ## [v7.0.0] - 2026-06-09

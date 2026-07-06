@@ -268,11 +268,89 @@ class ApiClientTest {
                 .port(0)
                 .route(routes -> routes.get(ApiClient.PROJECT_FINDINGS_URL + "/{uuid}", (request, response) -> {
             assertCommonHeaders(request);
+            QueryStringDecoder query = new QueryStringDecoder(request.uri());
+            assertThat(query.parameters())
+                    .containsOnlyKeys(ApiClient.PAGINATED_REQ_PAGE_PARAM, ApiClient.PAGINATED_REQ_PAGESIZE_PARAM)
+                    .containsEntry(ApiClient.PAGINATED_REQ_PAGESIZE_PARAM, List.of("100"))
+                    .extractingByKey(ApiClient.PAGINATED_REQ_PAGE_PARAM, as(InstanceOfAssertFactories.list(String.class)))
+                    .hasSize(1).first().satisfies(p -> {
+                assertThat(Integer.valueOf(p)).isBetween(1, 2);
+            });
             assertThat(request.param("uuid")).isNotEmpty();
             String uuid = request.param("uuid");
             return switch (uuid) {
-                case "uuid-1" ->
-                    response.sendString(Mono.just("[]"));
+                case "uuid-1" -> {
+                    int page = Integer.parseInt(query.parameters().get(ApiClient.PAGINATED_REQ_PAGE_PARAM).get(0));
+                    int totalCount = 2;
+                    yield switch (page) {
+                        case 1 ->
+                            response
+                            .header(ApiClient.PAGINATED_RES_TOTAL_COUNT_HEADER, String.valueOf(totalCount))
+                            .sendString(Mono.just("""
+                                                        [{
+                                                          "component": {
+                                                              "uuid": "uuid-1",
+                                                              "name": "name-1",
+                                                              "group": "group-1",
+                                                              "version": "version-1",
+                                                              "purl": "purl-1"
+                                                          },
+                                                          "vulnerability": {
+                                                              "uuid": "uuid-1",
+                                                              "source": "NVD",
+                                                              "vulnId": "vulnId-1",
+                                                              "title": "title-1",
+                                                              "subtitle": "subtitle-1",
+                                                              "description": "description-1",
+                                                              "recommendation": "recommendation-1",
+                                                              "severity": "CRITICAL",
+                                                              "severityRank": 1,
+                                                              "cwes": [],
+                                                              "aliases": []
+                                                          },
+                                                          "analysis": {
+                                                              "state": "state-1",
+                                                              "isSuppressed": false
+                                                          },
+                                                          "matrix": "matrix-1"
+                                                      }]
+                                                  """));
+                        case 2 ->
+                            response
+                            .header(ApiClient.PAGINATED_RES_TOTAL_COUNT_HEADER, String.valueOf(totalCount))
+                            .sendString(Mono.just("""
+                                                    [{
+                                                        "component": {
+                                                            "uuid": "uuid-1",
+                                                            "name": "name-1",
+                                                            "group": "group-1",
+                                                            "version": "version-1",
+                                                            "purl": "purl-1"
+                                                        },
+                                                        "vulnerability": {
+                                                            "uuid": "uuid-2",
+                                                            "source": "GITHUB",
+                                                            "vulnId": "GHSA-abcd-abcd-abcd",
+                                                            "title": "title-1",
+                                                            "subtitle": "subtitle-1",
+                                                            "description": "description-1",
+                                                            "recommendation": "recommendation-1",
+                                                            "severity": "CRITICAL",
+                                                            "severityRank": 1,
+                                                            "cwes": [],
+                                                            "aliases": []
+                                                        },
+                                                        "analysis": {
+                                                            "state": "state-1",
+                                                            "isSuppressed": false
+                                                        },
+                                                        "matrix": "matrix-2"
+                                                    }]
+                                                  """));
+                        default ->
+                            response.sendString(Mono.just("[]"));
+                    };
+                }
                 default ->
                     response.sendNotFound();
             };
@@ -285,7 +363,7 @@ class ApiClientTest {
                 .hasNoCause()
                 .hasMessage(Messages.ApiClient_Error_RetrieveFindings(HttpResponseStatus.NOT_FOUND.code(), HttpResponseStatus.NOT_FOUND.reasonPhrase()));
 
-        assertThat(uut.getFindings("uuid-1")).isEmpty();
+        assertThat(uut.getFindings("uuid-1")).hasSize(2);
     }
 
     @Test

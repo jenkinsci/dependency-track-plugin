@@ -15,11 +15,13 @@
  */
 package org.jenkinsci.plugins.DependencyTrack.model;
 
+import jakarta.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import lombok.experimental.UtilityClass;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONNull;
@@ -28,10 +30,29 @@ import net.sf.json.JSONObject;
 @UtilityClass
 public class FindingParser extends ModelParser {
 
+    /**
+     * parses a complete JSON array
+     *
+     * @param jsonResponse the raw JSON array representing the findings to parse
+     * @return the list of findings <b>without</b> aliases
+     */
     public List<Finding> parse(final String jsonResponse) {
-        final JSONArray jsonArray = JSONArray.fromObject(jsonResponse);
-        return jsonArray.stream()
-                .map(JSONObject.class::cast)
+        var jsonObjects = JSONArray.fromObject(jsonResponse).stream().map(JSONObject.class::cast);
+        return parse(jsonObjects);
+    }
+
+    /**
+     * parses a list of JSON objects
+     *
+     * @param jsonObjects the list of raw JSON objects (findings) to parse
+     * @return the list of findings <b>without</b> aliases
+     */
+    public List<Finding> parse(final @Nonnull List<JSONObject> jsonObjects) {
+        return parse(jsonObjects.stream());
+    }
+
+    private List<Finding> parse(final Stream<JSONObject> jsonObjects) {
+        return jsonObjects
                 .map(FindingParser::parseFinding)
                 .collect(ArrayList<Finding>::new, (findings, finding) -> {
                     // filter duplicates based on aliases
