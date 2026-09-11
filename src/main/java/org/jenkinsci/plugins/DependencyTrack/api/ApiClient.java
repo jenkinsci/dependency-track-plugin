@@ -245,6 +245,7 @@ public class ApiClient {
             fetchMore = !fetchedFindings.isEmpty() && findings.size() < fetchedFindings.totalSize();
         }
         // because the request is paged and the parser eliminates aliases, we must collect the raw results first and parse them at the end
+        findings.forEach(JenkinsXmlSanitizer::sanitizeFinding);
         return FindingParser.parse(findings);
     }
 
