@@ -52,4 +52,15 @@ class FindingParserTest {
 
         assertThat(FindingParser.parse(Files.contentOf(findings, StandardCharsets.UTF_8))).usingRecursiveFieldByFieldElementComparator().containsExactly(f1, f2, f3);
     }
+
+    @Test
+    void sanitizesVulnerabilityDescriptionForXml11Serialization() {
+        final String invalidDescription = "before" + (char) 0xFFFF + "after";
+        final String findings = Files.contentOf(new File("src/test/resources/findings.json"), StandardCharsets.UTF_8)
+                .replace("description-3", invalidDescription);
+
+        assertThat(FindingParser.parse(findings))
+                .extracting(finding -> finding.getVulnerability().getDescription())
+                .contains("before\\uFFFFafter");
+    }
 }
