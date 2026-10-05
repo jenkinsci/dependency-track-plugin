@@ -1,11 +1,11 @@
-package org.jenkinsci.plugins.DependencyTrack.api;
+package org.jenkinsci.plugins.DependencyTrack.model;
 
-public final class JenkinsXmlSanitizer {
+final class JenkinsXmlSanitizer {
 
     private JenkinsXmlSanitizer() {
     }
 
-    public static String sanitizeXml11(final String value) {
+    static String sanitizeXml11(final String value) {
         if (value == null || value.isEmpty()) {
             return value;
         }

@@ -26,7 +26,6 @@ import lombok.experimental.UtilityClass;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONNull;
 import net.sf.json.JSONObject;
-import org.jenkinsci.plugins.DependencyTrack.api.JenkinsXmlSanitizer;
 
 @UtilityClass
 public class FindingParser extends ModelParser {

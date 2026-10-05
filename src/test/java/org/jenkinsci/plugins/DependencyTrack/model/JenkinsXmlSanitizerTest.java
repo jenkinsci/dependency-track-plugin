@@ -1,4 +1,4 @@
-package org.jenkinsci.plugins.DependencyTrack.api;
+package org.jenkinsci.plugins.DependencyTrack.model;
 
 import org.junit.jupiter.api.Test;
 
