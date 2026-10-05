@@ -39,8 +39,8 @@
     <properties>
         <jenkins.version>2.555.1</jenkins.version>
         <hpi.compatibleSinceVersion>7.0.0</hpi.compatibleSinceVersion>
-        <configuration-as-code.version>2117.vc05a_0b_e6b_f4e</configuration-as-code.version>
-        <byte-buddy.version>1.18.12</byte-buddy.version>
+        <configuration-as-code.version>2131.vb_a_13ed96f755</configuration-as-code.version>
+        <byte-buddy.version>1.18.14</byte-buddy.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <maven.javadoc.skip>true</maven.javadoc.skip>
@@ -153,7 +153,7 @@
                 <plugin>
                     <groupId>org.sonarsource.scanner.maven</groupId>
                     <artifactId>sonar-maven-plugin</artifactId>
-                    <version>5.7.0.6970</version>
+                    <version>5.8.0.7211</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -267,7 +267,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>exec-maven-plugin</artifactId>
-                <version>3.6.3</version>
+                <version>3.6.4</version>
                 <executions>
                     <execution>
                         <id>npm install</id>
@@ -435,7 +435,7 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.46</version>
+            <version>1.18.48</version>
             <scope>provided</scope>
         </dependency>
         <dependency>
