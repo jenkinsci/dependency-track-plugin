@@ -4,6 +4,7 @@
 ### ⚠ Breaking
 ### ⭐ New Features
 ### 🐞 Bugs Fixed
+- Prevent serialization errors by replacing invalid characters in vulnerability descriptions ([#467](https://github.com/jenkinsci/dependency-track-plugin/pull/467))
 
 ## [v7.1.0] - 2026-07-12
 ### ⚠ Breaking

@@ -77,7 +77,7 @@ public class FindingParser extends ModelParser {
         final String vulnId = getKeyOrNull(json, "vulnId");
         final String title = getKeyOrNull(json, "title");
         final String subtitle = getKeyOrNull(json, "subtitle");
-        final String description = getKeyOrNull(json, "description");
+        final String description = JenkinsXmlSanitizer.sanitizeXml11(getKeyOrNull(json, "description"));
         final String recommendation = getKeyOrNull(json, "recommendation");
         final Severity severity = getEnum(json, "severity", Severity.class);
         final Integer severityRank = json.optInt("severityRank");
