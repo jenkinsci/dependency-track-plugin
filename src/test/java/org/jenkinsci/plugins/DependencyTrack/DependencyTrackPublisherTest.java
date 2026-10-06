@@ -39,17 +39,19 @@ import java.time.Duration;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
-import org.assertj.core.api.InstanceOfAssertFactories;
 import org.jenkinsci.plugins.DependencyTrack.api.ApiClient;
 import org.jenkinsci.plugins.DependencyTrack.api.ApiClientException;
 import org.jenkinsci.plugins.DependencyTrack.api.ProjectData;
 import org.jenkinsci.plugins.DependencyTrack.api.UploadResult;
+import org.jenkinsci.plugins.DependencyTrack.model.Finding;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
+import org.jenkinsci.plugins.DependencyTrack.model.Severity;
 import org.jenkinsci.plugins.DependencyTrack.model.SeverityDistribution;
 import org.jenkinsci.plugins.DependencyTrack.model.Team;
 import org.jenkinsci.plugins.DependencyTrack.model.Violation;
 import org.jenkinsci.plugins.DependencyTrack.model.ViolationState;
 import org.jenkinsci.plugins.DependencyTrack.model.ViolationType;
+import org.jenkinsci.plugins.DependencyTrack.model.Vulnerability;
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -388,6 +390,69 @@ class DependencyTrackPublisherTest {
         verify(client).getFindings("uuid-1");
         verify(client).getTeamPermissions();
         verify(abortedBuild, never()).getAction(ResultAction.class);
+        verify(build, never()).setResult(any(Result.class));
+    }
+
+    @Test
+    void testPerformSyncUnstableThresholds(@TempDir Path tmpWork) throws IOException {
+        File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
+        FilePath workDir = new FilePath(tmpWork.toFile());
+        DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
+        uut.setProjectId("uuid-1");
+        uut.setDependencyTrackApiKey(apikeyId);
+        uut.setUnstableTotalCritical(1);
+
+        var vuln = new Vulnerability("", "", "", "", "", "", "", Severity.CRITICAL, 1, 1, "", null);
+        var finding = new Finding(null, vuln, null, "");
+        when(client.uploadBom(any(ProjectData.class), anyString())).thenReturn(new UploadResult(true, "token-1"));
+        when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
+        when(client.getFindings("uuid-1")).thenReturn(List.of(finding));
+        when(client.getTeamPermissions()).thenReturn(Team.builder().name("test-team").permissions(Set.of()).build());
+
+        Run buildWithResultAction = mock(Run.class);
+        when(buildWithResultAction.getResult()).thenReturn(Result.SUCCESS);
+        when(buildWithResultAction.getAction(ResultAction.class)).thenReturn(new ResultAction(List.of(), new SeverityDistribution(42)));
+        when(build.getPreviousSuccessfulBuild()).thenReturn(buildWithResultAction);
+
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
+        verify(client, times(2)).isTokenBeingProcessed("token-1");
+        verify(client).getFindings("uuid-1");
+        verify(client).getTeamPermissions();
+        verify(buildWithResultAction, times(2)).getAction(ResultAction.class);
+        verify(build).setResult(Result.UNSTABLE);
+    }
+
+    @Test
+    void testPerformSyncFailedThresholds(@TempDir Path tmpWork) throws IOException {
+        File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
+        FilePath workDir = new FilePath(tmpWork.toFile());
+        DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
+        uut.setProjectId("uuid-1");
+        uut.setDependencyTrackApiKey(apikeyId);
+        uut.setFailedTotalCritical(1);
+
+        var vuln = new Vulnerability("", "", "", "", "", "", "", Severity.CRITICAL, 1, 1, "", null);
+        var finding = new Finding(null, vuln, null, "");
+        when(client.uploadBom(any(ProjectData.class), anyString())).thenReturn(new UploadResult(true, "token-1"));
+        when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.TRUE).thenReturn(Boolean.FALSE);
+        when(client.getFindings("uuid-1")).thenReturn(List.of(finding));
+        when(client.getTeamPermissions()).thenReturn(Team.builder().name("test-team").permissions(Set.of()).build());
+
+        Run buildWithResultAction = mock(Run.class);
+        when(buildWithResultAction.getResult()).thenReturn(Result.SUCCESS);
+        when(buildWithResultAction.getAction(ResultAction.class)).thenReturn(new ResultAction(List.of(), new SeverityDistribution(42)));
+        when(build.getPreviousSuccessfulBuild()).thenReturn(buildWithResultAction);
+
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener))
+                .isInstanceOf(AbortException.class)
+                .hasMessage(Messages.Builder_Threshold_Exceed());
+        verify(client, times(2)).isTokenBeingProcessed("token-1");
+        verify(client).getFindings("uuid-1");
+        verify(client).getTeamPermissions();
+        verify(buildWithResultAction, times(2)).getAction(ResultAction.class);
+        verify(build, never()).setResult(any(Result.class));
     }
 
     @Test
