@@ -46,11 +46,12 @@ jobs:
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
       - name: perform release
-        run: mvn -B -DskipTests -Dspotbugs.skip=true -DreleaseVersion=${{ inputs.release_version }} -Darguments="-DskipTests -Dspotbugs.skip=true" release:prepare release:perform
+        run: mvn -B -DskipTests -Dspotbugs.skip=true -DreleaseVersion="${RELEASE_VERSION}" -Darguments="-DskipTests -Dspotbugs.skip=true" release:prepare release:perform
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           MAVEN_TOKEN: ${{ secrets.MAVEN_TOKEN }}
           MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          RELEASE_VERSION: ${{ inputs.release_version }}
 
       - name: extract version
         id: current_version
