@@ -441,12 +441,13 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         }
         final RiskGate riskGate = new RiskGate(thresholds);
         final Result result = riskGate.evaluate(currentResult.getSeverityDistribution(), previousDistribution);
-        if (result.isWorseOrEqualTo(Result.UNSTABLE) && result.isCompleteBuild()) {
+        if (result.ordinal == Result.UNSTABLE.ordinal && result.isCompleteBuild()) {
             logger.log(Messages.Builder_Threshold_Exceed());
             // allow build to proceed, but mark overall build unstable
             build.setResult(result);
         }
         if (result.isWorseThan(Result.UNSTABLE) && result.isCompleteBuild()) {
+            logger.log(Messages.Builder_Threshold_Exceed());
             // attempt to halt the build
             throw new AbortException(Messages.Builder_Threshold_Exceed());
         }

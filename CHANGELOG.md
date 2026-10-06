@@ -3,6 +3,8 @@
 ## [Unreleased]
 ### ⚠ Breaking
 ### ⭐ New Features
+- Allow scripted pipelines to override the "FAILURE" result when thresholds are exceeded. ([#461](https://github.com/jenkinsci/dependency-track-plugin/issues/461))
+
 ### 🐞 Bugs Fixed
 - Prevent serialization errors by replacing invalid characters in vulnerability descriptions ([#467](https://github.com/jenkinsci/dependency-track-plugin/pull/467))
 
