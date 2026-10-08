@@ -21,6 +21,7 @@ import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
@@ -320,12 +321,13 @@ public class ApiClient {
     public UploadResult uploadVex(@Nonnull final ProjectData project, @Nonnull final String vex) throws ApiClientException {
         final var formBodyBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
         formBodyBuilder.addFormDataPart("vex", vex);
+        final var projectId = project.id();
         // Creates the payload that will be sent to Dependency-Track
-        if (project.id() != null && !project.id().isBlank()) {
-            formBodyBuilder.addFormDataPart("project", project.id());
+        if (projectId != null && !projectId.isBlank()) {
+            formBodyBuilder.addFormDataPart("project", projectId);
         } else {
-            formBodyBuilder.addFormDataPart("projectName", project.name())
-                    .addFormDataPart("projectVersion", project.version());
+            formBodyBuilder.addFormDataPart("projectName", Objects.requireNonNull(project.name(), Messages.ApiClient_Error_NameOrVersionMissing()))
+                    .addFormDataPart("projectVersion", Objects.requireNonNull(project.version(), Messages.ApiClient_Error_NameOrVersionMissing()));
         }
         return upload(VEX_URL, formBodyBuilder.build());
     }
@@ -334,12 +336,13 @@ public class ApiClient {
     public UploadResult uploadBom(@Nonnull final ProjectData project, @Nonnull final String bom) throws ApiClientException {
         final var formBodyBuilder = new MultipartBody.Builder().setType(MultipartBody.FORM);
         formBodyBuilder.addFormDataPart("bom", bom);
+        final var projectId = project.id();
         // Creates the payload that will be sent to Dependency-Track
-        if (project.id() != null && !project.id().isBlank()) {
-            formBodyBuilder.addFormDataPart("project", project.id());
+        if (projectId != null && !projectId.isBlank()) {
+            formBodyBuilder.addFormDataPart("project", projectId);
         } else {
-            formBodyBuilder.addFormDataPart("projectName", project.name())
-                    .addFormDataPart("projectVersion", project.version())
+            formBodyBuilder.addFormDataPart("projectName", Objects.requireNonNull(project.name(), Messages.ApiClient_Error_NameOrVersionMissing()))
+                    .addFormDataPart("projectVersion", Objects.requireNonNull(project.version(), Messages.ApiClient_Error_NameOrVersionMissing()))
                     .addFormDataPart("autoCreate", String.valueOf(project.autoCreate()));
         }
         final var properties = project.properties();
@@ -384,7 +387,7 @@ public class ApiClient {
 
     public void updateProjectProperties(@Nonnull final String projectUuid, @Nonnull final ProjectData.Properties properties) throws ApiClientException {
         final var updates = new JSONObject();
-        final var tags = (properties.tags() != null ? properties.tags().stream() : Stream.empty())
+        final var tags = Optional.ofNullable(properties.tags()).map(List::stream).orElseGet(Stream::empty)
                 .map(tag -> Map.of("name", tag))
                 .toList();
         // overwrite tags if needed

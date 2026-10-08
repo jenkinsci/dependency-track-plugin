@@ -321,7 +321,8 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
 
         logger.log(Messages.Builder_Publishing(effectiveUrl, effectiveArtifact));
         var uploadResult = apiClient.uploadBom(projectData, bom);
-        if (!uploadResult.success()) {
+        var lastResultToken = uploadResult.token();
+        if (!uploadResult.success() || lastResultToken == null) {
             throw new AbortException(Messages.Builder_Upload_Failed());
         }
 
@@ -329,10 +330,11 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
             final String effectiveVex = env.expand(vex);
             final String vexData = readArtifact(logger, workspace, effectiveVex);
             // must wait for bom proccesing to finish before uploading vex
-            waitWhileTokenIsBeingProcessed(logger, apiClient, uploadResult.token());
+            waitWhileTokenIsBeingProcessed(logger, apiClient, lastResultToken);
             logger.log(Messages.Builder_Publishing(effectiveUrl, effectiveVex));
             uploadResult = apiClient.uploadVex(projectData, vexData);
-            if (!uploadResult.success()) {
+            lastResultToken = uploadResult.token();
+            if (!uploadResult.success() || lastResultToken == null) {
                 throw new AbortException(Messages.Builder_Upload_Failed());
             }
         }
@@ -342,8 +344,8 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         updateProjectProperties(logger, apiClient, effectiveProjectName, effectiveProjectVersion, effectiveProjectProperties);
 
         final var thresholds = getThresholds();
-        if (synchronous && uploadResult.token() != null) {
-            final var resultActions = publishAnalysisResult(logger, apiClient, uploadResult.token(), run, effectiveProjectName, effectiveProjectVersion);
+        if (synchronous) {
+            final var resultActions = publishAnalysisResult(logger, apiClient, lastResultToken, run, effectiveProjectName, effectiveProjectVersion);
             if (thresholds.hasValues()) {
                 evaluateRiskGates(run, logger, resultActions.findingsAction, thresholds);
             }
