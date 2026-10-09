@@ -3,6 +3,11 @@
 ## [Unreleased]
 ### ⚠ Breaking
 ### ⭐ New Features
+### 🐞 Bugs Fixed
+
+## [v7.2.0] - 2026-10-09
+### ⚠ Breaking
+### ⭐ New Features
 - Allow scripted pipelines to override the "FAILURE" result when thresholds are exceeded. ([#461](https://github.com/jenkinsci/dependency-track-plugin/issues/461))
 
 ### 🐞 Bugs Fixed
