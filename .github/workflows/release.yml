@@ -27,8 +27,8 @@ jobs:
           distribution: 'zulu'
           cache: 'maven'
           server-id: 'maven.jenkins-ci.org'
-          server-username: 'MAVEN_USERNAME'
-          server-password: 'MAVEN_TOKEN'
+          server-username-env-var: 'MAVEN_USERNAME'
+          server-password-env-var: 'MAVEN_TOKEN'
 
       - name: Set up Node.js
         uses: actions/setup-node@v7
