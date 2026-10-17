@@ -1,0 +1,6 @@
+<div>
+    Zugangsdaten, die ein OIDC-Token für die Authentifizierung per <a href="https://dependencytrack.github.io/docs/next/concepts/workload-identity-federation/" target="_blank">Workload Identity Federation</a> bereitstellen (erfordert Dependency-Track v5.2.0 oder neuer).
+    Hierfür eignet sich ein "OpenID Connect id token" aus dem Plugin <a href="https://plugins.jenkins.io/oidc-provider/" target="_blank">OpenID Connect Provider</a>.
+    Das Token wird einmal pro Build gegen ein kurzlebiges Zugriffstoken getauscht, sodass kein API-Schlüssel gespeichert werden muss.
+    Falls angegeben, hat es Vorrang vor dem API-Schlüssel.
+</div>

@@ -27,6 +27,7 @@ import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import net.sf.json.JSONArray;
 import net.sf.json.JSONObject;
+import okhttp3.FormBody;
 import okhttp3.MediaType;
 import okhttp3.MultipartBody;
 import okhttp3.OkHttpClient;
@@ -56,6 +57,7 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAUTHORIZED;
 import static org.springframework.http.HttpHeaders.ACCEPT;
+import static org.springframework.http.HttpHeaders.AUTHORIZATION;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RequiredArgsConstructor
@@ -78,6 +80,7 @@ public class ApiClient {
     static final String PAGINATED_RES_TOTAL_COUNT_HEADER = "X-Total-Count";
     static final String TEAM_SELF_URL = API_URL + "/team/self";
     static final String VERSION_URL = "/api/version";
+    static final String OAUTH_TOKEN_URL = "/api/v2/oauth/token";
 
     /**
      * the base url to DT instance without trailing slashes, e.g.
@@ -97,6 +100,56 @@ public class ApiClient {
 
     @Nonnull
     private final OkHttpClient httpClient;
+
+    /**
+     * the access token obtained via workload identity federation. if present,
+     * it is used instead of the api key.
+     */
+    private String accessToken;
+
+    /**
+     * Exchanges the given OIDC token for an access token using workload
+     * identity federation. All subsequent requests use the access token instead
+     * of the api key.
+     *
+     * @param subjectToken the OIDC token issued for the workload
+     * @param workloadIdentityProvider the name of the workload identity provider
+     * in Dependency-Track
+     * @param serviceAccount the name of the service account in Dependency-Track
+     * @throws ApiClientException if the exchange fails
+     *
+     * @see <a href="https://dependencytrack.github.io/docs/next/guides/administration/configuring-workload-identity-federation/#exchange-the-token-in-the-workload">
+     *           DependencyTrack documentation</a>
+     */
+    public void exchangeWorkloadIdentityToken(@Nonnull final String subjectToken, @Nonnull final String workloadIdentityProvider, @Nonnull final String serviceAccount) throws ApiClientException {
+        final var body = new FormBody.Builder()
+                .add("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange")
+                .add("subject_token_type", "urn:ietf:params:oauth:token-type:jwt")
+                .add("subject_token", subjectToken)
+                .add("workload_identity_provider", workloadIdentityProvider)
+                .add("service_account", serviceAccount)
+                .build();
+        final var request = new Request.Builder()
+                .url(baseUrl + OAUTH_TOKEN_URL)
+                .addHeader(ACCEPT, APPLICATION_JSON_VALUE)
+                .post(body)
+                .build();
+        accessToken = executeWithRetry(() -> {
+            try (var response = httpClient.newCall(request).execute()) {
+                final var responseBody = response.body().string();
+                if (!response.isSuccessful()) {
+                    final int status = response.code();
+                    logger.log(responseBody);
+                    throw new ApiClientException(Messages.ApiClient_Error_TokenExchange(status, HttpStatus.valueOf(status).getReasonPhrase()));
+                }
+                return JSONObject.fromObject(responseBody).getString("access_token");
+            } catch (ApiClientException e) {
+                throw e;
+            } catch (IOException e) {
+                throw new ApiClientException(Messages.ApiClient_Error_Connection("", ""), e);
+            }
+        });
+    }
 
     @Nonnull
     public String getVersion() throws ApiClientException {
@@ -460,9 +513,13 @@ public class ApiClient {
     }
 
     private Request createRequest(final URI uri, final String method, final RequestBody bodyPublisher) {
-        return new Request.Builder()
-                .url(baseUrl + uri)
-                .addHeader(API_KEY_HEADER, apiKey)
+        final var builder = new Request.Builder().url(baseUrl + uri);
+        if (accessToken != null) {
+            builder.addHeader(AUTHORIZATION, "Bearer " + accessToken);
+        } else {
+            builder.addHeader(API_KEY_HEADER, apiKey);
+        }
+        return builder
                 .addHeader(ACCEPT, APPLICATION_JSON_VALUE)
                 .method(method, bodyPublisher)
                 .build();
