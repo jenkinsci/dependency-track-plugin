@@ -156,6 +156,60 @@ class ApiClientTest {
     }
 
     @Test
+    void exchangeWorkloadIdentityTokenTest() throws ApiClientException, InterruptedException {
+        final AtomicReference<Map<String, String>> requestBody = new AtomicReference<>();
+        final CountDownLatch completionSignal = new CountDownLatch(1);
+        server = HttpServer.create()
+                .host("localhost")
+                .port(0)
+                .route(routes -> routes.post(ApiClient.OAUTH_TOKEN_URL, (request, response) -> {
+            assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER)).isFalse();
+            return response.sendString(request.receiveForm()
+                    .collectMap(HttpData::getName, v -> Uncheck.apply(HttpData::getString, v))
+                    .doOnSuccess(m -> {
+                        requestBody.set(m);
+                        completionSignal.countDown();
+                    })
+                    .map(body -> "{\"access_token\":\"access-token\",\"token_type\":\"Bearer\",\"expires_in\":3600}"));
+        }).get(ApiClient.PROJECT_URL, (request, response) -> {
+            assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER)).isFalse();
+            assertThat(request.requestHeaders().get(HttpHeaderNames.AUTHORIZATION)).isEqualTo("Bearer access-token");
+            return response.addHeader("X-Powered-By", "Dependency-Track v5.2.0").send();
+        }))
+                .bindNow();
+
+        ApiClient uut = createClient();
+        uut.exchangeWorkloadIdentityToken("oidc-token", "jenkins", "ci-pipeline");
+
+        completionSignal.await(5, TimeUnit.SECONDS);
+        assertThat(completionSignal.getCount()).isZero();
+        assertThat(requestBody).hasValueSatisfying(body -> assertThat(body).containsOnly(
+                entry("grant_type", "urn:ietf:params:oauth:grant-type:token-exchange"),
+                entry("subject_token_type", "urn:ietf:params:oauth:token-type:jwt"),
+                entry("subject_token", "oidc-token"),
+                entry("workload_identity_provider", "jenkins"),
+                entry("service_account", "ci-pipeline")));
+        assertThat(uut.testConnection()).isEqualTo("Dependency-Track v5.2.0");
+    }
+
+    @Test
+    void exchangeWorkloadIdentityTokenTestWithErrors() {
+        server = HttpServer.create()
+                .host("localhost")
+                .port(0)
+                .route(routes -> routes.post(ApiClient.OAUTH_TOKEN_URL, (request, response) -> response.status(HttpResponseStatus.BAD_REQUEST).sendString(Mono.just("{\"error\":\"invalid_grant\"}"))))
+                .bindNow();
+
+        ApiClient uut = createClient();
+
+        assertThatCode(() -> uut.exchangeWorkloadIdentityToken("oidc-token", "jenkins", "ci-pipeline")).isInstanceOf(ApiClientException.class)
+                .hasNoCause()
+                .hasMessage(Messages.ApiClient_Error_TokenExchange(HttpResponseStatus.BAD_REQUEST.code(), HttpResponseStatus.BAD_REQUEST.reasonPhrase()));
+
+        verify(logger).log("{\"error\":\"invalid_grant\"}");
+    }
+
+    @Test
     void getProjectsTest() throws ApiClientException {
         server = HttpServer.create()
                 .host("localhost")

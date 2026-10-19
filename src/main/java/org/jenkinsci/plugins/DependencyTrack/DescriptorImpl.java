@@ -90,6 +90,28 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
     private String dependencyTrackApiKey;
 
     /**
+     * Specifies the credential-id for an OIDC token used for authentication via
+     * workload identity federation.
+     */
+    @Getter(onMethod_ = {@Nullable})
+    @Setter(onMethod_ = {@DataBoundSetter})
+    private String dependencyTrackOidcToken;
+
+    /**
+     * Specifies the name of the workload identity provider in Dependency-Track.
+     */
+    @Getter(onMethod_ = {@Nullable})
+    @Setter(onMethod_ = {@DataBoundSetter})
+    private String dependencyTrackWorkloadIdentityProvider;
+
+    /**
+     * Specifies the name of the service account in Dependency-Track.
+     */
+    @Getter(onMethod_ = {@Nullable})
+    @Setter(onMethod_ = {@DataBoundSetter})
+    private String dependencyTrackServiceAccount;
+
+    /**
      * Specifies the maximum number of minutes to wait for synchronous jobs to
      * complete.
      */
@@ -143,11 +165,16 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
      *
      * @param dependencyTrackUrl the base URL to Dependency-Track
      * @param dependencyTrackApiKey the API key to use for authentication
+     * @param dependencyTrackOidcToken credential-Id of the OIDC token to use for
+     * authentication via workload identity federation
+     * @param dependencyTrackWorkloadIdentityProvider name of the workload
+     * identity provider
+     * @param dependencyTrackServiceAccount name of the service account
      * @param item used to lookup credentials in job config. ignored in global
      * @return ListBoxModel of project names and their id
      */
     @POST
-    public ListBoxModel doFillProjectIdItems(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable final Item item) {
+    public ListBoxModel doFillProjectIdItems(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @QueryParameter final String dependencyTrackOidcToken, @QueryParameter final String dependencyTrackWorkloadIdentityProvider, @QueryParameter final String dependencyTrackServiceAccount, @AncestorInPath @Nullable final Item item) {
         if (item == null) {
             Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         } else {
@@ -157,9 +184,8 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
         try {
             // url may come from instance-config. if empty, then take it from global config (this)
             final String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElseGet(this::getDependencyTrackUrl);
-            // api-key may come from instance-config. if empty, then take it from global config (this)
-            final String apiKey = lookupApiKey(Optional.ofNullable(PluginUtil.trimToNull(dependencyTrackApiKey)).orElseGet(this::getDependencyTrackApiKey), item);
-            final ApiClient apiClient = createClient(url, apiKey);
+            final Authentication auth = resolveAuthentication(dependencyTrackApiKey, dependencyTrackOidcToken, dependencyTrackWorkloadIdentityProvider, dependencyTrackServiceAccount, item);
+            final ApiClient apiClient = createClient(url, auth);
             final List<ListBoxModel.Option> options = apiClient.getProjects().stream()
                     .map(p -> new ListBoxModel.Option(p.getName().concat(" ").concat(Optional.ofNullable(p.getVersion()).orElse("")).trim(), p.getUuid()))
                     .sorted(Comparator.comparing(o -> o.name))
@@ -195,6 +221,19 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
                 .includeEmptyValue()
                 .includeAs(ACL.SYSTEM2, item, StringCredentials.class, List.of())
                 .includeCurrentValue(credentialsId);
+    }
+
+    /**
+     * Retrieve the credentials to populate the dropdown of possible OIDC
+     * tokens.
+     *
+     * @param credentialsId the current credential value of secret
+     * @param item used to lookup credentials in job config. ignored in global
+     * @return ListBoxModel of credentials
+     */
+    @POST
+    public ListBoxModel doFillDependencyTrackOidcTokenItems(@QueryParameter final String credentialsId, @AncestorInPath final Item item) {
+        return doFillDependencyTrackApiKeyItems(credentialsId, item);
     }
 
     /**
@@ -234,12 +273,18 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
      * config
      * @param dependencyTrackApiKey credential-Id of the api key as specified in
      * the global config
+     * @param dependencyTrackOidcToken credential-Id of the OIDC token as
+     * specified in the global config
+     * @param dependencyTrackWorkloadIdentityProvider name of the workload
+     * identity provider as specified in the global config
+     * @param dependencyTrackServiceAccount name of the service account as
+     * specified in the global config
      * @param item used to check jenkins permissions
      * @return
      */
     @POST
-    public FormValidation doTestConnectionGlobal(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable Item item) {
-        return testConnection(dependencyTrackUrl, dependencyTrackApiKey, false, false, item);
+    public FormValidation doTestConnectionGlobal(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @QueryParameter final String dependencyTrackOidcToken, @QueryParameter final String dependencyTrackWorkloadIdentityProvider, @QueryParameter final String dependencyTrackServiceAccount, @AncestorInPath @Nullable Item item) {
+        return testConnection(dependencyTrackUrl, dependencyTrackApiKey, dependencyTrackOidcToken, dependencyTrackWorkloadIdentityProvider, dependencyTrackServiceAccount, false, false, item);
     }
 
     /**
@@ -249,6 +294,12 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
      * @param dependencyTrackUrl value of the URL as specified in the job config
      * @param dependencyTrackApiKey credential-Id of the api key as specified in
      * the job config
+     * @param dependencyTrackOidcToken credential-Id of the OIDC token as
+     * specified in the job config
+     * @param dependencyTrackWorkloadIdentityProvider name of the workload
+     * identity provider as specified in the job config
+     * @param dependencyTrackServiceAccount name of the service account as
+     * specified in the job config
      * @param synchronous value for synchronous publishing as specified in the
      * job config
      * @param projectProperties value for setting project properties as
@@ -257,8 +308,8 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
      * @return
      */
     @POST
-    public FormValidation doTestConnectionJob(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @QueryParameter final boolean synchronous, @QueryParameter final boolean projectProperties, @AncestorInPath @Nullable Item item) {
-        return testConnection(dependencyTrackUrl, dependencyTrackApiKey, synchronous, projectProperties, item);
+    public FormValidation doTestConnectionJob(@QueryParameter final String dependencyTrackUrl, @QueryParameter final String dependencyTrackApiKey, @QueryParameter final String dependencyTrackOidcToken, @QueryParameter final String dependencyTrackWorkloadIdentityProvider, @QueryParameter final String dependencyTrackServiceAccount, @QueryParameter final boolean synchronous, @QueryParameter final boolean projectProperties, @AncestorInPath @Nullable Item item) {
+        return testConnection(dependencyTrackUrl, dependencyTrackApiKey, dependencyTrackOidcToken, dependencyTrackWorkloadIdentityProvider, dependencyTrackServiceAccount, synchronous, projectProperties, item);
     }
 
     /**
@@ -269,11 +320,16 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
      * @param dependencyTrackUrl the base URL to Dependency-Track
      * @param dependencyTrackApiKey the credential-id of the API key to use for
      * authentication
+     * @param dependencyTrackOidcToken the credential-id of the OIDC token to
+     * use for authentication via workload identity federation
+     * @param dependencyTrackWorkloadIdentityProvider name of the workload
+     * identity provider
+     * @param dependencyTrackServiceAccount name of the service account
      * @param synchronous if sync-mode is enabled or not
      * @param item used to check permission and lookup credentials
      * @return FormValidation
      */
-    private FormValidation testConnection(final String dependencyTrackUrl, final String dependencyTrackApiKey, final boolean synchronous, final boolean updateProjectProperties, @AncestorInPath @Nullable Item item) {
+    private FormValidation testConnection(final String dependencyTrackUrl, final String dependencyTrackApiKey, final String dependencyTrackOidcToken, final String dependencyTrackWorkloadIdentityProvider, final String dependencyTrackServiceAccount, final boolean synchronous, final boolean updateProjectProperties, @AncestorInPath @Nullable Item item) {
         if (item == null) {
             Jenkins.get().checkPermission(Jenkins.ADMINISTER);
         } else {
@@ -281,11 +337,10 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
         }
         // url may come from instance-config. if empty, then take it from global config (this)
         final String url = Optional.ofNullable(PluginUtil.parseBaseUrl(dependencyTrackUrl)).orElseGet(this::getDependencyTrackUrl);
-        // api-key may come from instance-config. if empty, then take it from global config (this)
-        final String apiKey = lookupApiKey(Optional.ofNullable(PluginUtil.trimToNull(dependencyTrackApiKey)).orElseGet(this::getDependencyTrackApiKey), item);
-        if (doCheckDependencyTrackUrl(url, item).kind == FormValidation.Kind.OK && !apiKey.isBlank()) {
+        final Authentication auth = resolveAuthentication(dependencyTrackApiKey, dependencyTrackOidcToken, dependencyTrackWorkloadIdentityProvider, dependencyTrackServiceAccount, item);
+        if (doCheckDependencyTrackUrl(url, item).kind == FormValidation.Kind.OK && auth.isComplete()) {
             try {
-                final ApiClient apiClient = createClient(url, apiKey);
+                final ApiClient apiClient = createClient(url, auth);
                 final var poweredBy = apiClient.testConnection();
                 if (!poweredBy.startsWith("Dependency-Track v")) {
                     return FormValidation.error(Messages.Publisher_ConnectionTest_Error(poweredBy));
@@ -294,6 +349,10 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
                 final var requiredVersion = new VersionNumber("4.12.0");
                 if (actualVersion.isOlderThan(requiredVersion)) {
                     return FormValidation.error(Messages.Publisher_ConnectionTest_VersionWarning(actualVersion, requiredVersion));
+                }
+                if (auth.workloadIdentity()) {
+                    // the permissions of a service account cannot be checked
+                    return FormValidation.ok(Messages.Publisher_ConnectionTest_SuccessServiceAccount(poweredBy));
                 }
                 return checkTeamPermissions(apiClient, poweredBy, synchronous, updateProjectProperties);
             } catch (ApiClientException e) {
@@ -406,11 +465,34 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
         return dependencyTrackPollingInterval;
     }
 
-    private ApiClient createClient(final String baseUrl, final String apiKey) {
+    private ApiClient createClient(final String baseUrl, final Authentication auth) throws ApiClientException {
         final int connectionTimeout = Math.max(dependencyTrackConnectionTimeout, 0);
         final int readTimeout = Math.max(dependencyTrackReadTimeout, 0);
         final var httpClient = PluginUtil.newHttpClient(connectionTimeout, readTimeout);
-        return clientFactory.create(baseUrl, apiKey, new ConsoleLogger(), httpClient);
+        final ApiClient apiClient = clientFactory.create(baseUrl, auth.workloadIdentity() ? "" : auth.secret(), new ConsoleLogger(), httpClient);
+        if (auth.workloadIdentity()) {
+            apiClient.exchangeWorkloadIdentityToken(auth.secret(), auth.provider(), auth.serviceAccount());
+        }
+        return apiClient;
+    }
+
+    /**
+     * resolves the authentication to use. values may come from instance-config.
+     * if empty, then take them from global config (this). an api key from
+     * instance-config takes precedence over an OIDC token from global config.
+     */
+    @NonNull
+    private Authentication resolveAuthentication(final String apiKeyId, final String oidcTokenId, final String provider, final String serviceAccount, final Item item) {
+        final String instanceOidcTokenId = PluginUtil.trimToNull(oidcTokenId);
+        final String effectiveOidcTokenId = instanceOidcTokenId != null || PluginUtil.trimToNull(apiKeyId) != null
+                ? instanceOidcTokenId
+                : PluginUtil.trimToNull(getDependencyTrackOidcToken());
+        if (effectiveOidcTokenId != null) {
+            return new Authentication(true, lookupApiKey(effectiveOidcTokenId, item),
+                    Optional.ofNullable(PluginUtil.trimToNull(provider)).or(() -> Optional.ofNullable(getDependencyTrackWorkloadIdentityProvider())).orElse(""),
+                    Optional.ofNullable(PluginUtil.trimToNull(serviceAccount)).or(() -> Optional.ofNullable(getDependencyTrackServiceAccount())).orElse(""));
+        }
+        return new Authentication(false, lookupApiKey(Optional.ofNullable(PluginUtil.trimToNull(apiKeyId)).orElseGet(this::getDependencyTrackApiKey), item), "", "");
     }
 
     @NonNull
@@ -420,5 +502,18 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
                 .map(StringCredentials::getSecret)
                 .map(Secret::getPlainText)
                 .findFirst().orElse("");
+    }
+
+    /**
+     * @param workloadIdentity whether workload identity federation is used
+     * @param secret the api key or the OIDC token
+     * @param provider name of the workload identity provider
+     * @param serviceAccount name of the service account
+     */
+    private record Authentication(boolean workloadIdentity, @NonNull String secret, @NonNull String provider, @NonNull String serviceAccount) {
+
+        boolean isComplete() {
+            return !secret.isBlank() && (!workloadIdentity || !provider.isBlank() && !serviceAccount.isBlank());
+        }
     }
 }

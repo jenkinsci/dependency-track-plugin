@@ -24,6 +24,15 @@ limitations under the License.
         <f:entry title="${%dependencytrack.apikey}" field="dependencyTrackApiKey">
             <c:select id="dependencytrack.apikey" />
         </f:entry>
+        <f:entry title="${%dependencytrack.oidctoken}" field="dependencyTrackOidcToken">
+            <c:select id="dependencytrack.oidctoken" />
+        </f:entry>
+        <f:entry title="${%dependencytrack.workloadidentityprovider}" field="dependencyTrackWorkloadIdentityProvider">
+            <f:textbox id="dependencytrack.workloadidentityprovider" />
+        </f:entry>
+        <f:entry title="${%dependencytrack.serviceaccount}" field="dependencyTrackServiceAccount">
+            <f:textbox id="dependencytrack.serviceaccount" />
+        </f:entry>
         <f:advanced>
             <f:entry title="${%dependencytrack.url.frontend}" field="dependencyTrackFrontendUrl">
                 <f:textbox id="dependencytrack.url.frontend" checkMethod="post" />
@@ -41,7 +50,7 @@ limitations under the License.
                 <f:number id="dependencytrack.read.timeout" default="5" clazz="non-negative-number-required" min="0" />
             </f:entry>
         </f:advanced>
-        <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnectionGlobal" with="dependencyTrackUrl,dependencyTrackApiKey" />
+        <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnectionGlobal" with="dependencyTrackUrl,dependencyTrackApiKey,dependencyTrackOidcToken,dependencyTrackWorkloadIdentityProvider,dependencyTrackServiceAccount" />
     </f:section>
 
 </j:jelly>

@@ -36,6 +36,7 @@ import java.io.ObjectOutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import lombok.extern.slf4j.Slf4j;
@@ -106,8 +107,11 @@ class DependencyTrackPublisherTest {
     private final String apikeyId = "api-key-id";
     private final String apikey = "api-key";
 
+    private JenkinsRule r;
+
     @BeforeEach
     void setup(JenkinsRule r) throws IOException {
+        this.r = r;
         when(listener.getLogger()).thenReturn(System.err);
 
         DescriptorImpl descriptor = r.jenkins.getDescriptorByType(DescriptorImpl.class);
@@ -669,5 +673,98 @@ class DependencyTrackPublisherTest {
                 .untilAsserted(() -> assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener))
                 .isInstanceOf(AbortException.class)
                 .hasMessage(Messages.Builder_Polling_Timeout_Exceeded()));
+    }
+
+    @Test
+    void testPerformSyncWithWorkloadIdentity(@TempDir Path tmpWork) throws IOException {
+        File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
+        FilePath workDir = new FilePath(tmpWork.toFile());
+        final List<String> apiKeys = new ArrayList<>();
+        DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, (url, apiKey, logger, f) -> {
+            apiKeys.add(apiKey);
+            return client;
+        });
+        uut.setProjectId("uuid-1");
+        uut.setDependencyTrackOidcToken(apikeyId);
+        uut.setDependencyTrackWorkloadIdentityProvider("jenkins");
+        uut.setDependencyTrackServiceAccount("ci-pipeline");
+        uut.setWarnOnViolationWarn(true);
+
+        when(client.uploadBom(any(ProjectData.class), anyString())).thenReturn(new UploadResult(true, "token-1"));
+        when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.FALSE);
+        when(client.getFindings("uuid-1")).thenReturn(List.of());
+        when(client.getViolations("uuid-1")).thenReturn(List.of(new Violation("uuid-1", ViolationType.SECURITY, ViolationState.WARN, "rule-1", null)));
+
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
+        assertThat(apiKeys).containsExactly("");
+        verify(client).exchangeWorkloadIdentityToken(apikey, "jenkins", "ci-pipeline");
+        verify(client, never()).getTeamPermissions();
+        verify(client).getViolations("uuid-1");
+        verify(build).setResult(Result.UNSTABLE);
+        verify(build).addOrReplaceAction(any(ViolationsRunAction.class));
+    }
+
+    @Test
+    void testPerformSyncWithWorkloadIdentityAndViolationsNotPermitted(@TempDir Path tmpWork) throws IOException {
+        File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
+        FilePath workDir = new FilePath(tmpWork.toFile());
+        DescriptorImpl descriptor = r.jenkins.getDescriptorByType(DescriptorImpl.class);
+        descriptor.setDependencyTrackOidcToken(apikeyId);
+        descriptor.setDependencyTrackWorkloadIdentityProvider("jenkins");
+        descriptor.setDependencyTrackServiceAccount("ci-pipeline");
+        DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), true, clientFactory);
+        uut.setProjectId("uuid-1");
+
+        when(client.uploadBom(any(ProjectData.class), anyString())).thenReturn(new UploadResult(true, "token-1"));
+        when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.FALSE);
+        when(client.getFindings("uuid-1")).thenReturn(List.of());
+        when(client.getViolations("uuid-1")).thenThrow(new ApiClientException("forbidden"));
+
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
+        verify(client).exchangeWorkloadIdentityToken(apikey, "jenkins", "ci-pipeline");
+        verify(client, never()).getTeamPermissions();
+        verify(build).addOrReplaceAction(any(ResultAction.class));
+        verify(build, never()).addOrReplaceAction(any(ViolationsRunAction.class));
+    }
+
+    @Test
+    void testPerformWithWorkloadIdentityIncomplete(@TempDir Path tmpWork) throws IOException {
+        File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
+        FilePath workDir = new FilePath(tmpWork.toFile());
+        DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, clientFactory);
+        uut.setProjectId("uuid-1");
+        uut.setDependencyTrackOidcToken(apikeyId);
+
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener))
+                .isInstanceOf(AbortException.class)
+                .hasMessage(Messages.Builder_WorkloadIdentity_Incomplete());
+        verify(client, never()).uploadBom(any(ProjectData.class), anyString());
+    }
+
+    @Test
+    void testPerformJobApiKeyOverridesGlobalWorkloadIdentity(@TempDir Path tmpWork) throws IOException {
+        File tmp = tmpWork.resolve("bom.xml").toFile();
+        tmp.createNewFile();
+        FilePath workDir = new FilePath(tmpWork.toFile());
+        DescriptorImpl descriptor = r.jenkins.getDescriptorByType(DescriptorImpl.class);
+        descriptor.setDependencyTrackOidcToken(apikeyId);
+        descriptor.setDependencyTrackWorkloadIdentityProvider("jenkins");
+        descriptor.setDependencyTrackServiceAccount("ci-pipeline");
+        final List<String> apiKeys = new ArrayList<>();
+        DependencyTrackPublisher uut = new DependencyTrackPublisher(tmp.getName(), false, (url, apiKey, logger, f) -> {
+            apiKeys.add(apiKey);
+            return client;
+        });
+        uut.setProjectId("uuid-1");
+        uut.setDependencyTrackApiKey(apikeyId);
+
+        when(client.uploadBom(any(ProjectData.class), anyString())).thenReturn(new UploadResult(true, "token-1"));
+
+        assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
+        assertThat(apiKeys).containsExactly(apikey);
+        verify(client, never()).exchangeWorkloadIdentityToken(anyString(), anyString(), anyString());
     }
 }
