@@ -350,10 +350,6 @@ public class DescriptorImpl extends BuildStepDescriptor<Publisher> implements Se
                 if (actualVersion.isOlderThan(requiredVersion)) {
                     return FormValidation.error(Messages.Publisher_ConnectionTest_VersionWarning(actualVersion, requiredVersion));
                 }
-                if (auth.workloadIdentity()) {
-                    // the permissions of a service account cannot be checked
-                    return FormValidation.ok(Messages.Publisher_ConnectionTest_SuccessServiceAccount(poweredBy));
-                }
                 return checkTeamPermissions(apiClient, poweredBy, synchronous, updateProjectProperties);
             } catch (ApiClientException e) {
                 return FormValidation.error(e, Messages.Publisher_ConnectionTest_Error(e.getMessage()));

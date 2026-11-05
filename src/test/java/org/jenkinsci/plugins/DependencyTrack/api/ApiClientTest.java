@@ -28,6 +28,7 @@ import java.time.LocalDateTime;
 import java.time.Month;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -37,6 +38,7 @@ import org.apache.commons.io.function.Uncheck;
 import org.assertj.core.api.InstanceOfAssertFactories;
 import org.jenkinsci.plugins.DependencyTrack.model.Project;
 import org.jenkinsci.plugins.DependencyTrack.model.ProjectParser;
+import org.jenkinsci.plugins.DependencyTrack.model.Team;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -175,6 +177,9 @@ class ApiClientTest {
             assertThat(request.requestHeaders().contains(ApiClient.API_KEY_HEADER)).isFalse();
             assertThat(request.requestHeaders().get(HttpHeaderNames.AUTHORIZATION)).isEqualTo("Bearer access-token");
             return response.addHeader("X-Powered-By", "Dependency-Track v5.2.0").send();
+        }).get(ApiClient.USER_SELF_PERMISSIONS_URL, (request, response) -> {
+            assertThat(request.requestHeaders().get(HttpHeaderNames.AUTHORIZATION)).isEqualTo("Bearer access-token");
+            return response.sendString(Mono.just("[\"BOM_UPLOAD\",\"VIEW_PORTFOLIO\"]"));
         }))
                 .bindNow();
 
@@ -190,6 +195,7 @@ class ApiClientTest {
                 entry("workload_identity_provider", "jenkins"),
                 entry("service_account", "ci-pipeline")));
         assertThat(uut.testConnection()).isEqualTo("Dependency-Track v5.2.0");
+        assertThat(uut.getTeamPermissions()).isEqualTo(Team.builder().name("svc:ci-pipeline").permissions(Set.of("BOM_UPLOAD", "VIEW_PORTFOLIO")).build());
     }
 
     @Test

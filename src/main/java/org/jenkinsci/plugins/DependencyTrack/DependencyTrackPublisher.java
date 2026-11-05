@@ -366,7 +366,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
 
         final var thresholds = getThresholds();
         if (synchronous) {
-            final var resultActions = publishAnalysisResult(logger, apiClient, lastResultToken, run, effectiveProjectName, effectiveProjectVersion, useWorkloadIdentity);
+            final var resultActions = publishAnalysisResult(logger, apiClient, lastResultToken, run, effectiveProjectName, effectiveProjectVersion);
             if (thresholds.hasValues()) {
                 evaluateRiskGates(run, logger, resultActions.findingsAction, thresholds);
             }
@@ -426,7 +426,7 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         }
     }
     
-    private PublishAnalysisResult publishAnalysisResult(final ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build, final String effectiveProjectName, final String effectiveProjectVersion, final boolean useWorkloadIdentity) throws InterruptedException, ApiClientException, AbortException {
+    private PublishAnalysisResult publishAnalysisResult(final ConsoleLogger logger, final ApiClient apiClient, final String token, final Run<?, ?> build, final String effectiveProjectName, final String effectiveProjectVersion) throws InterruptedException, ApiClientException, AbortException {
         waitWhileTokenIsBeingProcessed(logger, apiClient, token);
 
         final String effectiveProjectId = lookupProjectId(logger, apiClient, effectiveProjectName, effectiveProjectVersion);
@@ -440,14 +440,19 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         findingsAction.setProjectName(effectiveProjectName);
         build.addOrReplaceAction(findingsAction);
 
-        final List<Violation> violations = fetchViolations(logger, apiClient, effectiveProjectId, useWorkloadIdentity);
+        final var team = apiClient.getTeamPermissions();
         ViolationsRunAction violationsAction = null;
-        if (violations != null) {
+        // for compatibility reasons: the permission may not be present so we check if it is. otherwise an exception would be thrown.
+        if (team.getPermissions().contains(VIEW_POLICY_VIOLATION.toString())) {
+            logger.log(Messages.Builder_Violations_Processing());
+            final var violations = apiClient.getViolations(effectiveProjectId);
             violationsAction = new ViolationsRunAction(violations);
             violationsAction.setDependencyTrackUrl(getEffectiveFrontendUrl());
             violationsAction.setProjectId(effectiveProjectId);
             violationsAction.setProjectName(effectiveProjectName);
             build.addOrReplaceAction(violationsAction);
+        } else {
+            logger.log(Messages.Builder_Violations_Skipped(VIEW_POLICY_VIOLATION, team.getName()));
         }
 
         // add ResultLinkAction with one that surely contains a projectId
@@ -457,28 +462,6 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         build.addOrReplaceAction(linkAction);
 
         return new PublishAnalysisResult(findingsAction, violationsAction);
-    }
-
-    @Nullable
-    private List<Violation> fetchViolations(final ConsoleLogger logger, final ApiClient apiClient, final String effectiveProjectId, final boolean useWorkloadIdentity) throws ApiClientException {
-        if (useWorkloadIdentity) {
-            // the permissions of a service account cannot be checked in advance, so we just try it
-            logger.log(Messages.Builder_Violations_Processing());
-            try {
-                return apiClient.getViolations(effectiveProjectId);
-            } catch (ApiClientException e) {
-                logger.log(Messages.Builder_Violations_SkippedServiceAccount(VIEW_POLICY_VIOLATION, e.getLocalizedMessage()));
-                return null;
-            }
-        }
-        final var team = apiClient.getTeamPermissions();
-        // for compatibility reasons: the permission may not be present so we check if it is. otherwise an exception would be thrown.
-        if (team.getPermissions().contains(VIEW_POLICY_VIOLATION.toString())) {
-            logger.log(Messages.Builder_Violations_Processing());
-            return apiClient.getViolations(effectiveProjectId);
-        }
-        logger.log(Messages.Builder_Violations_Skipped(VIEW_POLICY_VIOLATION, team.getName()));
-        return null;
     }
 
     private void evaluateRiskGates(final Run<?, ?> build, final ConsoleLogger logger, final ResultAction currentResult, final Thresholds thresholds) throws AbortException {

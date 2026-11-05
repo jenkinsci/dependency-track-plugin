@@ -49,9 +49,6 @@ To setup, navigate to Jenkins > System Configuration and complete the Dependency
 
 **Service account**: Name of the service account in Dependency-Track the build acts as. Required for workload identity federation.
 
-> [!NOTE]
-> When using workload identity federation, "Test Connection" cannot verify the permissions of the service account. Make sure the service account has the permissions required by the features you use.
-
 **Dependency-Track Frontend URL**: URL to the Frontend of your Dependency-Track instance. Use this if you run backend and frontend on different servers. If omitted, "Dependency-Track Backend URL" will be used instead.
 
 **Polling Timeout**: Defines the maximum number of minutes to wait for Dependency-Track to process a job when using synchronous publishing.

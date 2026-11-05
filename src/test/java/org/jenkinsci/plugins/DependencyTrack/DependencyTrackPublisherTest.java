@@ -694,19 +694,19 @@ class DependencyTrackPublisherTest {
         when(client.uploadBom(any(ProjectData.class), anyString())).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(List.of());
+        when(client.getTeamPermissions()).thenReturn(Team.builder().name("svc:ci-pipeline").permissions(Set.of(VIEW_POLICY_VIOLATION.toString())).build());
         when(client.getViolations("uuid-1")).thenReturn(List.of(new Violation("uuid-1", ViolationType.SECURITY, ViolationState.WARN, "rule-1", null)));
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
         assertThat(apiKeys).containsExactly("");
         verify(client).exchangeWorkloadIdentityToken(apikey, "jenkins", "ci-pipeline");
-        verify(client, never()).getTeamPermissions();
         verify(client).getViolations("uuid-1");
         verify(build).setResult(Result.UNSTABLE);
         verify(build).addOrReplaceAction(any(ViolationsRunAction.class));
     }
 
     @Test
-    void testPerformSyncWithWorkloadIdentityAndViolationsNotPermitted(@TempDir Path tmpWork) throws IOException {
+    void testPerformSyncWithWorkloadIdentityAndMissingViolationPermission(@TempDir Path tmpWork) throws IOException {
         File tmp = tmpWork.resolve("bom.xml").toFile();
         tmp.createNewFile();
         FilePath workDir = new FilePath(tmpWork.toFile());
@@ -720,11 +720,11 @@ class DependencyTrackPublisherTest {
         when(client.uploadBom(any(ProjectData.class), anyString())).thenReturn(new UploadResult(true, "token-1"));
         when(client.isTokenBeingProcessed("token-1")).thenReturn(Boolean.FALSE);
         when(client.getFindings("uuid-1")).thenReturn(List.of());
-        when(client.getViolations("uuid-1")).thenThrow(new ApiClientException("forbidden"));
+        when(client.getTeamPermissions()).thenReturn(Team.builder().name("svc:ci-pipeline").permissions(Set.of()).build());
 
         assertThatCode(() -> uut.perform(build, workDir, env, launcher, listener)).doesNotThrowAnyException();
         verify(client).exchangeWorkloadIdentityToken(apikey, "jenkins", "ci-pipeline");
-        verify(client, never()).getTeamPermissions();
+        verify(client, never()).getViolations(anyString());
         verify(build).addOrReplaceAction(any(ResultAction.class));
         verify(build, never()).addOrReplaceAction(any(ViolationsRunAction.class));
     }

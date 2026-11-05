@@ -58,7 +58,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.jenkinsci.plugins.DependencyTrack.model.Permissions.*;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -280,15 +279,18 @@ class DescriptorImplTest {
         final var poweredBy = "Dependency-Track v5.2.0";
         when(client.testConnection()).thenReturn(poweredBy);
         when(client.getVersion()).thenReturn("5.2.0");
+        when(client.getTeamPermissions()).thenReturn(Team.builder().name("svc:ci-pipeline").permissions(requiredPermissions).build());
         try (ACLContext ignored = ACL.as(User.getOrCreateByIdOrFullName(ACL.SYSTEM_USERNAME))) {
             CredentialsProvider.lookupStores(r.jenkins).iterator().next().addCredentials(Domain.global(), new StringCredentialsImpl(CredentialsScope.GLOBAL, credentialsid, "test", Secret.fromString(oidcToken)));
             uut = new DescriptorImpl(factory);
 
-            assertThat(uut.doTestConnectionJob("http:///url.tld", "", credentialsid, "jenkins", "ci-pipeline", true, false, null))
+            assertThat(uut.doTestConnectionJob("http:///url.tld", "", credentialsid, "jenkins", "ci-pipeline", false, false, null))
                     .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.OK)
-                    .hasMessage(Messages.Publisher_ConnectionTest_SuccessServiceAccount(poweredBy));
+                    .extracting(FormValidation::renderHtml).asString()
+                    .contains(Messages.Publisher_ConnectionTest_Success(poweredBy))
+                    .contains(Messages.Publisher_PermissionTest_Team("svc:ci-pipeline"))
+                    .contains(Messages.Publisher_PermissionTest_Okay(BOM_UPLOAD));
             verify(client).exchangeWorkloadIdentityToken(oidcToken, "jenkins", "ci-pipeline");
-            verify(client, never()).getTeamPermissions();
 
             assertThat(uut.doTestConnectionJob("http:///url.tld", "", credentialsid, "", "", true, false, null))
                     .hasFieldOrPropertyWithValue("kind", FormValidation.Kind.ERROR)

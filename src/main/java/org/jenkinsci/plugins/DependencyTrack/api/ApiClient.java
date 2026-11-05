@@ -23,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import lombok.RequiredArgsConstructor;
 import net.sf.json.JSONArray;
@@ -79,6 +80,7 @@ public class ApiClient {
     static final String PAGINATED_REQ_PAGESIZE_PARAM = "pageSize";
     static final String PAGINATED_RES_TOTAL_COUNT_HEADER = "X-Total-Count";
     static final String TEAM_SELF_URL = API_URL + "/team/self";
+    static final String USER_SELF_PERMISSIONS_URL = API_URL + "/user/self/permissions";
     static final String VERSION_URL = "/api/version";
     static final String OAUTH_TOKEN_URL = "/api/v2/oauth/token";
 
@@ -106,6 +108,11 @@ public class ApiClient {
      * it is used instead of the api key.
      */
     private String accessToken;
+
+    /**
+     * the username of the service account the access token belongs to
+     */
+    private String serviceAccountUsername;
 
     /**
      * Exchanges the given OIDC token for an access token using workload
@@ -149,6 +156,7 @@ public class ApiClient {
                 throw new ApiClientException(Messages.ApiClient_Error_Connection("", ""), e);
             }
         });
+        serviceAccountUsername = "svc:" + serviceAccount;
     }
 
     @Nonnull
@@ -192,9 +200,14 @@ public class ApiClient {
         });
     }
 
+    /**
+     * @return the name and permissions of the team the api key belongs to or,
+     * when using workload identity federation, of the service account
+     * @throws ApiClientException if the request fails
+     */
     @Nonnull
     public Team getTeamPermissions() throws ApiClientException {
-        final var request = createRequest(URI.create(TEAM_SELF_URL));
+        final var request = createRequest(URI.create(accessToken != null ? USER_SELF_PERMISSIONS_URL : TEAM_SELF_URL));
         return executeWithRetry(() -> {
             try (var response = httpClient.newCall(request).execute()) {
                 final var body = response.body().string();
@@ -202,6 +215,10 @@ public class ApiClient {
                     final int status = response.code();
                     logger.log(body);
                     throw new ApiClientException(Messages.ApiClient_Error_Connection(status, HttpStatus.valueOf(status).getReasonPhrase()));
+                }
+                if (accessToken != null) {
+                    final var permissions = JSONArray.fromObject(body).stream().map(String.class::cast).collect(Collectors.toSet());
+                    return Team.builder().name(serviceAccountUsername).permissions(permissions).build();
                 }
                 final var jsonObject = JSONObject.fromObject(body);
                 return TeamParser.parse(jsonObject);
