@@ -114,6 +114,22 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
     private String dependencyTrackApiKey;
 
     /**
+     * Specifies the credential-id for an OIDC token used for authentication via
+     * workload identity federation.
+     */
+    private String dependencyTrackOidcToken;
+
+    /**
+     * Specifies the name of the workload identity provider in Dependency-Track.
+     */
+    private String dependencyTrackWorkloadIdentityProvider;
+
+    /**
+     * Specifies the name of the service account in Dependency-Track.
+     */
+    private String dependencyTrackServiceAccount;
+
+    /**
      * Specifies the maximum number of minutes to wait for synchronous jobs to
      * complete.
      */
@@ -314,9 +330,14 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
 
         final String bom = readArtifact(logger, workspace, effectiveArtifact);
         final String effectiveUrl = getEffectiveUrl();
-        final String effectiveApiKey = getEffectiveApiKey(run);
+        final String effectiveOidcToken = getEffectiveOidcToken();
+        final boolean useWorkloadIdentity = effectiveOidcToken != null;
+        final String effectiveApiKey = useWorkloadIdentity ? "" : getEffectiveApiKey(run);
         final var effectiveProjectProperties = expandProjectProperties(env);
         final ApiClient apiClient = clientFactory.create(effectiveUrl, effectiveApiKey, logger, PluginUtil.newHttpClient(getEffectiveConnectionTimeout(), getEffectiveReadTimeout()));
+        if (useWorkloadIdentity) {
+            exchangeWorkloadIdentityToken(logger, apiClient, effectiveOidcToken, run);
+        }
         final var projectData = new ProjectData(projectId, effectiveProjectName, effectiveProjectVersion, true, effectiveProjectProperties);
 
         logger.log(Messages.Builder_Publishing(effectiveUrl, effectiveArtifact));
@@ -375,6 +396,19 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
             }
             throw new AbortException(msg);
         }
+    }
+
+    private void exchangeWorkloadIdentityToken(final ConsoleLogger logger, final ApiClient apiClient, final String credId, final Run<?, ?> run) throws ApiClientException, AbortException {
+        final String provider = Optional.ofNullable(PluginUtil.trimToNull(dependencyTrackWorkloadIdentityProvider)).orElseGet(descriptor::getDependencyTrackWorkloadIdentityProvider);
+        final String serviceAccount = Optional.ofNullable(PluginUtil.trimToNull(dependencyTrackServiceAccount)).orElseGet(descriptor::getDependencyTrackServiceAccount);
+        final String oidcToken = Optional.ofNullable(CredentialsProvider.findCredentialById(credId, StringCredentials.class, run))
+                .map(cred -> CredentialsProvider.track(run, cred))
+                .map(StringCredentials::getSecret).map(Secret::getPlainText).orElse(null);
+        if (PluginUtil.isBlank(oidcToken) || PluginUtil.isBlank(provider) || PluginUtil.isBlank(serviceAccount)) {
+            logger.log(Messages.Builder_WorkloadIdentity_Incomplete());
+            throw new AbortException(Messages.Builder_WorkloadIdentity_Incomplete());
+        }
+        apiClient.exchangeWorkloadIdentityToken(oidcToken, provider, serviceAccount);
     }
 
     private void waitWhileTokenIsBeingProcessed(final ConsoleLogger logger, final ApiClient apiClient, final String token) throws InterruptedException, ApiClientException, AbortException {
@@ -492,7 +526,8 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         if (descriptor == null) {
             descriptor = getDescriptor();
         }
-        overrideGlobals = !PluginUtil.isBlank(dependencyTrackUrl) || !PluginUtil.isBlank(dependencyTrackFrontendUrl) || !PluginUtil.isBlank(dependencyTrackApiKey);
+        overrideGlobals = !PluginUtil.isBlank(dependencyTrackUrl) || !PluginUtil.isBlank(dependencyTrackFrontendUrl) || !PluginUtil.isBlank(dependencyTrackApiKey)
+                || !PluginUtil.isBlank(dependencyTrackOidcToken) || !PluginUtil.isBlank(dependencyTrackWorkloadIdentityProvider) || !PluginUtil.isBlank(dependencyTrackServiceAccount);
         return this;
     }
 
@@ -508,6 +543,9 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
             dependencyTrackUrl = null;
             dependencyTrackFrontendUrl = null;
             dependencyTrackApiKey = null;
+            dependencyTrackOidcToken = null;
+            dependencyTrackWorkloadIdentityProvider = null;
+            dependencyTrackServiceAccount = null;
             dependencyTrackPollingTimeout = null;
             dependencyTrackPollingInterval = null;
             dependencyTrackConnectionTimeout = null;
@@ -550,6 +588,23 @@ public final class DependencyTrackPublisher extends Recorder implements SimpleBu
         } else {
             return "";
         }
+    }
+
+    /**
+     * resolves the credential-id of the OIDC token for workload identity
+     * federation. an api key in the job config takes precedence over the OIDC
+     * token from the global config.
+     *
+     * @return effective credential-id of the OIDC token or {@code null} if an
+     * api key shall be used
+     */
+    @Nullable
+    private String getEffectiveOidcToken() {
+        final String jobOidcToken = PluginUtil.trimToNull(dependencyTrackOidcToken);
+        if (jobOidcToken != null || PluginUtil.trimToNull(dependencyTrackApiKey) != null) {
+            return jobOidcToken;
+        }
+        return PluginUtil.trimToNull(descriptor.getDependencyTrackOidcToken());
     }
 
     /**
