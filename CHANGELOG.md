@@ -3,6 +3,8 @@
 ## [Unreleased]
 ### ⚠ Breaking
 ### ⭐ New Features
+- Support authentication via workload identity federation ([#480](https://github.com/jenkinsci/dependency-track-plugin/issues/480))
+
 ### 🐞 Bugs Fixed
 
 ## [v7.2.0] - 2026-10-09

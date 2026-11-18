@@ -190,13 +190,18 @@ public final class ProjectProperties implements Describable<ProjectProperties>, 
          *
          * @param dependencyTrackUrl the base URL to Dependency-Track
          * @param dependencyTrackApiKey the API key to use for authentication
+         * @param dependencyTrackOidcToken the OIDC token to use for
+         * authentication via workload identity federation
+         * @param dependencyTrackWorkloadIdentityProvider name of the workload
+         * identity provider
+         * @param dependencyTrackServiceAccount name of the service account
          * @param item used to lookup credentials in job config
          * @return ListBoxModel
          */
         @POST
-        public ListBoxModel doFillParentIdItems(@RelativePath("..") @QueryParameter final String dependencyTrackUrl, @RelativePath("..") @QueryParameter final String dependencyTrackApiKey, @AncestorInPath @Nullable final Item item) {
+        public ListBoxModel doFillParentIdItems(@RelativePath("..") @QueryParameter final String dependencyTrackUrl, @RelativePath("..") @QueryParameter final String dependencyTrackApiKey, @RelativePath("..") @QueryParameter final String dependencyTrackOidcToken, @RelativePath("..") @QueryParameter final String dependencyTrackWorkloadIdentityProvider, @RelativePath("..") @QueryParameter final String dependencyTrackServiceAccount, @AncestorInPath @Nullable final Item item) {
             org.jenkinsci.plugins.DependencyTrack.DescriptorImpl pluginDescriptor = Jenkins.get().getDescriptorByType(org.jenkinsci.plugins.DependencyTrack.DescriptorImpl.class);
-            return pluginDescriptor.doFillProjectIdItems(dependencyTrackUrl, dependencyTrackApiKey, item);
+            return pluginDescriptor.doFillProjectIdItems(dependencyTrackUrl, dependencyTrackApiKey, dependencyTrackOidcToken, dependencyTrackWorkloadIdentityProvider, dependencyTrackServiceAccount, item);
         }
     }
 }
