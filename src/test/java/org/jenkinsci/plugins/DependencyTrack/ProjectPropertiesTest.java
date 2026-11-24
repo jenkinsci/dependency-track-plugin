@@ -97,11 +97,11 @@ class ProjectPropertiesTest {
             when(mockJenkins.getDescriptorByType(org.jenkinsci.plugins.DependencyTrack.DescriptorImpl.class)).thenReturn(descriptorMock);
             ProjectProperties.DescriptorImpl uut = new ProjectProperties.DescriptorImpl();
 
-            uut.doFillParentIdItems("url", "key", null);
+            uut.doFillParentIdItems("url", "key", "oidc", "provider", "sa", null);
 
             ReflectionUtils.setField(instanceField, null, origJenkins);
             verify(mockJenkins).getDescriptorByType(org.jenkinsci.plugins.DependencyTrack.DescriptorImpl.class);
-            verify(descriptorMock).doFillProjectIdItems("url", "key", null);
+            verify(descriptorMock).doFillProjectIdItems("url", "key", "oidc", "provider", "sa", null);
         }
     }
 }

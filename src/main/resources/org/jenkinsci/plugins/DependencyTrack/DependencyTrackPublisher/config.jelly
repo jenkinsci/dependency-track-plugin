@@ -49,6 +49,15 @@ limitations under the License.
             <f:entry title="${%dependencytrack.apikey}" field="dependencyTrackApiKey">
                 <c:select id="dependencytrack.apikey" />
             </f:entry>
+            <f:entry title="${%dependencytrack.oidctoken}" field="dependencyTrackOidcToken">
+                <c:select id="dependencytrack.oidctoken" />
+            </f:entry>
+            <f:entry title="${%dependencytrack.workloadidentityprovider}" field="dependencyTrackWorkloadIdentityProvider">
+                <f:textbox id="dependencytrack.workloadidentityprovider" />
+            </f:entry>
+            <f:entry title="${%dependencytrack.serviceaccount}" field="dependencyTrackServiceAccount">
+                <f:textbox id="dependencytrack.serviceaccount" />
+            </f:entry>
             <f:entry title="${%dependencytrack.polling.timeout}" field="dependencyTrackPollingTimeout">
                 <f:number id="dependencytrack.polling.timeout" clazz="positive-number" min="1" />
             </f:entry>
@@ -61,7 +70,7 @@ limitations under the License.
             <f:entry title="${%dependencytrack.read.timeout}" field="dependencyTrackReadTimeout">
                 <f:number id="dependencytrack.read.timeout" clazz="non-negative-number" min="0" />
             </f:entry>
-            <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnectionJob" with="dependencyTrackUrl,dependencyTrackApiKey,synchronous,projectProperties" />
+            <f:validateButton title="${%dependencytrack.connection.test}" progress="${%dependencytrack.connection.testing}" method="testConnectionJob" with="dependencyTrackUrl,dependencyTrackApiKey,dependencyTrackOidcToken,dependencyTrackWorkloadIdentityProvider,dependencyTrackServiceAccount,synchronous,projectProperties" />
         </f:optionalBlock>
     </f:section>
 
